@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Schulung – Vorschau aller Zustände</title>
+  <style>
+    :root { --primary: #1f3a5f; }
+    body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; background: #e4e1db; color: #1b1f24; }
+    header { padding: 20px 24px 8px; }
+    h1 { margin: 0 0 6px; font-size: 1.4rem; color: var(--primary); }
+    header p { margin: 4px 0; max-width: 62rem; line-height: 1.5; }
+    .controls { display: flex; flex-wrap: wrap; gap: 16px; align-items: center; margin-top: 10px; }
+    .controls label { display: flex; gap: 8px; align-items: center; min-height: 44px; }
+    h2 { font-size: 1.15rem; margin: 30px 24px 4px; color: var(--primary); }
+    h3 { font-size: 1rem; margin: 16px 24px 8px; }
+    .meta { margin: 0 24px 10px; font-size: .9rem; color: #4b5563; max-width: 62rem; }
+    .tag { display: inline-block; font-size: .8rem; font-weight: 700; padding: 1px 8px; border-radius: 999px; background: #fff; border: 1px solid #c9c4bb; margin-left: 6px; }
+    .grid { display: flex; flex-wrap: wrap; gap: 22px; padding: 0 24px 10px; }
+    figure { margin: 0; }
+    figcaption { font-size: .9rem; margin: 6px 2px 0; display: flex; justify-content: space-between; gap: 8px; width: 390px; }
+    figcaption a { color: var(--primary); }
+    iframe { width: 390px; height: 780px; border: 0; border-radius: 22px; background: #fff; box-shadow: 0 0 0 1px #c9ced4, 0 8px 24px rgba(0,0,0,.08); }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Vorschau aller Zustände</h1>
+    <p>Jeder Rahmen zeigt eine Seite der Schulung in 390 × 780 px. Je Muster sind alle gebauten App-Varianten zu sehen, jeweils in vier Schritten: 1 Ansehen, 2 Frage, 3 Reaktion mit Markierung, 4 Erklärung (Muster 6 beginnt bei Schritt 2). Unter jedem Muster steht, für welche Apps der Person welcher Screen als Fallback gezeigt wird. In Schritt 3 und 4 ist eine falsche Beispielantwort eingesetzt (bei Muster 6 die Auswahl 1, 2, 4; bei W1 die Stellen 1, 2, 4; bei W2 die zweite Karte). Nichts hier wird gespeichert.</p>
+    <p>„Exportansicht" blendet Buttons und alles Persönliche aus (Antwort-Zeile, eigene Auswahl, eigene Zahlen), damit sich die Zustände als Ersatzbilder für das Umfragetool abfotografieren lassen. „Einzeln öffnen" zeigt eine Seite allein.</p>
+    <div class="controls">
+      <label><input type="checkbox" id="export"> Exportansicht</label>
+      <label>Beispielantwort:
+        <select id="answer">
+          <option value="">falsch (Standard)</option>
+          <option value="1">Antwort 1</option>
+          <option value="2">Antwort 2</option>
+          <option value="3">Antwort 3</option>
+        </select>
+      </label>
+      <label>Apps für Sperrbildschirm und Wiedererkennen:
+        <select id="apps">
+          <option value="ig,tt,sc">Instagram, TikTok, Snapchat</option>
+          <option value="ig">nur Instagram</option>
+          <option value="tt">nur TikTok</option>
+          <option value="sc">nur Snapchat</option>
+          <option value="fb">nur Facebook</option>
+          <option value="x">nur X</option>
+        </select>
+      </label>
+    </div>
+  </header>
+  <main id="out"></main>
+  <script>
+    // Einzelansicht: preview.html?single=<Aufrufparameter, URL-codiert> zeigt nur einen Rahmen 390 × 844 oben links
+    (function () {
+      var single = new URLSearchParams(location.search).get("single");
+      if (!single) return;
+      document.body.innerHTML = '<iframe title="Einzelansicht" src="index.html?' + single.replace(/"/g, "") +
+        '" style="width:390px;height:844px;border:0;display:block;border-radius:0;box-shadow:none"></iframe>';
+      document.body.style.margin = "0";
+      window.__single = true;
+    })();
+  </script>
+  <script src="content.js"></script>
+  <script>
+    (function () {
+      if (window.__single) return;
+      var C = window.CONTENT;
+      var params = new URLSearchParams(location.search);
+      var exp = document.getElementById("export"), ans = document.getElementById("answer"), appsSel = document.getElementById("apps");
+      exp.checked = params.get("export") === "1";
+      ans.value = params.get("answer") || "";
+      appsSel.value = params.get("apps") || "ig,tt,sc";
+      function reload() {
+        var q = new URLSearchParams();
+        if (exp.checked) q.set("export", "1");
+        if (ans.value) q.set("answer", ans.value);
+        if (appsSel.value !== "ig,tt,sc") q.set("apps", appsSel.value);
+        location.search = q.toString();
+      }
+      [exp, ans, appsSel].forEach(function (el) { el.addEventListener("change", reload); });
+
+      var extra = (exp.checked ? "&export=1" : "") + (ans.value ? "&answer=" + ans.value : "") + "&apps=" + appsSel.value;
+      function label(k) { return k === "lock" ? "Sperrbildschirm" : (C.apps[k] || {}).label || k; }
+      // gleiche Regel wie in app.js (fallbackFor)
+      function fallbackFor(p, target) {
+        if (p.variants.ig) return "ig";
+        var o = p.order, i = o.indexOf(target);
+        for (var k = 1; k <= o.length; k++) { var a = o[(i + k) % o.length]; if (p.variants[a]) return a; }
+        return Object.keys(p.variants)[0];
+      }
+      function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+      function frame(key, caption, more) {
+        var src = "index.html?preview=" + key + (more || "") + extra;
+        return '<figure><iframe loading="lazy" title="' + esc(caption) + '" src="' + esc(src) + '"></iframe>' +
+          "<figcaption><span>" + esc(caption) + '</span><a href="' + esc(src) + '" target="_blank" rel="noopener">einzeln öffnen</a></figcaption></figure>';
+      }
+
+      var html = '<h2>Einleitung</h2><div class="grid">' + frame("intro", "Einleitung 1") + frame("apps", "Einleitung 2 · Deine Apps") + "</div>";
+
+      var steps = [["L", "1 Ansehen"], ["A", "2 Frage"], ["B", "3 Reaktion"], ["E", "4 Erklärung"]];
+      C.patterns.forEach(function (p) {
+        html += "<h2>Muster " + p.id + " · " + esc(p.name) + "</h2>";
+        var built = Object.keys(p.variants);
+        if (p.always) {
+          html += '<p class="meta">Wird immer gezeigt; die Meldungen kommen nur aus den genutzten Apps (Auswahl oben).</p>';
+        } else {
+          var notes = p.order.filter(function (a) { return built.indexOf(a) < 0; }).map(function (a) {
+            return label(a) + " → " + label(fallbackFor(p, a));
+          });
+          html += '<p class="meta">Reihenfolge: ' + p.order.map(label).join(", ") + ". Gebaut: " + built.map(label).join(", ") +
+            ". " + (notes.length ? "Fallback: " + notes.join("; ") + "." : "Kein Fallback nötig.") + "</p>";
+        }
+        built.forEach(function (v) {
+          html += "<h3>" + esc(label(v)) + (p.always ? "" : '<span class="tag">gebaut</span>') + "</h3><div class=\"grid\">";
+          steps.forEach(function (s) {
+            if (p.type === "multi" && s[0] === "L") return;
+            html += frame("p" + p.id + s[0], "Muster " + p.id + " · " + label(v) + " · " + s[1], p.always ? "" : "&variant=" + v);
+          });
+          html += "</div>";
+        });
+      });
+
+      html += '<h2>Wiedererkennen</h2><p class="meta">Gezählt werden in W1 nur Stellen zu Mustern, die bei den oben gewählten Apps gezeigt werden.</p><div class="grid">' +
+        frame("W1A", "W1 Stellen antippen") + frame("W1B", "W1 Rückmeldung") + frame("W2A", "W2 Meldungen") + frame("W2B", "W2 Rückmeldung") + "</div>";
+      html += '<h2>Schluss</h2><div class="grid">' + frame("einordnung", "Einordnung") + frame("zusammenfassung", "Zusammenfassung") + "</div>";
+      document.getElementById("out").innerHTML = html;
+    })();
+  </script>
+</body>
+</html>
