@@ -1,0 +1,95 @@
+/* study.css – Ergänzungen für die Fragebogen-Seiten (Handy zuerst, 375 px).
+ * Grundfarben, .frame, .page, .field, .btn kommen aus styles.css. */
+
+.study { display: flex; flex-direction: column; min-height: 100%; }
+
+.progress-track {
+  height: 4px; background: #e3e8ee; border-radius: 2px;
+  margin: 10px 12px 0; overflow: hidden; flex: 0 0 auto;
+}
+.progress-fill { height: 100%; background: var(--primary, #1f3a5f); transition: width 300ms ease; }
+
+.offline-bar {
+  margin: 8px 12px 0; padding: 8px 12px; border-radius: 8px;
+  background: #fff4c2; color: #5d4a00; font-size: 0.9rem;
+}
+
+.study-page { padding: 18px 16px 32px; }
+.study-page .tp-h1, .study-page h1 { font-size: 1.35rem; margin: 6px 0 12px; }
+.study-page .tp-p { margin: 0 0 14px; line-height: 1.55; }
+
+.doclink { display: inline-block; margin: 2px 0 16px; font-weight: 600; }
+
+.notice {
+  margin: 0 0 16px; padding: 10px 12px; border-left: 4px solid var(--primary, #1f3a5f);
+  background: var(--card, #f2f5f8); border-radius: 0 8px 8px 0; line-height: 1.5;
+}
+
+.check-card {
+  display: flex; gap: 10px; align-items: flex-start; padding: 12px;
+  border: 1px solid #d4dbe3; border-radius: 10px; background: #fff;
+  line-height: 1.45; cursor: pointer;
+}
+.check-card input { width: 20px; height: 20px; flex: 0 0 auto; margin-top: 1px; }
+
+/* Skalen und Auswahl als große Tipp-Buttons, keine Dropdowns */
+.opt-col { display: flex; flex-direction: column; gap: 8px; }
+.opt-btn {
+  padding: 12px 14px; border: 1px solid #d4dbe3; border-radius: 10px;
+  background: #fff; color: inherit; font-size: 1rem; text-align: left; cursor: pointer;
+}
+.opt-btn.selected {
+  border-color: var(--primary, #1f3a5f);
+  background: var(--primary, #1f3a5f); color: #fff; font-weight: 600;
+}
+
+.nav-row { display: flex; gap: 10px; margin-top: 22px; }
+.nav-row .btn { flex: 1; }
+
+.linklike {
+  background: none; border: none; padding: 10px 0 0; margin-top: 18px;
+  color: var(--primary, #1f3a5f); text-decoration: underline; font-size: 0.95rem; cursor: pointer;
+}
+
+.linkbox {
+  margin: 0 0 16px; padding: 14px; border: 1px dashed var(--primary, #1f3a5f);
+  border-radius: 12px; background: #fff;
+}
+.linkbox-url {
+  font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 0.95rem;
+  word-break: break-all; margin-bottom: 10px; font-weight: 600;
+}
+.linkbox .btn { width: 100%; margin-bottom: 8px; }
+
+.foldout { margin: 6px 0; border: 1px solid #d4dbe3; border-radius: 10px; padding: 10px 12px; background: #fff; }
+.foldout summary { font-weight: 600; cursor: pointer; }
+.foldout p { margin: 10px 0 2px; }
+
+.chooser { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; }
+
+.field .error:empty { display: none; }
+.page-error { margin-top: 10px; }
+
+/* Ergänzungen T0 */
+.tp-h2 { font-size: 1.05rem; margin: 18px 0 8px; }
+.hint { color: #6b7486; font-size: 0.88rem; margin: -2px 0 8px; }
+.field input[type="number"], .field input[type="text"], .other-input {
+  width: 100%; padding: 11px 12px; border: 1px solid #d4dbe3; border-radius: 10px;
+  font-size: 1rem; background: #fff;
+}
+.other-input { margin-top: 8px; }
+.ta { width: 100%; padding: 11px 12px; border: 1px solid #d4dbe3; border-radius: 10px;
+  font-size: 1rem; background: #fff; resize: vertical; }
+.file-input { width: 100%; padding: 10px; border: 1px dashed #9aa6b4; border-radius: 10px; background: #fff; }
+.screen-placeholder {
+  border: 2px dashed #9aa6b4; border-radius: 14px; background: #fff;
+  padding: 26px 14px; text-align: center; color: #6b7486; margin: 0 0 14px;
+}
+.screen-placeholder b { color: #1a2233; }
+
+/* Schritte + Skizze (T0-04) */
+.steps { margin: 0 0 12px; padding-left: 22px; line-height: 1.55; }
+.steps li { margin-bottom: 6px; }
+.sketch { background: #fff; border: 1px solid #d4dbe3; border-radius: 12px;
+  padding: 8px; margin: 0 0 14px; }
+.sketch svg { width: 100%; height: auto; display: block; }

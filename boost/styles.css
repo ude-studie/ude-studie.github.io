@@ -1,0 +1,989 @@
+/* ── Grundwerte ─────────────────────────────────────────── */
+:root {
+  --primary: #1f3a5f;
+  --primary-dark: #152a45;
+  --primary-soft: #eaf0f7;
+  --mark: #c0392b;
+  --mark-text: #8e1c12;
+  --human: #1e7a3c;
+  --select: #e0b400;
+  --text: #1b1f24;
+  --muted: #5b6470;
+  --line: #e3e0da;
+  --page: #f5f3ef;
+  --card: #ffffff;
+  --desk: #e4e1db;
+  --shadow: 0 1px 2px rgba(31,42,58,.06), 0 6px 20px rgba(31,42,58,.07);
+  --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --dur: 350ms;
+}
+
+* { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+
+html, body { margin: 0; padding: 0; }
+
+body {
+  font-family: var(--font);
+  font-size: 1rem;
+  line-height: 1.5;
+  color: var(--text);
+  background: var(--desk);
+}
+
+button, input { font: inherit; }
+
+.frame {
+  width: 100%;
+  max-width: 390px;
+  margin: 0 auto;
+  height: 100vh;
+  height: 100dvh;
+  background: var(--page);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+}
+
+@media (min-width: 500px) and (min-height: 600px) {
+  body { padding: 24px 0; }
+  .frame {
+    height: min(844px, calc(100vh - 48px));
+    height: min(844px, calc(100dvh - 48px));
+    border-radius: 28px;
+    box-shadow: 0 0 0 1px #cfcac2, 0 12px 40px rgba(0,0,0,.12);
+  }
+}
+
+.sr-only {
+  position: absolute !important;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0,0,0,0);
+  white-space: nowrap; border: 0;
+}
+
+:focus-visible {
+  outline: 3px solid #2f6fd6;
+  outline-offset: 2px;
+}
+[tabindex="-1"]:focus { outline: none; }
+
+/* ── Seitengerüst ───────────────────────────────────────── */
+.page {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+/* Fußleiste mit dem einen Hauptbutton */
+.lp-foot {
+  flex: 0 0 auto;
+  padding: 10px 20px calc(16px + env(safe-area-inset-bottom));
+  background: var(--page);
+}
+
+/* Textseiten (Einleitung, Einordnung, Zusammenfassung) */
+.tp-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 36px 24px 12px;
+}
+.tp-kicker {
+  margin: 0 0 6px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.tp h1 {
+  font-size: 1.75rem;
+  line-height: 1.2;
+  letter-spacing: -.01em;
+  color: var(--primary);
+  margin: 0 0 20px;
+}
+.tp p { margin: 0 0 16px; line-height: 1.6; }
+.tp-score {
+  background: var(--card);
+  border-radius: 16px;
+  padding: 14px 16px;
+  font-weight: 700;
+  box-shadow: var(--shadow);
+}
+
+.field { margin: 8px 0 18px; }
+.field label { display: block; font-weight: 700; margin-bottom: 6px; }
+.field input {
+  width: 100%;
+  min-height: 52px;
+  padding: 10px 14px;
+  border: 2px solid #8a939e;
+  border-radius: 14px;
+  background: #fff;
+  font-size: 1rem;
+}
+.field .error { color: var(--mark-text); margin-top: 6px; font-size: 0.95rem; }
+
+/* ── Buttons ────────────────────────────────────────────── */
+.btn {
+  display: block;
+  width: 100%;
+  min-height: 54px;
+  padding: 14px 16px;
+  border: 0;
+  border-radius: 16px;
+  background: var(--primary);
+  color: #fff;
+  font-size: 1.0625rem;
+  font-weight: 700;
+  cursor: pointer;
+  text-align: center;
+  text-decoration: none;
+  transition: background-color 150ms;
+}
+.btn:hover { background: var(--primary-dark); }
+.btn:disabled { background: #a7b0bb; color: #fff; cursor: not-allowed; }
+.btn.secondary {
+  background: transparent;
+  color: var(--primary);
+  border: 2px solid var(--primary);
+  margin-top: 10px;
+}
+.status-line { min-height: 1.5em; margin: 8px 0 0; color: var(--muted); }
+
+/* ── Lernseite: Kopf, Bühne mit Handy, Karten ───────────── */
+.lp-head {
+  flex: 0 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 20px 4px;
+}
+.lp-step { font-size: 0.875rem; font-weight: 600; color: var(--muted); }
+.lp-app {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--primary);
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 3px 12px;
+}
+.fallback-note {
+  flex: 0 0 auto;
+  padding: 2px 20px 0;
+  font-size: 0.875rem;
+  color: var(--muted);
+}
+
+.lp-stage {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  row-gap: 14px;
+  padding: 10px 20px 12px;
+}
+.lp-ctx {
+  margin: 0;
+  width: 100%;
+  padding: 11px 14px 11px 16px;
+  border-left: 5px solid var(--primary);
+  border-radius: 14px;
+  background: var(--card);
+  box-shadow: var(--shadow);
+  font-size: 1.0625rem;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--text);
+  outline: none;
+}
+/* kurz aufleuchten, wenn sich der Text nach dem Tipp ändert */
+.lp-ctx.changed { animation: ctx-flash 900ms ease-out; }
+@keyframes ctx-flash { 0%, 35% { background: #fff4c2; } 100% { background: var(--card); } }
+.lp-ctx[hidden] { display: none; }
+.lp-panel { width: 100%; flex: 0 0 auto; }
+.lp-panel:empty { display: none; }
+.lp-panel.reserved { visibility: hidden; }
+
+/* Das Handy: feste Innengröße, wird skaliert (siehe fitDevice in app.js) */
+.device-wrap {
+  position: relative;
+  flex: 0 0 auto;
+  transition: width 320ms cubic-bezier(.2,.7,.2,1), height 320ms cubic-bezier(.2,.7,.2,1);
+}
+.device {
+  position: absolute;
+  left: 0; top: 0;
+  width: 410px;
+  height: 800px;
+  transform-origin: 0 0;
+  transition: transform 320ms cubic-bezier(.2,.7,.2,1);
+  border: 10px solid #15171b;
+  border-radius: 56px;
+  overflow: hidden;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 0 0 1px rgba(0,0,0,.08), 0 24px 48px rgba(31,42,58,.22);
+}
+.device-wrap.no-anim, .device-wrap.no-anim .device { transition: none; }
+.device-status {
+  flex: 0 0 auto;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 24px 0 22px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #111;
+  position: relative;
+  z-index: 6;
+}
+.device-tag {
+  font-size: 11px;
+  font-weight: 700;
+  border: 1.5px solid currentColor;
+  border-radius: 999px;
+  padding: 0 8px;
+  line-height: 17px;
+  opacity: .85;
+}
+.device-time { margin-right: auto; }
+.device-icons svg { display: block; width: 58px; height: 14px; fill: currentColor; color: currentColor; }
+.device.tt, .device.rl { background: #000; }
+.device.tt .device-status, .device.rl .device-status, .device.lock .device-status, .device.igc .device-status { color: #fff; }
+.device.igc { background: #111; }
+
+.screen-body {
+  flex: 1 1 auto;
+  position: relative;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.screen-body.scroll {
+  display: block;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 24px;
+}
+
+/* Frage-Karte */
+.q-card {
+  margin: 0;
+  padding: 18px 16px 12px;
+  border: 0;
+  border-radius: 20px;
+  background: var(--card);
+  box-shadow: var(--shadow);
+  min-width: 0;
+}
+.q-card legend {
+  float: left;
+  width: 100%;
+  padding: 0;
+  margin: 0 0 8px;
+  font-size: 1.125rem;
+  line-height: 1.35;
+  font-weight: 700;
+  outline: none;
+}
+.q-card legend + * { clear: both; }
+.opt {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 52px;
+  margin: 0 0 8px;
+  padding: 10px 14px;
+  border: 1.5px solid var(--line);
+  border-radius: 14px;
+  background: #fff;
+  cursor: pointer;
+  transition: border-color 150ms, background-color 150ms;
+}
+.opt:has(input:checked) { border-color: var(--primary); background: var(--primary-soft); }
+.opt input {
+  width: 22px; height: 22px;
+  margin: 0;
+  flex: 0 0 auto;
+  accent-color: var(--primary);
+}
+
+/* Hinweis unter dem Handy (statt des Kastens im Screen) */
+.callout {
+  background: var(--card);
+  border-left: 5px solid var(--mark);
+  border-radius: 14px;
+  padding: 14px 16px;
+  color: var(--mark-text);
+  font-weight: 600;
+  line-height: 1.45;
+  box-shadow: var(--shadow);
+  outline: none;
+}
+
+/* Erklärung */
+.ex-card {
+  background: var(--card);
+  border-radius: 20px;
+  padding: 20px 18px 8px;
+  box-shadow: var(--shadow);
+}
+.ex-card h2 {
+  font-size: 1.375rem;
+  line-height: 1.25;
+  color: var(--primary);
+  margin: 0 0 10px;
+  outline: none;
+}
+.verdict {
+  margin: 0 0 6px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  background: #f1f2f4;
+  font-size: 0.9375rem;
+}
+.lines { margin: 0; }
+.lines > div { padding: 12px 0; border-top: 1px solid #eeebe6; }
+.lines > div:first-child { border-top: 0; }
+.lines dt { font-weight: 700; color: var(--primary); margin-bottom: 2px; }
+.lines dd { margin: 0; line-height: 1.5; }
+
+/* Rückmeldung beim Wiedererkennen */
+.feedback { margin: 0; outline: none; }
+.feedback.good,
+.feedback.neutral,
+.feedback:not(.good):not(.neutral) {
+  background: var(--card);
+  border-radius: 16px;
+  padding: 14px 16px;
+  box-shadow: var(--shadow);
+  line-height: 1.5;
+}
+.feedback.good { border-left: 5px solid var(--human); }
+.feedback.neutral { border-left: 5px solid #8a939e; }
+
+/* Markierung im Screen */
+.mark {
+  position: absolute;
+  z-index: 3;
+  border: 3px solid var(--mark);
+  border-radius: 10px;
+  box-shadow: 0 0 0 2px rgba(255,255,255,.75);
+  pointer-events: none;
+}
+.fade-in { animation: fade-in 260ms ease-out both; }
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+
+/* gemeinsame Bausteine */
+.avatar {
+  flex: 0 0 auto;
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  background: #c99aa8;
+}
+.app-icon {
+  flex: 0 0 auto;
+  width: 38px; height: 38px;
+  border-radius: 10px;
+  background: #999;
+}
+.ai-ig { background: linear-gradient(45deg, #f5a623 0%, #e1306c 50%, #8a3ab9 100%); }
+.ai-tt { background: #111; }
+.ai-sc { background: #fffc00; box-shadow: inset 0 0 0 1px rgba(0,0,0,.12); }
+.ai-fb { background: #1877f2; }
+.ai-x { background: #2f3336; box-shadow: inset 0 0 0 1px rgba(255,255,255,.2); }
+
+/* ── Einleitung, Bildschirm 2: App-Kacheln ─────────────── */
+.app-tiles { display: flex; flex-direction: column; gap: 10px; margin: 4px 0 16px; }
+.app-tile {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  min-height: 56px;
+  padding: 8px 14px;
+  border: 2px solid #c9ced4;
+  border-radius: 14px;
+  background: #fff;
+  color: var(--text);
+  font-size: 1.0625rem;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+.app-tile .app-icon { width: 34px; height: 34px; border-radius: 9px; }
+.app-tile .app-name { flex: 1 1 auto; }
+.tile-check {
+  width: 26px; height: 26px;
+  border-radius: 50%;
+  border: 2px solid #9aa3ad;
+  display: flex; align-items: center; justify-content: center;
+}
+.tile-check svg { width: 18px; height: 18px; fill: transparent; }
+.app-tile[aria-pressed="true"] { border-color: var(--primary); background: #f1f5fa; }
+.app-tile[aria-pressed="true"] .tile-check { background: var(--primary); border-color: var(--primary); }
+.app-tile[aria-pressed="true"] .tile-check svg { fill: #fff; }
+
+
+
+/* ── Vorlage: TikTok-Feed und Reels ─────────────────────── */
+.tt, .rl { background: #000; color: #fff; }
+.tt .feed, .rl .feed {
+  flex: 1 1 auto;
+  position: relative;
+  overflow: hidden;
+  min-height: 0;
+}
+.tt .track, .rl .track {
+  position: absolute;
+  inset: 0;
+  transition: transform var(--dur) cubic-bezier(.2,.7,.2,1);
+}
+.tt .track.still, .rl .track.still { transition: none; }
+.tt .post, .rl .post {
+  position: relative;
+  height: 100%;
+  background-size: cover;
+  background-position: center;
+}
+/* Bild als eigene Ebene mit langsamem Zoom, damit es nach Video aussieht */
+.tt .post, .rl .post { overflow: hidden; }
+.post-bg {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  animation: kenburns 15s ease-in-out infinite alternate;
+}
+@keyframes kenburns { from { transform: scale(1); } to { transform: scale(1.12) translate(-1.5%, -1%); } }
+/* dunkler Verlauf unten, damit weiße Schrift auf hellen Bildern lesbar bleibt */
+.tt .post::after, .rl .post::after {
+  content: "";
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  height: 45%;
+  background: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,.5) 100%);
+  pointer-events: none;
+}
+.tt .post .meta, .rl .post .meta, .tt .post .side, .rl .post .side, .rl .bar { z-index: 1; }
+.tt .post .meta, .rl .post .meta {
+  position: absolute;
+  left: 14px; right: 76px; bottom: 40px;
+  text-shadow: 0 1px 3px rgba(0,0,0,.6);
+}
+.tt .post .user, .rl .post .user { font-weight: 700; font-size: 1rem; }
+.tt .post .cap, .rl .post .cap { font-size: 0.9375rem; }
+.tt .post .side, .rl .post .side {
+  position: absolute;
+  right: 8px; bottom: 40px;
+  width: 60px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  font-size: 0.8125rem;
+  text-shadow: 0 1px 3px rgba(0,0,0,.6);
+}
+.tt .post .side span, .rl .post .side span { display: flex; flex-direction: column; align-items: center; }
+.tt .post .side svg, .rl .post .side svg { width: 30px; height: 30px; fill: #fff; color: #fff; filter: drop-shadow(0 1px 2px rgba(0,0,0,.5)); }
+.tt .nav, .rl .nav {
+  flex: 0 0 auto;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  background: #000;
+  padding: 6px 0 24px;
+  font-size: 0.6875rem;
+}
+.tt .nav span, .rl .nav span { display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 44px; }
+.tt .nav svg, .rl .nav svg { width: 22px; height: 22px; fill: #fff; color: #fff; }
+.tt .nav .plus svg { width: 34px; height: 24px; }
+
+/* Muster 1, Zustand B: ein Beitrag weiter plus Anschnitt von Beitrag 42 */
+.tt .track.to-b { transform: translateY(calc(-100% - 56px)); }
+.tt .seam-zone { position: absolute; left: 8px; right: 8px; bottom: 14px; height: 84px; pointer-events: none; }
+
+/* Muster 4: Reels */
+.rl .track.to-b { transform: translateY(-100%); }
+.rl .post .meta { bottom: 22px; }
+.rl .post .side { bottom: 22px; }
+.rl .post .time { font-size: 0.875rem; font-weight: 700; margin-top: 4px; }
+.rl .bar {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  height: 4px;
+  background: rgba(255,255,255,.35);
+}
+.rl .bar span { display: block; height: 100%; background: #fff; }
+.rl .bar span.run { width: 0; animation: bar-run 4s linear infinite; }
+.is-export .rl .bar span.run { animation-play-state: paused; }
+/* TikTok: Reiter oben und Folgen-Plus am Profilbild */
+.tt-tabs {
+  position: absolute;
+  z-index: 2;
+  top: 10px; left: 0; right: 0;
+  display: flex;
+  justify-content: center;
+  gap: 22px;
+  font-size: 1.0625rem;
+  font-weight: 600;
+  color: rgba(255,255,255,.7);
+  text-shadow: 0 1px 3px rgba(0,0,0,.5);
+}
+.tt-tabs span { padding: 2px 4px 6px; position: relative; }
+.tt-tabs span.on { color: #fff; }
+.tt-tabs span.on::after { content: ""; position: absolute; left: 30%; right: 30%; bottom: 0; height: 3px; border-radius: 2px; background: #fff; }
+.tt-av { position: relative; margin-bottom: 8px; }
+.tt-av .avatar { width: 46px; height: 46px; border: 2px solid #fff; font-size: 1.125rem; }
+.tt-av i {
+  position: absolute;
+  left: 50%; bottom: -9px;
+  transform: translateX(-50%);
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  background: #fe2c55;
+  color: #fff;
+  font-style: normal;
+  font-weight: 700;
+  font-size: 15px;
+  line-height: 19px;
+  text-align: center;
+}
+@keyframes bar-run { from { width: 0; } to { width: 100%; } }
+
+/* ── Vorlage: Instagram-Feed ────────────────────────────── */
+.ig { background: #fff; color: #111; }
+.ig-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--line);
+  background: #fff;
+  position: relative;
+  z-index: 2;
+}
+.ig-title { font-size: 1.375rem; font-weight: 700; letter-spacing: -.2px; }
+.ig-icons { display: flex; gap: 16px; margin-left: auto; }
+.ig-plus svg { display: block; width: 30px; height: 22px; color: #111; fill: #111; }
+.ig-title { margin-left: 12px; }
+.ig-icons svg { width: 24px; height: 24px; color: #111; }
+.ig-content { transition: transform 200ms ease-out; }
+.ig-content.pulled { transform: translateY(52px); }
+.ig-content.settle { animation: settle 180ms ease-out both; }
+@keyframes settle { from { transform: translateY(52px); } to { transform: none; } }
+.ig-refresh {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  font-size: 0.875rem;
+  color: #444;
+}
+.spinner {
+  width: 20px; height: 20px;
+  border: 2px solid #999;
+  border-top-color: transparent;
+  border-radius: 50%;
+}
+.spinner.spin { animation: spin 700ms linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.toast {
+  position: absolute;
+  left: 50%; top: 50%;
+  transform: translate(-50%, -50%);
+  background: #262626;
+  color: #fff;
+  font-size: 0.875rem;
+  padding: 6px 14px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.ig-post-head {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px;
+}
+.ig-post-head .user { font-weight: 600; position: relative; }
+.ig-post-head .sugg { margin-left: auto; font-size: 0.8125rem; color: #555; position: relative; }
+.ig-img { height: 300px; background-size: cover; background-position: center; }
+.ig-img.short { height: 60px; }
+/* Muster 1 in Instagram: Zone um den Übergang zwischen zwei Beiträgen (Ziel der Markierung) */
+/* reicht von der Zeile unter Beitrag 41 bis unter die Kopfzeile von Beitrag 42, damit die Umrandung keinen Text schneidet */
+.ig-seam { position: relative; height: 92px; margin: -38px 0 -54px; pointer-events: none; }
+.w1 .ig-img { height: 150px; }
+.w1 .ig-img.short { height: 48px; }
+.ig-line { position: relative; padding: 6px 14px 10px; font-size: 0.9375rem; }
+
+/* ── Vorlage: Instagram-Stories (Muster 8) ─────────────── */
+.st-bar { display: flex; gap: 12px; padding: 10px 12px 4px; overflow: hidden; }
+.st { flex: 0 0 auto; width: 66px; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.st-ring {
+  position: relative;
+  width: 64px; height: 64px;
+  border-radius: 50%;
+  padding: 3px;
+  border: 2px dashed transparent;
+}
+.st-ring::before {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  border-radius: 50%;
+  background: linear-gradient(45deg, #f5a623 0%, #e1306c 55%, #8a3ab9 100%);
+  transition: opacity 300ms ease-out;
+}
+.st-ring.own::before { background: #dbdbdb; inset: 1px; }
+.st-av {
+  position: relative;
+  display: flex; align-items: center; justify-content: center;
+  width: 100%; height: 100%;
+  border-radius: 50%;
+  border: 3px solid #fff;
+  color: #fff;
+  font-weight: 700;
+  font-size: 1.25rem;
+  transition: filter 300ms ease-out, opacity 300ms ease-out;
+}
+.st-av.av0 { background: #8c9aa8; }
+.st-av.av1 { background: #c98a9b; }
+.st-av.av2 { background: #7f9fb8; }
+.st-av.av3 { background: #b59a6a; }
+.st-av.av4 { background: #7fa88a; }
+.st-plus {
+  position: absolute;
+  right: 0; bottom: 0;
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  background: #0095f6;
+  border: 2px solid #fff;
+  color: #fff;
+  font-size: 14px;
+  line-height: 15px;
+  text-align: center;
+  font-weight: 700;
+}
+.st-name { font-size: 0.75rem; color: #262626; max-width: 66px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.st-ring.expire::before, .st-ring.expired::before { opacity: 0; }
+.st-ring.expire, .st-ring.expired { border-color: #b5b5b5; transition: border-color 300ms ease-out; }
+.st-ring.expire .st-av, .st-ring.expired .st-av { filter: grayscale(1); opacity: .45; }
+.st-expiry { padding: 2px 14px 8px; font-size: 0.8125rem; color: #737373; transition: opacity 300ms ease-out; }
+.st-expiry.fade-out { opacity: 0; }
+
+/* ── Vorlage: Kommentare ───────────────────────────────── */
+.igc { background: #111; color: #111; }
+.igc-reel { flex: 0 0 210px; background-size: cover; background-position: center; filter: brightness(.7); }
+.igc-sheet { flex: 1 1 auto; background: #fff; border-radius: 18px 18px 0 0; margin-top: -16px; position: relative; }
+.igc-grip { width: 40px; height: 4px; border-radius: 2px; background: #d0d0d0; margin: 8px auto 0; }
+.igc-head {
+  padding: 12px 16px;
+  font-weight: 700;
+  font-size: 1.0625rem;
+  border-bottom: 1px solid var(--line);
+}
+.igc-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-bottom: 1px solid #f0f1f3;
+}
+.igc-row.mine { background: #f2f5fb; }
+.igc-text { flex: 1 1 auto; }
+.igc-text .user { font-weight: 600; font-size: 0.9375rem; }
+.igc-like {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 36px;
+  font-size: 0.875rem;
+  color: #555;
+}
+.igc-like svg { width: 18px; height: 18px; color: #777; }
+.igc-row.mine .igc-like svg { fill: #d62d3a; }
+.igc-row.mine .igc-like { color: #c0392b; font-weight: 700; }
+.igc-like.pop .n { animation: pop 320ms ease-out; }
+@keyframes pop { 0% { transform: scale(1); } 45% { transform: scale(1.8); } 100% { transform: scale(1); } }
+
+/* ── Vorlage: Sperrbildschirm ──────────────────────────── */
+.lock { background: linear-gradient(180deg, #1f2d4a 0%, #3c4f78 60%, #6a7ea6 100%); color: #fff; }
+.lock .screen-body { padding: 0 10px 28px; }
+.lock-clock { text-align: center; font-size: 3rem; font-weight: 300; line-height: 1.1; margin-top: 12px; }
+.lock-date { text-align: center; font-size: 1rem; margin-bottom: 6px; }
+.lock-list { display: flex; flex-direction: column; gap: 8px; padding-top: 10px; }
+.note {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 52px;
+  padding: 7px 12px;
+  border: 3px solid transparent;
+  border-radius: 16px;
+  background: rgba(245,246,248,.95);
+  color: #111;
+  text-align: left;
+  font-size: 0.9375rem;
+  line-height: 1.3;
+}
+button.note { cursor: pointer; }
+button.note[aria-pressed="true"] { border-color: var(--select); box-shadow: 0 0 0 2px rgba(224,180,0,.35); }
+.note-main { flex: 1 1 auto; display: flex; flex-direction: column; min-width: 0; }
+.note-top { display: flex; justify-content: space-between; gap: 8px; font-size: 0.8125rem; }
+.note-top span { color: #555; }
+.note.human { border-color: var(--human); }
+.note.app { border-color: var(--mark); }
+.note-tag {
+  position: absolute;
+  right: 10px; bottom: -11px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #fff;
+  padding: 1px 8px;
+  border-radius: 999px;
+}
+.note.human .note-tag { background: var(--human); }
+.note.app .note-tag { background: var(--mark); }
+.lock .note { margin-bottom: 6px; }
+.picked {
+  position: absolute;
+  left: -6px; top: -8px;
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  background: var(--select);
+  display: flex; align-items: center; justify-content: center;
+}
+.picked svg { width: 16px; height: 16px; fill: #111; }
+
+/* ── Vorlage: Snapchat-Chatliste ───────────────────────── */
+.snap { background: #fff; color: #111; }
+.snap-head { background: #fffc00; color: #111; font-weight: 700; font-size: 1.25rem; padding: 14px 16px; }
+.snap-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-bottom: 1px solid #f0f1f3;
+}
+.snap-row .avatar { width: 46px; height: 46px; }
+.snap-text { flex: 1 1 auto; }
+.snap-text .user { font-weight: 700; }
+.snap-text .status { font-size: 0.8125rem; color: #555; }
+.streak { font-weight: 700; color: #b34a00; white-space: nowrap; padding: 2px 4px; }
+
+/* ── Wiedererkennen 1: nummerierte Stellen ─────────────── */
+.spot {
+  position: absolute;
+  z-index: 3;
+  width: 44px; height: 44px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.spot > span {
+  width: 30px; height: 30px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.9375rem;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 0 0 2px #fff, 0 2px 6px rgba(0,0,0,.3);
+}
+button.spot[aria-pressed="true"] > span { box-shadow: 0 0 0 2px #fff, 0 0 0 6px var(--select); }
+.spot.target > span { background: var(--human); }
+.spot.miss > span { background: #6b7280; }
+.spot.mine > span { box-shadow: 0 0 0 2px #fff, 0 0 0 6px var(--select); }
+/* Marker sitzen IM Element, direkt neben dem, was sie bezeichnen
+   (Feedback-Call 05.10.: Positionen müssen exakt stimmen) */
+.spot-refresh, .spot-sugg-0, .spot-likes-1, .spot-user-1 {
+  position: static;
+  display: inline-flex;
+  vertical-align: middle;
+  margin-left: 6px;
+  transform: none;
+}
+.ig-more { position: relative; }
+.ig-more .spot-edge { left: 50%; top: 4px; transform: translateX(-50%); }
+.ig-more::before {
+  content: "";
+  position: absolute;
+  left: 0; right: 0; top: 0;
+  border-top: 2px dashed #b8bec6;
+}
+
+/* ── Wiedererkennen 2: drei Meldungen ──────────────────── */
+.cards { background: #fff; color: #111; }
+.cards .screen-body { padding: 16px 14px 28px; }
+.cards-list { display: flex; flex-direction: column; gap: 12px; }
+.card {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 64px;
+  padding: 12px 14px;
+  border: 2px solid #c9ced4;
+  border-radius: 14px;
+  background: #fff;
+  cursor: pointer;
+}
+label.card:has(input:checked) { border-color: var(--select); box-shadow: 0 0 0 3px rgba(224,180,0,.35); }
+.card input { width: 22px; height: 22px; margin: 0; flex: 0 0 auto; accent-color: var(--primary); }
+.card-text { display: flex; flex-direction: column; font-size: 0.9375rem; line-height: 1.35; }
+.card-text strong { font-size: 0.8125rem; }
+div.card { cursor: default; }
+.card.right { border-color: var(--human); }
+.card.chosen { box-shadow: 0 0 0 3px rgba(224,180,0,.6); }
+.card-check {
+  margin-left: auto;
+  width: 28px; height: 28px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: var(--human);
+  display: flex; align-items: center; justify-content: center;
+}
+.card-check svg { width: 18px; height: 18px; fill: #fff; }
+
+
+/* Profilbild-Platzhalter mit Initiale */
+.avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.9375rem;
+}
+.avc0 { background: #c98a9b; }
+.avc1 { background: #7f9fb8; }
+.avc2 { background: #b59a6a; }
+.avc3 { background: #7fa88a; }
+.avc4 { background: #9b8ac9; }
+.avc5 { background: #d39a6a; }
+.avatar.bitmoji { border-radius: 40%; font-size: 1.125rem; box-shadow: inset 0 -6px 0 rgba(0,0,0,.08); }
+
+/* W2: Karten direkt auf der Seite */
+.lp-stage .cards-list { width: 100%; }
+
+/* Kleine Bildschirme: etwas enger */
+@media (max-height: 700px) {
+  .lp-head { padding-top: 10px; }
+  .lp-stage { row-gap: 10px; padding-top: 6px; }
+  .tp-body { padding-top: 24px; }
+  .q-card { padding: 14px 14px 8px; }
+  .opt { min-height: 46px; padding: 8px 12px; margin-bottom: 6px; }
+  .callout { padding: 10px 14px; font-size: 0.9375rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root { --dur: 1ms; }
+  .fade-in, .ig-content.settle, .igc-like.pop .n { animation-duration: 1ms; }
+  .ig-content { transition: none; }
+  .st-ring::before, .st-av, .st-expiry { transition: none; }
+  .device-wrap, .device { transition: none; }
+  .post-bg { animation: none; }
+}
+
+/* Exportansicht der Vorschau (statische Ersatzbilder): keine Bedienelemente */
+.is-export .lp-foot,
+.is-export .status-line,
+.is-export .field,
+.is-export .lp-stage[data-phase="ask"] .lp-panel { display: none; }
+
+.noscript { padding: 20px; }
+
+/* ── Überarbeitung 05.10. (Feedback-Call) ─────────────────────────── */
+
+/* Foto-Profilbilder: Foto deckt den Kreis, Initiale verschwindet */
+.avatar.asset-loaded { color: transparent !important; }
+
+/* „Screen noch einmal ansehen" */
+.relook {
+  display: block; margin: 10px auto 0; background: none; border: none;
+  color: var(--primary, #1f3a5f); text-decoration: underline;
+  font-size: 0.95rem; cursor: pointer; padding: 8px;
+}
+.relook-overlay {
+  position: fixed; inset: 0; z-index: 60; background: rgba(16, 20, 26, 0.92);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 10px; cursor: pointer;
+}
+.relook-stage { display: flex; justify-content: center; }
+.relook-hint { color: #e8ebf2; font-size: 0.9rem; margin: 0; }
+
+/* Geöffnete Story (Muster 8, Zustand A) */
+.story-full { position: absolute; inset: 0; background: #000; display: flex; flex-direction: column; }
+.story-bars { display: flex; gap: 4px; padding: 10px 10px 6px; }
+.story-bars span { flex: 1; height: 3px; border-radius: 2px; background: rgba(255,255,255,0.35); }
+.story-bars span.done { background: #fff; }
+.story-head { display: flex; align-items: center; gap: 9px; padding: 4px 12px 8px; color: #fff; }
+.story-head .user { font-weight: 700; font-size: 15px; }
+.story-age { color: rgba(255,255,255,0.8); font-size: 14px; }
+.story-img { flex: 1; margin: 0 0 0; }
+.story-reply { display: flex; align-items: center; gap: 10px; padding: 12px; }
+.story-reply .story-field {
+  flex: 1; border: 1px solid rgba(255,255,255,0.6); border-radius: 999px;
+  color: rgba(255,255,255,0.85); padding: 10px 14px; font-size: 14px;
+}
+.story-reply svg { width: 22px; height: 22px; fill: #fff; }
+
+/* Wiederfinden 2: Mensch/App-Auswahl je Meldung */
+.w2-card { border: 1px solid #d7dce2; margin: 0; padding: 12px; }
+.w2-choice { display: flex; gap: 8px; margin-top: 10px; width: 100%; }
+.w2-choice label { flex: 1; cursor: pointer; }
+.w2-choice input { position: absolute; opacity: 0; }
+.w2-choice span {
+  display: block; text-align: center; padding: 9px 6px;
+  border: 1px solid #c6cdd6; border-radius: 9px; font-size: 0.875rem; background: #fff;
+}
+.w2-choice input:checked + span {
+  background: var(--primary); color: #fff; border-color: var(--primary); font-weight: 600;
+}
+.w2-choice input:focus-visible + span { outline: 3px solid var(--select); outline-offset: 2px; }
+.w2-why { margin-top: 10px; font-size: 0.875rem; line-height: 1.5; color: #333; }
+.w2-verdict {
+  display: inline-block; font-weight: 700; border-radius: 6px; padding: 1px 8px;
+  margin-right: 8px; font-size: 0.8125rem;
+}
+.w2-verdict.good { background: #e5f4e8; color: #1c6b33; }
+.w2-verdict.neutral { background: #fdeeee; color: #9c2f2f; }
+
+/* Wiederfinden 1: Rückmeldung je Nummer */
+.fb-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.fb-list li { display: flex; align-items: center; gap: 10px; line-height: 1.45; }
+.fb-list li b {
+  flex: 0 0 auto; width: 26px; height: 26px; border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--primary); color: #fff; font-size: 0.875rem;
+}
+.fb-list li.hit b { background: var(--human); }
+.fb-list li.wrong b { background: #9c2f2f; }
+.fb-list li.plain b, .fb-list li.open b { background: #6b7280; }
+.fb-score { margin: 10px 0 0; font-weight: 700; }

@@ -1,0 +1,93 @@
+/* rec.css – Zusatzstile für die Erkennens-Screens (Sets T0/T1/T2).
+ * Baut auf styles.css der Schulung auf (.device, .ig-*, .snap-*, .lock …). */
+
+/* Bühne: Gerät (410×800) fest skaliert, groß 0.8, klein 0.34 */
+.rec-stage { display: flex; justify-content: center; overflow: hidden;
+  height: 648px; margin: 0 0 16px; }
+.rec-stage .device-wrap.rec { transform: scale(0.8); transform-origin: top center; }
+.rec-stage.mini { height: 280px; }
+.rec-stage.mini .device-wrap.rec { transform: scale(0.34); }
+.device-wrap.rec { width: 410px; height: 800px; flex: 0 0 auto; }
+.device-wrap.rec .device { width: 410px; height: 800px; }
+
+/* Rote Markierung des Zielelements */
+.rec-mark { display: inline-flex; outline: 3px solid #d6342c; outline-offset: 3px;
+  border-radius: 8px; }
+.rec-mark-area { display: block; outline: 3px solid #d6342c; outline-offset: 2px;
+  border-radius: 10px; margin: 2px; }
+
+/* Suchleisten, Icons, Zurück-Pfeil */
+.rec-search { display: inline-flex; align-items: center; gap: 8px; flex: 1;
+  background: #eef1f4; border-radius: 10px; padding: 8px 12px; color: #5c6670; }
+.rec-search i { font-style: normal; font-size: 15px; }
+.rec-search svg { width: 18px; height: 18px; fill: currentColor; }
+.rec-search.dark { background: rgba(255,255,255,0.14); color: #e8e8e8; }
+.rec-gearicon, .rec-menuicon, .rec-back { display: inline-flex; padding: 6px; }
+.rec-gearicon svg, .rec-menuicon svg, .rec-back svg { width: 24px; height: 24px; fill: currentColor; }
+.rec-back svg { fill: none; stroke: currentColor; }
+.rec-gearicon.light, .rec-back.light { color: #fff; }
+.rec-backwrap { display: inline-flex; margin-right: 6px; }
+.rec-tt-search { display: inline-flex; margin-left: auto; color: #fff; }
+.rec-tt-search svg { width: 20px; height: 20px; fill: currentColor; }
+
+/* X-Beiträge (heller Feed) */
+.rec-x-post { display: flex; gap: 10px; padding: 12px 14px; border-bottom: 1px solid #e7e9ec; }
+.rec-x-body { flex: 1; min-width: 0; }
+.rec-x-body p { margin: 4px 0 8px; line-height: 1.45; font-size: 15px; }
+.rec-x-handle { color: #74808c; font-weight: 400; }
+.rec-x-img { height: 150px; border-radius: 12px; margin-bottom: 8px; }
+.rec-x-actions { display: flex; gap: 26px; color: #74808c; font-size: 13px; }
+.rec-x-actions svg { width: 17px; height: 17px; fill: currentColor; vertical-align: -3px; margin-right: 4px; }
+.rec-x-actions .rec-mark, .rec-x-actions span { display: inline-flex; align-items: center; }
+
+/* Vorschläge-Kachel (Facebook) */
+.rec-tile { padding: 12px 14px; border-top: 6px solid #eef1f4; border-bottom: 6px solid #eef1f4; }
+.rec-tile-head { font-weight: 700; margin-bottom: 10px; }
+.rec-tile-row { display: flex; gap: 10px; }
+.rec-tile-card { flex: 1; border: 1px solid #e2e6ea; border-radius: 10px; padding: 10px 8px;
+  display: flex; flex-direction: column; align-items: center; gap: 6px; font-size: 12.5px; text-align: center; }
+.rec-tile-card button { border: none; background: #e7f0fd; color: #1a66c9; font-weight: 600;
+  border-radius: 7px; padding: 5px 10px; font-size: 12.5px; }
+
+/* Video im hellen Feed (Facebook Autoplay) */
+.rec-videowrap { position: relative; }
+.rec-play-overlay { position: absolute; left: 12px; bottom: 16px; background: rgba(0,0,0,0.65);
+  color: #fff; font-size: 12.5px; padding: 4px 9px; border-radius: 7px; }
+.rec-videobar { position: absolute; left: 0; right: 0; bottom: 0; height: 4px; background: rgba(0,0,0,0.25); display: block; }
+.rec-videobar i { display: block; height: 100%; width: 38%; background: #d6342c; }
+
+/* Dunkler Video-Feed: Hinweis auf nächstes Video + Nahtzone */
+.rec-next-hint { position: absolute; left: 50%; transform: translateX(-50%); bottom: 86px;
+  background: rgba(255,255,255,0.16); color: #fff; padding: 6px 12px; border-radius: 999px; font-size: 13px; white-space: nowrap; }
+.rec-seam-zone { position: absolute; left: 10px; right: 10px; bottom: 6px; height: 56px; }
+
+/* TikTok-Posteingang */
+.rec-inbox { color: #ececec; padding: 0 0 70px; }
+.rec-inbox-head { text-align: center; font-weight: 700; padding: 12px 0; font-size: 16px; }
+.rec-inbox-refresh { display: flex; align-items: center; gap: 10px; justify-content: center;
+  color: #b9bec4; padding: 10px 0 14px; font-size: 13.5px; }
+.rec-inbox-row { display: flex; align-items: center; gap: 12px; padding: 11px 14px; }
+.rec-inbox-text { flex: 1; min-width: 0; font-size: 14.5px; }
+.rec-inbox-text .user { font-weight: 700; }
+.rec-inbox-time { color: #8a9097; font-size: 12.5px; }
+
+/* Explore-Raster */
+.rec-explore { display: grid; grid-template-columns: repeat(3, 1fr); gap: 3px; padding: 3px; }
+.rec-explore-cell { aspect-ratio: 1; }
+.rec-explore-hint { padding: 10px 14px 6px; color: #5c6670; font-size: 13px; }
+.rec-explore.dark { background: #000; }
+
+/* TikTok-Profil (Distraktor Zahnrad) */
+.rec-tt-profile { color: #ececec; }
+.rec-tt-profilehead { display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; }
+.rec-tt-profilename { font-weight: 700; }
+.rec-tt-profilestats { display: flex; justify-content: center; gap: 22px; padding: 12px 0 16px; font-size: 13px; color: #b9bec4; }
+.rec-tt-profilestats b { color: #fff; font-size: 16px; display: block; text-align: center; }
+
+/* Dunkle Stories-Leiste (Snapchat) */
+.st-bar.dark { background: transparent; }
+.st-expiry.dark { color: #cfd4d9; }
+
+/* Kopfzeile Snapchat mit Suchfeld/Zahnrad */
+.snap-head { display: flex; align-items: center; gap: 10px; }
+.snap-head span:first-child { flex: 0 0 auto; }

@@ -2,7 +2,9 @@
  * app.js – Ablauf, Zustände, Speichern und Rücksprung der Schulung.
  * Texte stehen in content.js.
  *
- * Aufruf: index.html?code=…&apps=ig,tt,sc,fb,x&return=…[&rname=…][&post=…]
+ * Aufruf: index.html?code=…&apps=ig,tt,sc,fb,x&return=…[&pilot=1]
+ * Antworten gehen als events (wave=BOOST) ins Studien-Backend (../db.js);
+ * „Weiter zum Fragebogen" setzt boost_done und springt zu return zurück.
  *
  * Ablauf je Muster in vier Schritten (state.sub):
  *   look     nur der Screen
@@ -28,9 +30,7 @@
   var params = new URLSearchParams(location.search);
   var urlCode = (params.get("code") || "").trim();
   var returnUrl = safeUrl(params.get("return"));
-  var postUrl = safeUrl(params.get("post"));
-  // Name des Ergebnis-Parameters beim Rücksprung (Standard r; SoSci Survey belegt r selbst, dort z. B. rname=uboost)
-  var resultParam = /^[A-Za-z][A-Za-z0-9_]{0,30}$/.test(params.get("rname") || "") ? params.get("rname") : "r";
+  var pilotFlag = params.get("pilot") === "1";
   var urlApps = parseApps(params.get("apps"));
   var previewKey = params.get("preview");
   var exportMode = params.get("export") === "1";
@@ -51,6 +51,14 @@
 
   function patternDef(id) { return C.patterns.filter(function (p) { return p.id === id; })[0]; }
   function appLabel(key) { return (C.apps[key] || {}).label || key; }
+
+  // ── Speichern ins Studien-Backend (db.js, geladen aus ../db.js) ────────
+  // Eine Zeile je abgeschlossener Seite, wave=BOOST. In der Vorschau oder
+  // ohne db.js (eigenständiger Aufruf) passiert nichts.
+  function dbSave(page, key, value, seconds) {
+    if (previewKey || !window.DB || !state.code) return;
+    window.DB.saveEvent(state.code, "BOOST", page, key, value, seconds, pilotFlag);
+  }
 
   // ── Zuordnung Muster × App ─────────────────────────────
   // Je Muster die erste App aus order, die die Person nutzt. Ist dafür kein Screen gebaut,
@@ -210,19 +218,33 @@
     var hits = selected.filter(function (n) { return humans.indexOf(n) >= 0; }).length;
     return { selected: selected.slice().sort(num), humans: humans, hits: hits, falseAlarms: selected.length - hits };
   }
-  // Zielstellen, deren Muster die Person gesehen hat (die übrigen zählen weder als Treffer noch als Fehler)
-  function countedTargets(it) {
+  // Wiederfinden 1 zur Laufzeit: nur Stellen zu gezeigten Mustern (plus
+  // Ablenker), fortlaufend nummeriert; Elemente nicht gezeigter Muster
+  // verschwinden aus dem Screen (d.refresh entfällt z. B. ohne Muster 2).
+  function w1Runtime(it) {
     var ids = (state.shown || []).map(function (s) { return s.id; });
-    return it.targets.filter(function (n) { return !it.spotPatterns || ids.indexOf(it.spotPatterns[n]) >= 0; });
+    var active = it.spotDefs.filter(function (d) { return d.pattern == null || ids.indexOf(d.pattern) >= 0; });
+    var spots = {}, meta = [];
+    active.forEach(function (d, i) {
+      spots[d.key] = i + 1;
+      meta.push({ n: i + 1, key: d.key, pattern: d.pattern, label: d.label });
+    });
+    var data = Object.assign({}, it.data, { spots: spots });
+    if (ids.indexOf(2) < 0) data.refresh = null;
+    return {
+      data: data,
+      meta: meta,
+      targets: meta.filter(function (m) { return m.pattern != null; }).map(function (m) { return m.n; })
+    };
   }
   function spotsResult(it, selected) {
-    var counted = countedTargets(it);
-    var ignored = it.targets.filter(function (n) { return counted.indexOf(n) < 0; });
-    var hits = selected.filter(function (n) { return counted.indexOf(n) >= 0; }).length;
-    var falseAlarms = selected.filter(function (n) { return it.targets.indexOf(n) < 0; }).length;
-    var r = { id: it.id, selected: selected.slice().sort(num), targets: counted, hits: hits, falseAlarms: falseAlarms, seconds: null };
-    if (ignored.length) r.notShown = ignored;
-    return r;
+    var rt = w1Runtime(it);
+    var hits = selected.filter(function (n) { return rt.targets.indexOf(n) >= 0; }).length;
+    var falseAlarms = selected.length - hits;
+    var patterns = {};
+    rt.meta.forEach(function (m) { if (m.pattern) patterns[m.n] = m.pattern; });
+    return { id: it.id, selected: selected.slice().sort(num), targets: rt.targets,
+             spotPatterns: patterns, hits: hits, falseAlarms: falseAlarms, seconds: null };
   }
   function num(a, b) { return a - b; }
   function patternCorrect(r) {
@@ -269,7 +291,7 @@
     });
     C.recognition.forEach(function (it) {
       if (it.type === "spots") s.recognition[it.id] = spotsResult(it, [1, 2, 4]);
-      else s.recognition[it.id] = { id: it.id, selected: 2, correct: it.correct, isCorrect: it.correct === 2, seconds: 0 };
+      else s.recognition[it.id] = w2Result(it, w2Cards(it), ["human", "app", "human"]);
     });
     var phaseOf = { L: "look", A: "ask", B: "react", E: "explain" };
     s.sub = m ? phaseOf[m[3]] : "look";
@@ -320,6 +342,7 @@
   }
   function setBg(el, src) {
     el.style.background = 'center / cover no-repeat url("' + src + '")';
+    el.classList.add("asset-loaded"); // Avatare: Initiale ausblenden, Foto zeigen
   }
   function tryImg(id, exts, done) {
     if (!exts.length) return done(null);
@@ -329,11 +352,14 @@
     img.onerror = function () { tryImg(id, exts.slice(1), done); };
     img.src = src;
   }
-  // Profilbild-Platzhalter: farbiger Kreis mit Anfangsbuchstabe
+  // Profilbild: rundes Foto (assets/av-<name>.jpg, CC0), sonst farbiger
+  // Kreis mit Anfangsbuchstabe als Rückfall (z. B. Gruppen, Nebenfiguren)
   function avatar(name, extra) {
-    var clean = String(name || "").replace(/^@/, "");
+    var clean = String(name || "").replace(/^@/, "").replace(/\s*·.*$/, "");
+    var slug = clean.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
     var n = hashCode(clean) % 6;
-    return '<span class="avatar avc' + n + (extra ? " " + extra : "") + '" aria-hidden="true">' + esc(clean.charAt(0).toUpperCase()) + "</span>";
+    return '<span class="avatar avc' + n + (extra ? " " + extra : "") +
+      '" data-asset="av-' + esc(slug) + '" aria-hidden="true">' + esc(clean.charAt(0).toUpperCase()) + "</span>";
   }
 
   function focusFirst(sel) {
@@ -582,6 +608,40 @@
       }
     },
 
+    "story-view": {
+      cls: "ig",
+      // Zustand A: die geöffnete Story von lena_k, oben Name und Alter ("23 Std.").
+      // Zustand B: zurück in der Story-Leiste, der Ring von lena_k ist weg.
+      render: function (p, isB, opt) {
+        var d = p.data;
+        if (!isB) {
+          return '<div class="story-full">' +
+            '<div class="story-bars"><span class="done"></span><span class="done"></span><span></span></div>' +
+            '<div class="story-head">' + avatar(d.story.user) + '<span class="user">' + esc(d.story.user) + "</span>" +
+            '<span class="story-age">' + esc(d.story.age) + "</span></div>" +
+            '<div class="story-img"' + assetAttr(d.story.asset) + "></div>" +
+            '<div class="story-reply"><span class="story-field">' + esc(d.story.replyField) + "</span>" + ICON.heartLine + ICON.send + "</div>" +
+            "</div>";
+        }
+        var html = igHead(d);
+        html += '<div class="st-bar">' + d.stories.map(function (st, i) {
+          if (st.expiring) {
+            // Der Platz, an dem lena_ks Ring war: Kreis ohne Ring, markiert
+            return '<div class="st"><span class="st-ring expired"' + (' data-mark="' + (d.markPlace || "below") + '"') +
+              '><span class="st-av av' + (i % 5) + '" aria-hidden="true">' + esc(st.user.charAt(0).toUpperCase()) + "</span></span>" +
+              '<span class="st-name">' + esc(st.user) + "</span></div>";
+          }
+          return '<div class="st"><span class="st-ring' + (st.own ? " own" : "") + '"><span class="st-av av' + (i % 5) + '" aria-hidden="true">' +
+            esc(st.user.charAt(0).toUpperCase()) + "</span>" + (st.own ? '<span class="st-plus" aria-hidden="true">+</span>' : "") +
+            '</span><span class="st-name">' + esc(st.user) + "</span></div>";
+        }).join("") + "</div>";
+        html += '<div class="ig-post"><div class="ig-post-head">' + avatar(d.post.user) + '<span class="user">' + esc(d.post.user) + "</span></div>" +
+          '<div class="ig-img"' + assetAttr(d.post.asset) + '></div><div class="ig-line">' + esc(d.post.line) + "</div></div>";
+        return html;
+      },
+      toB: function () { return Promise.resolve(); }
+    },
+
     "snap-chats": {
       cls: "snap",
       render: function (p, isB) {
@@ -627,7 +687,8 @@
     var maxH = small ? Math.min(availH, Math.max(170, window.innerHeight * 0.3)) : availH;
     var s = Math.min(1, availW / DEVICE_W, maxH / DEVICE_H);
     s = Math.max(small ? 0.2 : 0.42, s);
-    wrap.classList.toggle("no-anim", !animate || reduced);
+    // Kein Zoom-Effekt mehr (Feedback-Call 05.10.): Größenwechsel ohne Animation
+    wrap.classList.add("no-anim");
     dev.style.transform = "scale(" + s.toFixed(4) + ")";
     wrap.style.width = Math.round(DEVICE_W * s) + "px";
     wrap.style.height = Math.round(DEVICE_H * s) + "px";
@@ -746,6 +807,13 @@
       state.appsSource = known ? "param" : "asked";
       state.shown = assignPatterns(state.apps);
       state.pageSeconds.apps = secondsSince(state.pageStart);
+      dbSave("apps", "APPS", { apps: state.apps, source: state.appsSource,
+        shown: state.shown }, state.pageSeconds.apps);
+      if (!previewKey && window.DB && state.code) {
+        // Profil immer aktualisieren: T1/T2 leiten die gezeigten Muster aus
+        // den Apps im Profil ab, also muss hier der letzte Stand hinein.
+        window.DB.saveProfile(state.code, null, state.apps);
+      }
       buildPages();
       goto(2);
     });
@@ -840,6 +908,7 @@
         inp.addEventListener("change", function () { btn.disabled = false; });
       });
       btn.onclick = function () { tapToReact(pg); };
+      addRelookButton(pg);
       focusFirst(p.type === "multi" ? "#ctx" : "#q");
     } else if (phase === "react") {
       btn.textContent = C.ui.next;
@@ -850,10 +919,52 @@
       btn.onclick = function () {
         var r = state.patterns[p.id];
         if (r && r.secondsB == null) r.secondsB = secondsSince(state.bStart || state.pageStart);
+        if (r) {
+          var s = pg.shown || {};
+          dbSave("p" + p.id, "P" + p.id,
+            Object.assign({}, r, { app: s.app || p.targetApp, screen: s.screen || p.screenApp,
+              fallback: !!(s.fallback || p.fallback) }),
+            (r.secondsA || 0) + (r.secondsB || 0));
+        }
         goto(state.page + 1);
       };
       focusFirst("#ex-title");
     }
+  }
+
+  // „Screen noch einmal ansehen": zeigt den Screen (Zustand A) in voller Größe
+  // über der Frage; ein Tipp führt zurück. Die Antwort bleibt unverändert.
+  function addRelookButton(pg) {
+    var p = pg.pattern;
+    if (p.type === "multi") return; // Muster 6: der Screen ist ohnehin groß zu sehen
+    var panel = app.querySelector(".lp-panel");
+    if (!panel || panel.querySelector(".relook")) return;
+    var tpl = SCREENS[p.screen];
+    var b = document.createElement("button");
+    b.type = "button";
+    b.className = "relook";
+    b.textContent = "Screen noch einmal ansehen";
+    b.addEventListener("click", function () {
+      var ov = document.createElement("div");
+      ov.className = "relook-overlay";
+      ov.setAttribute("role", "dialog");
+      ov.setAttribute("aria-label", "Screen in voller Größe. Tippen zum Schließen.");
+      ov.innerHTML = '<div class="relook-stage">' +
+        deviceHtml(tpl.cls, tpl.render(p, false, {}), tpl.scroll && tpl.scroll(), null) +
+        '</div><p class="relook-hint">Tippen, um zur Frage zurückzukehren</p>';
+      document.body.appendChild(ov);
+      applyAssets(ov);
+      // Gerät in den verfügbaren Platz einpassen
+      var wrap = ov.querySelector(".device-wrap"), dev = wrap.firstChild;
+      var s = Math.min(1, (window.innerWidth - 32) / DEVICE_W, (window.innerHeight - 90) / DEVICE_H);
+      dev.style.transform = "scale(" + s.toFixed(4) + ")";
+      wrap.classList.add("no-anim");
+      wrap.style.width = Math.round(DEVICE_W * s) + "px";
+      wrap.style.height = Math.round(DEVICE_H * s) + "px";
+      ov.addEventListener("click", function () { ov.remove(); });
+    });
+    // Direkt unter dem Handy, über der Frage – sonst verschwindet er im Scrollbereich
+    panel.insertBefore(b, panel.firstChild);
   }
 
   // Der eine Tipp: Antwort speichern, Handy groß, App reagiert, dann Markierung und Hinweis
@@ -888,8 +999,8 @@
     panel.classList.add("reserved");
     stage.setAttribute("data-phase", "react");
     app.querySelector(".device-wrap").setAttribute("data-size", "full");
-    var grow = p.type === "multi" ? 0 : 320;
-    fitDevice(true);
+    var grow = 0; // kein Zoom mehr, die Reaktion der App beginnt sofort
+    fitDevice(false);
     wait(ms(grow)).then(function () {
       var ctxEl = app.querySelector("#ctx");
       if (ctxEl.textContent !== ctxFor(p, true)) {
@@ -930,22 +1041,39 @@
     var middle;
 
     if (it.type === "spots") {
+      var rt = w1Runtime(it);
+      var itR = Object.assign({}, it, { data: rt.data });
       var tpl = SCREENS[it.screen];
-      middle = deviceHtml(tpl.cls + " w1", tpl.render(it, false, { spot: function (key) { return spotHtml(it, key, isB, r); } }), true);
+      middle = deviceHtml(tpl.cls + " w1", tpl.render(itR, false, { spot: function (key) { return spotHtml(itR, rt, key, isB, r); } }), true);
     } else {
-      middle = '<div class="cards-list" role="radiogroup" aria-label="' + esc(it.ctx) + '">' + it.cards.map(function (c, i) {
+      var cards = w2Cards(it);
+      middle = '<div class="cards-list">' + cards.map(function (c, i) {
         var n = i + 1;
         var inner = '<span class="app-icon ' + iconClass(c.app) + '" aria-hidden="true"></span>' +
           '<span class="card-text"><strong>' + esc(appLabel(c.app)) + "</strong><span>" + esc(c.text) + "</span></span>";
-        if (!isB) return '<label class="card"><input type="radio" name="w2" value="' + n + '">' + inner + "</label>";
-        var chosen = r && r.selected === n && !exportMode;
-        return '<div class="card' + (n === it.correct ? " right" : "") + (chosen ? " chosen" : "") + '">' + inner +
-          (n === it.correct ? '<span class="card-check">' + ICON.check + "</span>" : "") +
-          (chosen ? '<span class="sr-only">' + esc(C.ui.selectedByYou) + "</span>" : "") + "</div>";
+        if (!isB) {
+          // je Meldung zwei Optionen: Von einem Menschen / Von der App
+          return '<fieldset class="card w2-card"><legend class="sr-only">' + esc(c.text) + "</legend>" + inner +
+            '<div class="w2-choice" role="radiogroup">' +
+            '<label><input type="radio" name="w2-' + n + '" value="human"><span>' + esc(it.labelHuman) + "</span></label>" +
+            '<label><input type="radio" name="w2-' + n + '" value="app"><span>' + esc(it.labelApp) + "</span></label>" +
+            "</div></fieldset>";
+        }
+        var a = r && r.answers ? r.answers[i] : null;
+        var ok = a && a.correct;
+        var verdict = exportMode || !a ? "" :
+          '<span class="w2-verdict ' + (ok ? "good" : "neutral") + '">' + esc(ok ? it.verdictRight : it.verdictWrong) + "</span>";
+        return '<div class="card w2-card solved">' + inner +
+          '<div class="w2-why">' + verdict + esc((a && !exportMode ? (c.human ? it.labelHuman : it.labelApp) + ". " : "") + c.why) + "</div></div>";
       }).join("") + "</div>";
     }
 
-    var panel = isB ? '<p class="feedback' + feedbackClass(it, r) + (previewKey ? "" : " fade-in") + '" id="fb">' + esc(feedbackText(it, r)) + "</p>" : "";
+    var panel = "";
+    if (isB) {
+      panel = it.type === "spots"
+        ? '<div class="feedback' + (previewKey ? "" : " fade-in") + '" id="fb">' + spotsFeedbackHtml(it, r, w1Runtime(it)) + "</div>"
+        : '<p class="feedback' + feedbackClass(it, r) + (previewKey ? "" : " fade-in") + '" id="fb">' + esc(feedbackText(it, r)) + "</p>";
+    }
     app.innerHTML = '<div class="page lp">' + head +
       '<main class="lp-stage" data-phase="' + (isB ? "react" : "ask") + '"><p class="lp-ctx" id="ctx">' + esc(it.ctx) + "</p>" +
       middle + '<div class="lp-panel">' + panel + "</div></main>" +
@@ -959,6 +1087,7 @@
       focusFirst("#fb");
       btn.onclick = function () {
         if (r && r.seconds == null) r.seconds = secondsSince(state.pageStart);
+        if (r) dbSave(it.id, it.id, r, r.seconds);
         goto(state.page + 1);
       };
       return;
@@ -968,8 +1097,12 @@
     if (it.type === "spots") {
       bindToggles(".spot", function () { btn.disabled = picks.length === 0; });
     } else {
-      app.querySelectorAll('input[name="w2"]').forEach(function (inp) {
-        inp.addEventListener("change", function () { btn.disabled = false; });
+      // „Auflösen" erst, wenn alle drei Meldungen eingeordnet sind
+      var allAnswered = function () {
+        return [1, 2, 3].every(function (n) { return app.querySelector('input[name="w2-' + n + '"]:checked'); });
+      };
+      app.querySelectorAll('.w2-choice input').forEach(function (inp) {
+        inp.addEventListener("change", function () { btn.disabled = !allAnswered(); });
       });
     }
     btn.onclick = function () {
@@ -978,10 +1111,12 @@
         if (!picks.length) return;
         state.recognition[it.id] = spotsResult(it, picks);
       } else {
-        var sel = app.querySelector('input[name="w2"]:checked');
-        if (!sel) return;
-        var n = Number(sel.value);
-        state.recognition[it.id] = { id: it.id, selected: n, correct: it.correct, isCorrect: n === it.correct, seconds: null };
+        var choices = [1, 2, 3].map(function (n) {
+          var sel = app.querySelector('input[name="w2-' + n + '"]:checked');
+          return sel ? sel.value : null;
+        });
+        if (choices.indexOf(null) >= 0) return;
+        state.recognition[it.id] = w2Result(it, w2Cards(it), choices);
       }
       state.sub = "react";
       save();
@@ -990,28 +1125,73 @@
     };
   }
 
-  function spotHtml(it, key, isB, r) {
-    var n = it.data.spots[key];
+  function spotHtml(it, rt, key, isB, r) {
+    var n = rt.data.spots[key];
     if (!n) return "";
-    var label = C.ui.spotPrefix + n + ": " + (it.spotLabels[n] || "");
+    var meta = rt.meta.filter(function (m) { return m.n === n; })[0] || {};
+    var label = C.ui.spotPrefix + n + ": " + (meta.label || "");
     if (!isB) {
       return '<button type="button" class="spot spot-' + esc(key) + '" data-n="' + n + '" aria-pressed="' + (picks.indexOf(n) >= 0) +
         '" aria-label="' + esc(label) + '"><span>' + n + "</span></button>";
     }
-    var target = it.targets.indexOf(n) >= 0;
+    var target = rt.targets.indexOf(n) >= 0;
     var mine = r && r.selected.indexOf(n) >= 0 && !exportMode;
     return '<span class="spot spot-' + esc(key) + (target ? " target" : " miss") + (mine ? " mine" : "") + '" role="img" aria-label="' +
       esc(label + (mine ? ", " + C.ui.selectedByYou : "")) + '"><span>' + n + "</span></span>";
   }
 
+  // Wiederfinden 2: drei Karten aus dem Pool – nur genutzte Apps, nur gezeigte
+  // Muster, mindestens eine Meldung von einem Menschen, fest je Teilnehmercode.
+  function w2Cards(it) {
+    var ids = shownIds();
+    var used = state.apps || ["ig"];
+    var pool = it.cardPool.filter(function (c) {
+      return used.indexOf(c.app) >= 0 && (c.pattern == null || ids.indexOf(c.pattern) >= 0);
+    });
+    if (!pool.length) pool = it.cardPool.filter(function (c) { return c.pattern == null || ids.indexOf(c.pattern) >= 0; });
+    var rnd = seededRandom(hashCode(String(state.code || "") + "w2"));
+    function shuffled(list) {
+      var l = list.slice();
+      for (var i = l.length - 1; i > 0; i--) { var j = Math.floor(rnd() * (i + 1)); var t = l[i]; l[i] = l[j]; l[j] = t; }
+      return l;
+    }
+    var humans = shuffled(pool.filter(function (c) { return c.human; }));
+    var apps = shuffled(pool.filter(function (c) { return !c.human; }));
+    var out = [];
+    if (humans.length) out.push(humans.shift());
+    while (out.length < 3 && apps.length) out.push(apps.shift());
+    while (out.length < 3 && humans.length) out.push(humans.shift());
+    return shuffled(out);
+  }
+  function w2Result(it, cards, choices) {
+    var answers = cards.map(function (c, i) {
+      var saidHuman = choices[i] === "human";
+      return { app: c.app, text: c.text, isHuman: !!c.human, saidHuman: saidHuman, correct: saidHuman === !!c.human };
+    });
+    var hits = answers.filter(function (a) { return a.correct; }).length;
+    return { id: it.id, answers: answers, hits: hits, isCorrect: hits === answers.length, seconds: null };
+  }
+
+  // Rückmeldung je Nummer: Name des Musters oder „kein Muster" (Feedback-Call 05.10.)
+  function spotsFeedbackHtml(it, r, rt) {
+    var rows = rt.meta.map(function (m) {
+      var name = m.pattern ? patternDef(m.pattern).name : it.noPatternLabel;
+      var tapped = r && !exportMode && r.selected.indexOf(m.n) >= 0;
+      var cls = m.pattern ? (tapped ? "hit" : "open") : (tapped ? "wrong" : "plain");
+      return '<li class="' + cls + '"><b>' + m.n + "</b> " + esc(name) + "</li>";
+    }).join("");
+    var score = exportMode || !r ? "" :
+      '<p class="fb-score">' + esc(fill(it.feedbackScore, { k: r.hits, n: rt.targets.length })) + "</p>";
+    return '<ul class="fb-list">' + rows + "</ul>" + score;
+  }
+
   function feedbackText(it, r) {
-    if (it.type === "spots") {
-      var you = exportMode || !r ? "" : fill(it.feedbackYou, { list: joinList(r.selected) });
-      var score = exportMode || !r ? "." : fill(it.feedbackScore, { k: r.hits, n: r.targets.length });
-      return you + it.feedbackText + score;
+    if (it.type === "cards") {
+      // Begründungen stehen an den Karten; hier nur noch die Bilanz
+      return exportMode || !r ? "" : fill(it.feedbackScore, { k: r.hits, n: r.answers.length });
     }
     var lead = exportMode || !r ? "" : (r.isCorrect ? it.feedbackRight : it.feedbackWrong);
-    return lead + it.feedbackText;
+    return lead + (it.feedbackText || "");
   }
   function feedbackClass(it, r) {
     if (it.type !== "cards") return "";
@@ -1036,7 +1216,7 @@
     var x = 0, y = 0, max = 0, ids = shownIds();
     ids.forEach(function (id) { if (patternCorrect(state.patterns[id])) x++; });
     C.recognition.forEach(function (it) {
-      max += it.type === "spots" ? countedTargets(it).length : (it.maxPoints || 0);
+      max += it.type === "spots" ? w1Runtime(it).targets.length : (it.maxPoints || 0);
       var r = state.recognition[it.id];
       if (!r) return;
       y += it.type === "spots" ? r.hits : (r.isCorrect ? 1 : 0);
@@ -1055,64 +1235,45 @@
 
   function renderSummary() {
     var Z = C.zusammenfassung;
-    var end;
-    if (returnUrl || exportMode) {
-      end = '<button class="btn" id="finish" type="button">' + esc(Z.button) + "</button>";
-    } else {
-      end = '<button class="btn" id="copy" type="button">' + esc(C.ui.copy) + "</button>" +
-        '<a class="btn secondary" id="dl" href="#" download="antworten_' + esc(fileSafe(state.code)) + '.json">' + esc(C.ui.download) + "</a>" +
-        '<p class="status-line" id="status" role="status"></p>';
-    }
     var count = shownIds().length;
     var title = fill(Z.title, { count: Z.numberWords[count] || count });
     app.innerHTML = '<div class="page tp"><div class="tp-body"><h1>' + esc(title) + "</h1>" + paras([groupText()]) +
       (exportMode ? "" : '<p class="tp-score">' + esc(fill(Z.scores, scores())) + "</p>") +
       "<p>" + esc(Z.outro) + "</p></div>" +
-      '<div class="lp-foot">' + end + "</div></div>";
+      '<div class="lp-foot"><button class="btn" id="finish" type="button">' + esc(Z.button) + "</button>" +
+      '<p class="status-line" id="status" role="status"></p></div></div>';
     focusFirst("h1");
     if (previewKey) return;
 
-    if (returnUrl) {
-      app.querySelector("#finish").addEventListener("click", function (e) {
-        e.currentTarget.disabled = true;
-        var result = finish();
-        sendPost(result).then(function () {
-          var u = new URL(returnUrl);
-          u.searchParams.set(resultParam, toBase64(JSON.stringify(result)));
-          location.href = u.href;
-        });
-      });
-    } else {
-      var status = app.querySelector("#status");
-      app.querySelector("#copy").addEventListener("click", function () {
-        var json = JSON.stringify(finish(), null, 2);
-        copyText(json).then(function (ok) { status.textContent = ok ? C.ui.copied : C.ui.copyFailed; });
-      });
-      app.querySelector("#dl").addEventListener("click", function (e) {
-        var json = JSON.stringify(finish(), null, 2);
-        e.currentTarget.href = URL.createObjectURL(new Blob([json], { type: "application/json" }));
-      });
-    }
+    app.querySelector("#finish").addEventListener("click", function (e) {
+      var btn = e.currentTarget;
+      btn.disabled = true;
+      var result = finish();
+      dbSave("zusammenfassung", "SUMMARY", result, state.pageSeconds.zusammenfassung);
+      var back = returnUrl || ("../index.html" + (state.code ? "?c=" + encodeURIComponent(state.code) +
+        (pilotFlag ? "&pilot=1" : "") : ""));
+      var done = (previewKey || !window.DB || !state.code)
+        ? Promise.resolve()
+        : window.DB.markDone(state.code, "BOOST");
+      Promise.resolve(done).then(function () { location.href = back; },
+        function () { location.href = back; });
+    });
   }
 
-  function fileSafe(s) { return String(s || "ohne-code").replace(/[^A-Za-z0-9_-]/g, "_"); }
-
-  // Ergebnis im Format aus Abschnitt 6 des Auftrags
-  var posted = false;
+  // Übersichtszeile für das SUMMARY-Ereignis (die Einzelantworten stehen
+  // bereits als eigene Zeilen APPS, P1–P8, W1, W2 in events)
   function finish() {
     if (state.pageSeconds.zusammenfassung == null) state.pageSeconds.zusammenfassung = secondsSince(state.pageStart);
     if (!state.finishedAt) state.finishedAt = isoNow();
     save();
-    var result = {
-      code: state.code,
+    return {
       version: C.version,
       startedAt: state.startedAt,
       finishedAt: state.finishedAt,
       apps: state.apps || [],
       appsSource: state.appsSource,
       shown: state.shown || [],
-      patterns: shownIds().map(function (id) { return state.patterns[id]; }).filter(Boolean),
-      recognition: C.recognition.map(function (it) { return state.recognition[it.id]; }).filter(Boolean),
+      scores: scores(),
       pageSeconds: {
         intro: state.pageSeconds.intro,
         apps: state.pageSeconds.apps,
@@ -1120,45 +1281,6 @@
         zusammenfassung: state.pageSeconds.zusammenfassung
       }
     };
-    if (!returnUrl && postUrl && !posted) { posted = true; sendPost(result); }
-    return result;
-  }
-
-  // POST an optionalen Endpoint; blockiert den Rücksprung höchstens 3 s, Fehler werden ignoriert.
-  function sendPost(result) {
-    if (!postUrl || !window.fetch) return Promise.resolve();
-    var req = fetch(postUrl, {
-      method: "POST",
-      mode: "cors",
-      credentials: "omit",
-      keepalive: true,
-      headers: { "Content-Type": "text/plain;charset=UTF-8" },
-      body: JSON.stringify(result)
-    }).catch(function () {});
-    return Promise.race([req, wait(3000)]);
-  }
-
-  function toBase64(str) {
-    var bytes = new TextEncoder().encode(str), bin = "";
-    for (var i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
-    return btoa(bin);
-  }
-
-  function copyText(text) {
-    if (navigator.clipboard && window.isSecureContext) {
-      return navigator.clipboard.writeText(text).then(function () { return true; }, function () { return legacyCopy(text); });
-    }
-    return Promise.resolve(legacyCopy(text));
-  }
-  function legacyCopy(text) {
-    var ta = document.createElement("textarea");
-    ta.value = text; ta.setAttribute("readonly", "");
-    ta.style.position = "fixed"; ta.style.opacity = "0";
-    document.body.appendChild(ta); ta.select();
-    var ok = false;
-    try { ok = document.execCommand("copy"); } catch (e) { ok = false; }
-    document.body.removeChild(ta);
-    return ok;
   }
 
   // ── Offline nach dem ersten Laden ──────────────────────

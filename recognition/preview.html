@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Erkennens-Sets – Durchsicht</title>
+  <link rel="stylesheet" href="../styles.css">
+  <link rel="stylesheet" href="rec.css">
+  <style>
+    body { background: #e9ecef; margin: 0; font-family: "Segoe UI", system-ui, sans-serif; }
+    .wrap { max-width: 1340px; margin: 0 auto; padding: 20px; }
+    h1 { font-size: 1.4rem; } h2 { margin: 28px 0 12px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 18px; }
+    .cell { background: #fff; border-radius: 14px; padding: 12px; }
+    .cell .info { font-size: 0.85rem; color: #444; margin-bottom: 8px; line-height: 1.4; }
+    .cell .info b { color: #000; }
+    .cell .tagd { display: inline-block; background: #6b7486; color: #fff; border-radius: 6px;
+      padding: 1px 7px; font-size: 0.75rem; margin-left: 6px; }
+    .cell .tagm { display: inline-block; background: #1f3a5f; color: #fff; border-radius: 6px;
+      padding: 1px 7px; font-size: 0.75rem; margin-left: 6px; }
+    .rec-stage { height: 648px; }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Erkennens-Sets T0 / T1 / T2 – Durchsicht (nur intern)</h1>
+  <p>Jede Karte: Set-Position, Muster bzw. Distraktor, App, rot markiertes Ziel.
+     Reihenfolge = feste Reihenfolge im Fragebogen.</p>
+  <div id="out"></div>
+</div>
+<script src="sets.js"></script>
+<script src="render.js"></script>
+<script>
+(function () {
+  var APP = { ig: "Instagram", tt: "TikTok", sc: "Snapchat", fb: "Facebook", x: "X", lock: "Sperrbildschirm" };
+  var out = document.getElementById("out");
+  ["T0", "T1", "T2"].forEach(function (set) {
+    var h = document.createElement("h2");
+    h.textContent = "Set " + set;
+    out.appendChild(h);
+    var grid = document.createElement("div");
+    grid.className = "grid";
+    window.RECOGNITION.SETS[set].forEach(function (entry, i) {
+      var cell = document.createElement("div");
+      cell.className = "cell";
+      var info = document.createElement("div");
+      info.className = "info";
+      info.innerHTML = "<b>" + (i + 1) + ". " + entry.id + "</b>" +
+        (entry.distraktor ? '<span class="tagd">Distraktor</span>'
+          : '<span class="tagm">' + window.RECOGNITION.MUSTER[entry.muster] + "</span>") +
+        "<br>App: " + (APP[entry.app] || entry.app) + " · Ziel: " + entry.target;
+      cell.appendChild(info);
+      cell.appendChild(window.RECOGNITION.render(entry, {}));
+      grid.appendChild(cell);
+    });
+    out.appendChild(grid);
+  });
+})();
+</script>
+</body>
+</html>

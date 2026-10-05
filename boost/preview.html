@@ -27,7 +27,7 @@
 <body>
   <header>
     <h1>Vorschau aller Zustände</h1>
-    <p>Jeder Rahmen zeigt eine Seite der Schulung in 390 × 780 px. Je Muster sind alle gebauten App-Varianten zu sehen, jeweils in vier Schritten: 1 Ansehen, 2 Frage, 3 Reaktion mit Markierung, 4 Erklärung (Muster 6 beginnt bei Schritt 2). Unter jedem Muster steht, für welche Apps der Person welcher Screen als Fallback gezeigt wird. In Schritt 3 und 4 ist eine falsche Beispielantwort eingesetzt (bei Muster 6 die Auswahl 1, 2, 4; bei W1 die Stellen 1, 2, 4; bei W2 die zweite Karte). Nichts hier wird gespeichert.</p>
+    <p>Jeder Rahmen zeigt eine Seite der Schulung in 390 × 780 px. Je Muster sind alle gebauten App-Varianten zu sehen, jeweils in vier Schritten: 1 Ansehen, 2 Frage (mit „Screen noch einmal ansehen"), 3 Reaktion mit Markierung, 4 Erklärung (Muster 6 beginnt bei Schritt 2). Unter jedem Muster steht, für welche Apps der Person welcher Screen als Fallback gezeigt wird. In Schritt 3 und 4 ist eine falsche Beispielantwort eingesetzt (bei Muster 6 die Auswahl 1, 2, 4; bei W1 die Stellen 1, 2, 4; bei W2 eine gemischte Beispiel-Einordnung). Nichts hier wird gespeichert.</p>
     <p>„Exportansicht" blendet Buttons und alles Persönliche aus (Antwort-Zeile, eigene Auswahl, eigene Zahlen), damit sich die Zustände als Ersatzbilder für das Umfragetool abfotografieren lassen. „Einzeln öffnen" zeigt eine Seite allein.</p>
     <div class="controls">
       <label><input type="checkbox" id="export"> Exportansicht</label>
@@ -123,8 +123,8 @@
         });
       });
 
-      html += '<h2>Wiedererkennen</h2><p class="meta">Gezählt werden in W1 nur Stellen zu Mustern, die bei den oben gewählten Apps gezeigt werden.</p><div class="grid">' +
-        frame("W1A", "W1 Stellen antippen") + frame("W1B", "W1 Rückmeldung") + frame("W2A", "W2 Meldungen") + frame("W2B", "W2 Rückmeldung") + "</div>";
+      html += '<h2>Wiederfinden</h2><p class="meta">W1: Nummerierte Marker nur für Muster, die bei den oben gewählten Apps gezeigt werden; Elemente nicht gezeigter Muster sind aus dem Screen entfernt (z. B. verschwindet das Lade-Rad bei „nur Snapchat"). W2: drei Meldungen aus den genutzten Apps, je „Von einem Menschen" oder „Von der App"; die Streak-Meldung kommt nur mit Muster 7 vor.</p><div class="grid">' +
+        frame("W1A", "W1 Nummern antippen") + frame("W1B", "W1 Rückmeldung") + frame("W2A", "W2 Meldungen einordnen") + frame("W2B", "W2 Rückmeldung") + "</div>";
       html += '<h2>Schluss</h2><div class="grid">' + frame("einordnung", "Einordnung") + frame("zusammenfassung", "Zusammenfassung") + "</div>";
       document.getElementById("out").innerHTML = html;
     })();
