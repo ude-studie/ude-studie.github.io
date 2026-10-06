@@ -401,6 +401,8 @@
     profile: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a4.5 4.5 0 110 9 4.5 4.5 0 010-9zm0 11c5 0 8 2.5 8 6v1H4v-1c0-3.5 3-6 8-6z"/></svg>',
     play: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M10 8l6 4-6 4z"/></svg>',
     check: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.5 16.2L5.3 12l-1.4 1.4 5.6 5.6L20.1 8.4 18.7 7z"/></svg>',
+    plusThin: '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M12 4v16M4 12h16"/></svg>',
+    repostLine: '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M4 11V9a3 3 0 013-3h12l-3-3M20 13v2a3 3 0 01-3 3H5l3 3"/></svg>',
     commentLine: '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" d="M20.5 11.5a8.5 8.5 0 01-12.4 7.6L3.5 20.5l1.4-4.4A8.5 8.5 0 1120.5 11.5z"/></svg>',
     bookmark: '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" d="M6 3h12v18l-6-5-6 5z"/></svg>',
     reels: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5" fill="none" stroke="currentColor" stroke-width="2"/><path fill="none" stroke="currentColor" stroke-width="2" d="M3 8.5h18M8 3l3 5.5M14 3l3 5.5"/><path d="M10 12l5 3-5 3z"/></svg>',
@@ -412,10 +414,59 @@
   function iconClass(key) { return (C.apps[key] || {}).icon || ""; }
 
   // Kopf der Instagram-artigen Screens: ohne App-Namen (keine Wortmarke), nur neutrale Symbole
+  // Aufbau wie die aktuelle Instagram-Startseite: schlichtes „+" links, Herz rechts
   function igHead(d) {
-    return '<div class="ig-head"><span class="ig-plus" aria-hidden="true">' + ICON.plus + "</span>" +
-      (d.title ? '<span class="ig-title">' + esc(d.title) + "</span>" : "") +
-      '<span class="ig-icons">' + ICON.heartLine + ICON.send + "</span></div>";
+    return '<div class="ig-head"><span class="ig-plus" aria-hidden="true">' + ICON.plusThin + "</span>" +
+      '<span class="ig-title">' + (d.title ? esc(d.title) : "") + "</span>" +
+      '<span class="ig-icons">' + ICON.heartLine + "</span></div>";
+  }
+
+  // 1204 → „1.204"
+  function deNum(n) { return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, "."); }
+
+  // Profilbild in der Story-Leiste: Foto (assets/av-<name>.jpg), sonst Initiale
+  function stAv(user, i, own) {
+    var slug = own ? "du" : String(user).toLowerCase().replace(/^@/, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+    return '<span class="st-av av' + (i % 5) + '" data-asset="av-' + esc(slug) + '" aria-hidden="true">' +
+      esc(String(user).charAt(0).toUpperCase()) + "</span>";
+  }
+  // Story-Leiste oben im Instagram-Feed: eigene Story + Kontakte mit Farbring und Foto
+  function igStoryBar(list) {
+    list = list || ["Deine Story", "lena_k", "tom.reist", "jonas.r", "mia.kocht"];
+    return '<div class="st-bar ig-stbar">' + list.map(function (u, i) {
+      var own = i === 0;
+      return '<div class="st"><span class="st-ring' + (own ? " own" : "") + '">' + stAv(u, i, own) +
+        (own ? '<span class="st-plus" aria-hidden="true">+</span>' : "") + '</span><span class="st-name">' + esc(u) + "</span></div>";
+    }).join("") + "</div>";
+  }
+  // Ein Instagram-Beitrag. „♡ 1.204 · Pasta in 10 Minuten" → Zähler an den Symbolen,
+  // „Gefällt … und N weiteren Personen", Bildunterschrift, Zeitangabe.
+  // tgt(key, html) umrahmt Stellen für Wiederfinden 1; headAttr markiert die Kopfzeile.
+  function igPostHtml(post, i, tgt, headAttr, imgCls) {
+    tgt = tgt || function (k, h) { return h; };
+    var m = /^♡\s*([^·]+?)\s*·\s*(.*)$/.exec(post.line || "");
+    var likes = m ? m[1] : "", cap = m ? m[2] : (post.line || "");
+    var n = Number(String(likes).replace(/\D/g, "")) || 0;
+    var friend = post.user === "lena_k" ? "jonas.r" : "lena_k";
+    var act = function (icon, count) { return '<span class="ig-act">' + icon + (count ? "<span>" + esc(count) + "</span>" : "") + "</span>"; };
+    return '<div class="ig-post"><div class="ig-post-head"' + (headAttr || "") + ">" + avatar(post.user) +
+      '<span class="ig-who">' + tgt("user-" + i, '<span class="user">' + esc(post.user) + "</span>") +
+      (post.suggested ? tgt("sugg-" + i, '<span class="sugg">' + esc(post.suggested) + "</span>") : "") + "</span>" +
+      '<span class="ig-dots" aria-hidden="true">⋯</span></div>' +
+      '<div class="ig-img ' + (imgCls || "ig-sq") + '"' + assetAttr(post.asset) + "></div>" +
+      '<div class="ig-actions" aria-hidden="true">' +
+      act(ICON.heartLine, likes) + act(ICON.commentLine, n ? deNum(Math.round(n / 23) + 2) : "") +
+      act(ICON.repostLine, n ? deNum(Math.round(n / 61) + 1) : "") + act(ICON.send, n ? deNum(Math.round(n / 40) + 1) : "") +
+      '<span class="ig-save">' + ICON.bookmark + "</span></div>" +
+      (n ? '<div class="ig-line">' + tgt("likes-" + i, '<span class="ig-likes">Gefällt <b>' + esc(friend) + "</b> und <b>" +
+        deNum(n - 1) + " weiteren Personen</b></span>") + "</div>" : "") +
+      (cap ? '<div class="ig-cap"><b>' + esc(post.user) + "</b> " + esc(cap) + "</div>" : "") +
+      '<div class="ig-time">Vor ' + (i + 2) + " Stunden</div></div>";
+  }
+  // Untere Leiste wie bei Instagram (nur Symbole)
+  function igNavHtml() {
+    return '<div class="ig-nav" aria-hidden="true">' + ICON.homeLine + ICON.searchLine + ICON.plusSquare + ICON.reels +
+      avatar("du", "ig-nav-av") + "</div>";
   }
 
   // Untere Leiste im TikTok-Stil (Start, Suche, Plus, Inbox, Profil)
@@ -503,40 +554,30 @@
             (isB && d.toast ? '<span class="toast' + (opt && opt.animate ? " fade-in" : "") + '">' + esc(d.toast) + "</span>" : "") +
             "</div>";
         }
+        // Story-Leiste oben im Feed (nicht mehr sichtbar, sobald weitergescrollt ist)
+        if (d.stories !== false && !(d.scrollFeed && isB)) html += igStoryBar(d.stories);
         var posts = d.scrollFeed && isB ? d.posts.slice(1) : d.posts;
         posts.forEach(function (post, j) {
           var i = d.scrollFeed && isB ? j + 1 : j;
           if (d.scrollFeed && isB && i === 2) html += '<div class="ig-seam"' + markAttr("seam-1") + "></div>";
-          // „♡ 1.204 · Pasta in 10 Minuten" → Gefällt-Zeile + Bildunterschrift wie bei Instagram
-          var m = /^♡\s*([^·]+?)\s*·\s*(.*)$/.exec(post.line || "");
-          var likes = m ? m[1] : "", cap = m ? m[2] : (post.line || "");
-          html += '<div class="ig-post"><div class="ig-post-head"' + markAttr("head-" + i) + ">" + avatar(post.user) +
-            '<span class="ig-who">' + tgt("user-" + i, '<span class="user">' + esc(post.user) + "</span>") +
-            (post.suggested ? tgt("sugg-" + i, '<span class="sugg">' + esc(post.suggested) + "</span>") : "") + "</span>" +
-            '<span class="ig-dots" aria-hidden="true">⋯</span></div>' +
-            '<div class="ig-img"' + assetAttr(post.asset) + "></div>" +
-            '<div class="ig-actions" aria-hidden="true">' + ICON.heartLine + ICON.commentLine + ICON.send +
-            '<span class="ig-save">' + ICON.bookmark + "</span></div>" +
-            '<div class="ig-line">' + (likes ? tgt("likes-" + i, '<b class="ig-likes">Gefällt ' + esc(likes) + " Mal</b>") : "") + "</div>" +
-            (cap ? '<div class="ig-cap"><b>' + esc(post.user) + "</b> " + esc(cap) + "</div>" : "") + "</div>";
+          html += igPostHtml(post, i, tgt, markAttr("head-" + i));
         });
         if (d.more) {
           html += tgt("edge", '<div class="ig-post ig-more"><div class="ig-post-head">' + avatar(d.more.user) + '<span class="user">' +
             esc(d.more.user) + '</span><span class="ig-dots" aria-hidden="true">⋯</span></div><div class="ig-img short"' +
             assetAttr(d.more.asset) + "></div></div>", "w1t-block");
         }
-        html += "</div>";
-        // Untere Leiste wie bei Instagram (nur Symbole)
-        html += '<div class="ig-nav" aria-hidden="true">' + ICON.homeLine + ICON.searchLine + ICON.plusSquare + ICON.reels +
-          avatar("du", "ig-nav-av") + "</div>";
+        html += "</div>" + igNavHtml();
         return html;
       },
       toB: function (body, p) {
         if (p.data.scrollFeed) {
-          // Weiter scrollen: der Feed rückt um genau einen Beitrag nach oben
+          // Weiter scrollen: der Feed rückt um Story-Leiste + ersten Beitrag nach oben
           var content = body.querySelector(".ig-content"), first = body.querySelector(".ig-post");
+          var k = body.getBoundingClientRect().width / body.offsetWidth || 1; // aktuelle Skalierung
+          var dy = (first.getBoundingClientRect().bottom - content.getBoundingClientRect().top) / k;
           content.style.transition = "transform " + ms(350) + "ms cubic-bezier(.2,.7,.2,1)";
-          content.style.transform = "translateY(-" + first.offsetHeight + "px)";
+          content.style.transform = "translateY(-" + Math.round(dy) + "px)";
           return wait(ms(360));
         }
         if (!p.data.toast) return Promise.resolve();
@@ -633,15 +674,14 @@
       render: function (p, isB, opt) {
         var d = p.data;
         var html = igHead(d);
-        html += '<div class="st-bar">' + d.stories.map(function (st, i) {
+        html += '<div class="st-bar ig-stbar">' + d.stories.map(function (st, i) {
           var cls = "st-ring" + (st.own ? " own" : "") + (st.expiring && isB ? " expired" : "");
           return '<div class="st"><span class="' + cls + '"' + (st.expiring && isB ? ' data-mark="' + (d.markPlace || "below") + '"' : "") +
-            (st.expiring ? ' data-expiring="1"' : "") + '><span class="st-av av' + (i % 5) + '" aria-hidden="true">' + esc(st.user.charAt(0).toUpperCase()) + "</span>" +
+            (st.expiring ? ' data-expiring="1"' : "") + ">" + stAv(st.user, i, st.own) +
             (st.own ? '<span class="st-plus" aria-hidden="true">+</span>' : "") + '</span><span class="st-name">' + esc(st.user) + "</span></div>";
         }).join("") + "</div>";
         if (!isB) html += '<div class="st-expiry">' + esc(d.expiry) + "</div>";
-        html += '<div class="ig-post"><div class="ig-post-head">' + avatar(d.post.user) + '<span class="user">' + esc(d.post.user) + "</span></div>" +
-          '<div class="ig-img"' + assetAttr(d.post.asset) + '></div><div class="ig-line">' + esc(d.post.line) + "</div></div>";
+        html += '<div class="ig-content">' + igPostHtml(d.post, 0) + "</div>" + igNavHtml();
         return html;
       },
       toB: function (body) {
@@ -669,19 +709,18 @@
             "</div>";
         }
         var html = igHead(d);
-        html += '<div class="st-bar">' + d.stories.map(function (st, i) {
+        html += '<div class="st-bar ig-stbar">' + d.stories.map(function (st, i) {
           if (st.expiring) {
             // Der Platz, an dem lena_ks Ring war: Kreis ohne Ring, markiert
             return '<div class="st"><span class="st-ring expired"' + (' data-mark="' + (d.markPlace || "below") + '"') +
-              '><span class="st-av av' + (i % 5) + '" aria-hidden="true">' + esc(st.user.charAt(0).toUpperCase()) + "</span></span>" +
+              ">" + stAv(st.user, i, false) + "</span>" +
               '<span class="st-name">' + esc(st.user) + "</span></div>";
           }
-          return '<div class="st"><span class="st-ring' + (st.own ? " own" : "") + '"><span class="st-av av' + (i % 5) + '" aria-hidden="true">' +
-            esc(st.user.charAt(0).toUpperCase()) + "</span>" + (st.own ? '<span class="st-plus" aria-hidden="true">+</span>' : "") +
+          return '<div class="st"><span class="st-ring' + (st.own ? " own" : "") + '">' + stAv(st.user, i, st.own) +
+            (st.own ? '<span class="st-plus" aria-hidden="true">+</span>' : "") +
             '</span><span class="st-name">' + esc(st.user) + "</span></div>";
         }).join("") + "</div>";
-        html += '<div class="ig-post"><div class="ig-post-head">' + avatar(d.post.user) + '<span class="user">' + esc(d.post.user) + "</span></div>" +
-          '<div class="ig-img"' + assetAttr(d.post.asset) + '></div><div class="ig-line">' + esc(d.post.line) + "</div></div>";
+        html += '<div class="ig-content">' + igPostHtml(d.post, 0) + "</div>" + igNavHtml();
         return html;
       },
       toB: function () { return Promise.resolve(); }

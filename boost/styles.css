@@ -582,6 +582,14 @@ button, input { font: inherit; }
 .ig-plus svg { display: block; width: 30px; height: 22px; color: #111; fill: #111; }
 .ig-title { margin-left: 12px; }
 .ig-icons svg { width: 24px; height: 24px; color: #111; }
+/* Kopfzeile wie die Instagram-Startseite: drei Spalten, keine Trennlinie */
+.ig .ig-head { display: grid; grid-template-columns: 44px 1fr 44px; align-items: center;
+  flex: 0 0 auto; height: 50px; min-height: 50px; box-sizing: border-box; padding: 0 10px; border-bottom: 0; }
+.ig-nav { flex: 0 0 auto; }
+.ig .ig-head .ig-plus svg { width: 28px; height: 28px; fill: none; }
+.ig .ig-head .ig-title { margin: 0; text-align: center; font-size: 1.25rem; }
+.ig .ig-head .ig-icons { margin: 0; justify-content: flex-end; }
+.ig .ig-head .ig-icons svg { width: 26px; height: 26px; }
 .ig-content { transition: transform 200ms ease-out; }
 .ig-content.pulled { transform: translateY(52px); }
 .ig-content.settle { animation: settle 180ms ease-out both; }
@@ -629,14 +637,26 @@ button, input { font: inherit; }
 .ig-dots { margin-left: auto; font-size: 1.25rem; line-height: 1; color: #111; letter-spacing: 1px; }
 .ig-img { height: 300px; background-size: cover; background-position: center; }
 .ig-img.short { height: 60px; }
-/* Aktionsleiste und Texte unter dem Bild wie bei Instagram */
-.ig-actions { display: flex; align-items: center; gap: 14px; padding: 9px 14px 2px; color: #111; }
+/* Instagram-Feed nah am Original: quadratische Bilder, Zähler an den Symbolen,
+   „Gefällt … und N weiteren Personen", Bildunterschrift, Zeitangabe */
+.ig { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+.ig-img.ig-sq { height: 410px; }
+.ig-actions { display: flex; align-items: center; gap: 16px; padding: 10px 12px 4px; color: #111; }
+.ig-act { display: inline-flex; align-items: center; gap: 5px; font-size: 0.8125rem; font-weight: 600; }
 .ig-actions svg { width: 24px; height: 24px; }
 .ig-actions .ig-save { margin-left: auto; display: inline-flex; }
-.ig-line { position: relative; padding: 4px 14px 0; font-size: 0.875rem; min-height: 4px; }
-.ig-likes { font-weight: 600; }
-.ig-cap { padding: 3px 14px 12px; font-size: 0.875rem; line-height: 1.4; }
+.ig-line { position: relative; padding: 4px 14px 0; font-size: 0.8125rem; }
+.ig-likes b { font-weight: 600; }
+.ig-cap { padding: 3px 14px 0; font-size: 0.8125rem; line-height: 1.4; }
 .ig-cap b { font-weight: 600; }
+.ig-time { padding: 3px 14px 14px; font-size: 0.6875rem; color: #737373; }
+/* Story-Leiste im Feed: Fotos statt Initialen, Trennlinie darunter */
+.ig-stbar { flex: 0 0 auto; padding: 8px 10px 10px; gap: 14px; border-bottom: 1px solid #efefef; }
+.ig .st-expiry { flex: 0 0 auto; }
+.ig-stbar .st-ring { width: 66px; height: 66px; }
+.st-av.asset-loaded { color: transparent; }
+.ig-post-head { padding: 8px 12px; }
+.ig-post-head .avatar { width: 32px; height: 32px; box-shadow: none; }
 .ig-refresh-in { display: inline-flex; align-items: center; gap: 8px; }
 /* Muster 2, Zustand B: die Meldung ersetzt den Hinweistext, statt ihn zu überdecken */
 .ig-refresh:has(.toast) .ig-refresh-in > span:last-child { visibility: hidden; }
@@ -652,7 +672,7 @@ button, input { font: inherit; }
 /* Muster 1 in Instagram: Zone um den Übergang zwischen zwei Beiträgen (Ziel der Markierung),
    vom Ende der Bildunterschrift bis unter die Kopfzeile des nächsten Beitrags */
 .ig-seam { position: relative; height: 62px; margin: -10px 0 -52px; pointer-events: none; }
-.w1 .ig-img { height: 180px; }
+.w1 .ig-img, .w1 .ig-img.ig-sq { height: 240px; }
 .w1 .ig-img.short { height: 56px; }
 
 /* ── Vorlage: Instagram-Stories (Muster 8) ─────────────── */
