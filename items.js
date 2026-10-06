@@ -47,7 +47,7 @@ window.ITEMS = {
       EW02: "Ich habe die Datenschutzinformation gelesen und willige in die beschriebene Verarbeitung meiner Daten ein. Ich kann das jederzeit widerrufen."
     },
     r02: {
-      title: "Kurz drei Fragen",
+      title: "Kurz vier Fragen",
       SC01: "Bist du 18 Jahre alt oder älter?",
       SC02: "Studierst du zurzeit an einer Hochschule?",
       SC03: "Welche dieser Apps nutzt du an einem normalen Tag mindestens einmal?",

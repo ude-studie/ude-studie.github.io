@@ -36,9 +36,8 @@
           { type: "radio", key: "SC01", label: T.r02.SC01, options: S.janein, required: true },
           { type: "radio", key: "SC02", label: T.r02.SC02, options: S.janein, required: true },
           { type: "multi", key: "SC03", label: T.r02.SC03, options: T.r02.SC03_options, required: true },
-          { type: "radio", key: "SC04", label: T.r02.SC04, options: T.r02.SC04_options, required: true },
-          { type: "radio", key: "SC05", label: T.r02.SC05, options: T.r02.SC05_options, required: true },
-          { type: "notice", text: T.r02.SC05_hinweis, visibleIf: { key: "SC05", equals: "eher_nicht" } }
+          { type: "radio", key: "SC04", label: T.r02.SC04, options: T.r02.SC04_options, required: true }
+          // SC05 (Teilnahme an allen drei Terminen) auf Daniels Wunsch am 06.10. entfernt
         ],
         after: function (answers, ctx) {
           // Betriebssystem an der Person speichern (nur ios/android)
