@@ -6,6 +6,16 @@
   height: 648px; margin: 0 0 16px; }
 .rec-stage .device-wrap.rec { transform: scale(0.8); transform-origin: top center; }
 .rec-stage.mini { height: 280px; }
+/* „Bild vergrößern" unter kleinen Bildern + Vollbild-Ansicht */
+.rec-mini-wrap { margin: 0 0 16px; }
+.rec-mini-wrap .rec-stage.mini { margin-bottom: 4px; }
+.rec-zoom { display: block; margin: 0 auto; padding: 8px 14px; background: none; border: none;
+  color: var(--primary, #1f3a5f); font-size: 0.95rem; font-weight: 600; text-decoration: underline; cursor: pointer; }
+.rec-overlay { position: fixed; inset: 0; z-index: 100; background: rgba(16, 20, 26, 0.92);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; cursor: pointer; }
+.rec-overlay .rec-overlay-stage { display: block; margin: 0; overflow: visible; flex: 0 0 auto; }
+.rec-overlay .rec-overlay-stage .device-wrap.rec { transform-origin: top left; }
+.rec-overlay .rec-overlay-close { width: auto; min-width: 160px; flex: 0 0 auto; }
 .rec-stage.mini .device-wrap.rec { transform: scale(0.34); }
 .device-wrap.rec { width: 410px; height: 800px; flex: 0 0 auto; }
 .device-wrap.rec .device { width: 410px; height: 800px; }

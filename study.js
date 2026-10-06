@@ -688,7 +688,16 @@
       case "screen": {
         var entry = item.entry || (window.RECOGNITION.SETS[item.set] || [])[item.index] || {};
         if (window.RECOGNITION.render) {
-          return window.RECOGNITION.render(entry, { mini: !!item.mini });
+          var stage = window.RECOGNITION.render(entry, { mini: !!item.mini });
+          if (!item.mini) return stage;
+          // Kleine Bilder (Bewertungsseiten): darunter „Bild vergrößern"
+          var wrapM = el("div", "rec-mini-wrap");
+          wrapM.appendChild(stage);
+          var zoom = el("button", "rec-zoom", "Bild vergrößern");
+          zoom.type = "button";
+          zoom.addEventListener("click", function () { openScreenOverlay(entry); });
+          wrapM.appendChild(zoom);
+          return wrapM;
         }
         var ph = el("div", "screen-placeholder" + (item.mini ? " mini" : ""));
         var line1 = el("div", null, "📱 [Screen folgt: " + (entry.app || "?") + "]");
@@ -718,6 +727,31 @@
       }
     }
     return null;
+  }
+
+  // Bild in voller Größe über der Seite; Tippen oder Schließen führt zurück
+  function openScreenOverlay(entry) {
+    var ov = el("div", "rec-overlay");
+    ov.setAttribute("role", "dialog");
+    ov.setAttribute("aria-label", "Bild in voller Größe");
+    var stage = window.RECOGNITION.render(entry, {});
+    stage.classList.add("rec-overlay-stage");
+    // Gerät (410 × 800) in den verfügbaren Platz einpassen
+    var s = Math.min(1, (window.innerWidth - 24) / 410, (window.innerHeight - 90) / 800);
+    var dev = stage.querySelector(".device-wrap");
+    if (dev) dev.style.transform = "scale(" + s.toFixed(4) + ")";
+    stage.style.height = Math.round(800 * s) + "px";
+    stage.style.width = Math.round(410 * s) + "px";
+    ov.appendChild(stage);
+    var close = el("button", "btn rec-overlay-close", "Schließen");
+    close.type = "button";
+    ov.appendChild(close);
+    var shut = function () { ov.remove(); document.removeEventListener("keydown", onKey); };
+    var onKey = function (e) { if (e.key === "Escape") shut(); };
+    ov.addEventListener("click", shut);
+    document.addEventListener("keydown", onKey);
+    document.body.appendChild(ov);
+    close.focus();
   }
 
   function foldout(label, text) {
