@@ -90,14 +90,12 @@ window.ITEMS = {
     },
     r05: {
       title: "Dein Link",
-      text: "Das ist dein persönlicher Link. Speichere ihn dir: In etwa zwei Wochen öffnest du damit den zweiten Fragebogen. Er enthält deinen Code, du musst dir nichts merken.",
+      text: "Das ist dein persönlicher Link mit deinem Code. In etwa zwei Wochen schicken wir ihn dir per Mail, dann öffnest du damit den zweiten Fragebogen. Du musst dir nichts merken.",
       copy: "Link kopieren",
       copied: "Kopiert!",
       homescreen: "Zum Startbildschirm hinzufügen",
       homescreen_ios: "Öffne diesen Link in Safari und tippe unten auf das Teilen-Symbol (Viereck mit Pfeil). Wähle „Zum Home-Bildschirm“, dann liegt die Studie wie eine App auf deinem Startbildschirm.",
       homescreen_android: "Tippe in Chrome oben rechts auf die drei Punkte. Wähle „Zum Startbildschirm hinzufügen“, dann liegt die Studie wie eine App auf deinem Startbildschirm.",
-      mail: "Ich habe den Link per Mail bekommen",
-      mail_hinweis: "Gut – die Erinnerungsmail enthält genau diesen Link. Du kannst ihn einfach aus der Mail öffnen.",
       abschied: "Jetzt geht es direkt weiter mit dem ersten Fragebogen."
     }
   }

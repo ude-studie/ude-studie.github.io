@@ -168,8 +168,14 @@
     if (typeof def.build === "function") def = def.build(ctx);
     currentWave = def.wave;
     var answers = waveAnswers(def.wave);
-    var history_ = [];
-    renderPage(def, startId || def.start, answers, history_);
+    // „Zurück" auch nach Neuladen oder späterem Wiedereinstieg: Verlauf aus
+    // der Seitenreihenfolge rekonstruieren (ohne Endseiten wie R-X)
+    var first = startId || def.start;
+    var idx = def.pages.map(function (p) { return p.id; }).indexOf(first);
+    var history_ = def.pages.slice(0, Math.max(0, idx))
+      .filter(function (p) { return !p.terminal; })
+      .map(function (p) { return p.id; });
+    renderPage(def, first, answers, history_);
   }
 
   // Gezeigte Muster deterministisch aus der App-Liste – exakt die Regel der
@@ -704,7 +710,6 @@
         });
         box5.appendChild(copy);
         box5.appendChild(foldout(T5.homescreen, ctx.os === "android" ? T5.homescreen_android : T5.homescreen_ios));
-        box5.appendChild(foldout(T5.mail, T5.mail_hinweis));
         return box5;
       }
     }

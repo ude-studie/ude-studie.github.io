@@ -56,6 +56,8 @@ window.CONTENT = {
     labelWirkung: "Wirkung:",
     labelZweck: "Zweck:",
     next: "Weiter",
+    back: "Zurück",
+    reviewNote: "Du siehst einen Schritt, den du schon abgeschlossen hast. Deine Antwort bleibt, wie sie war.",
     copy: "Antworten kopieren",
     copied: "Kopiert.",
     copyFailed: "Kopieren ging nicht. Nutze den Download-Link.",

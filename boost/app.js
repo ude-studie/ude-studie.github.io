@@ -184,6 +184,8 @@
       finishedAt: null,
       page: 0,
       sub: "look",       // Schritt auf der Seite: look, ask, react, explain
+      maxPage: 0,        // weiteste erreichte Seite; davor nur Ansicht (Zurück, Antworten gesperrt)
+      maxSub: "look",    // Schritt auf der weitesten Seite, um dorthin zurückzukehren
       pageStart: Date.now(),
       bStart: null,
       patterns: {},      // id -> Ergebnis
@@ -196,14 +198,27 @@
   }
   function save() {
     if (previewKey) return;
+    if (state.maxPage == null || state.page > state.maxPage) state.maxPage = state.page;
+    if (state.page === state.maxPage) state.maxSub = state.sub;
     try { sessionStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch (e) { /* ohne Zwischenstand weiter */ }
+  }
+  // Ansichtsmodus: eine schon abgeschlossene Seite, zu der man zurückgeblättert hat
+  function isReview() { return !previewKey && state.maxPage != null && state.page < state.maxPage; }
+  // Abgeschlossene Seiten zeigen ihren aufgelösten Zustand
+  function reviewSub(pg) {
+    if (pg.type === "pattern") return "explain";
+    if (pg.type === "recognition") return "react";
+    return "look";
   }
   function secondsSince(t) { return Math.max(0, Math.round((Date.now() - t) / 1000)); }
   function isoNow() { return new Date().toISOString().replace(/\.\d{3}Z$/, "Z"); }
 
   function goto(i) {
-    state.page = Math.min(i, pages.length - 1);
-    state.sub = "look";
+    state.page = Math.max(0, Math.min(i, pages.length - 1));
+    var max = state.maxPage == null ? state.page : state.maxPage;
+    if (state.page < max) state.sub = reviewSub(pages[state.page]);       // zurückgeblättert
+    else if (state.page === max && state.maxSub) state.sub = state.maxSub; // zurück an der aktuellen Stelle
+    else state.sub = "look";
     state.pageStart = Date.now();
     state.bStart = null;
     picks = [];
@@ -767,6 +782,32 @@
     else if (pg.type === "einordnung") renderEinordnung();
     else renderSummary();
     applyAssets(app);
+    addBackButton();
+  }
+
+  // Hinweis über dem Inhalt einer zurückgeblätterten Seite
+  function addReviewNote() {
+    var panel = app.querySelector(".lp-panel");
+    if (!panel || panel.querySelector(".review-note")) return;
+    var n = document.createElement("p");
+    n.className = "review-note";
+    n.textContent = C.ui.reviewNote;
+    panel.insertBefore(n, panel.firstChild);
+  }
+
+  // „Zurück": blättert eine Seite zurück; dort ist alles nur noch Ansicht
+  // (Antworten gesperrt). Weiter führt bis zur aktuellen Stelle zurück.
+  function addBackButton() {
+    if (previewKey || state.page === 0) return;
+    var foot = app.querySelector(".lp-foot");
+    if (!foot || foot.querySelector(".btn-back")) return;
+    var b = document.createElement("button");
+    b.type = "button";
+    b.className = "btn secondary btn-back";
+    b.textContent = C.ui.back;
+    b.addEventListener("click", function () { goto(state.page - 1); });
+    foot.classList.add("with-back");
+    foot.insertBefore(b, foot.firstChild);
   }
 
   function lpHead(left, right) {
@@ -796,6 +837,7 @@
         state.code = v;
       }
       if (previewKey) return;
+      if (isReview()) { goto(1); return; }
       state.pageSeconds.intro = secondsSince(state.pageStart);
       if (!state.startedAt) state.startedAt = isoNow();
       goto(1);
@@ -822,6 +864,17 @@
       '</div><div class="lp-foot"><button class="btn" id="go" type="button">' + esc(known ? A.knownButton : A.askButton) + "</button></div></div>";
     focusFirst("h1");
     var go = app.querySelector("#go");
+    if (isReview()) {
+      // Apps nicht mehr änderbar: davon hängt ab, welche Muster gezeigt wurden
+      app.querySelectorAll(".app-tile").forEach(function (btn) {
+        var on = (state.apps || []).indexOf(btn.getAttribute("data-app")) >= 0;
+        btn.setAttribute("aria-pressed", String(on));
+        btn.disabled = true;
+      });
+      go.textContent = C.ui.next;
+      go.addEventListener("click", function () { goto(state.page + 1); });
+      return;
+    }
     go.disabled = picks.length === 0;
     app.querySelectorAll(".app-tile").forEach(function (btn) {
       btn.addEventListener("click", function () {
@@ -925,6 +978,8 @@
     if (isB) placeMark(body);
     btn.disabled = false;
     btn.onclick = null;
+    var backBtn = app.querySelector(".btn-back");
+    if (backBtn) backBtn.disabled = false;
 
     if (phase === "look") {
       btn.textContent = C.ui.next;
@@ -947,6 +1002,7 @@
     } else {
       btn.textContent = C.ui.next;
       btn.onclick = function () {
+        if (isReview()) { goto(state.page + 1); return; }
         var r = state.patterns[p.id];
         if (r && r.secondsB == null) r.secondsB = secondsSince(state.bStart || state.pageStart);
         if (r) {
@@ -958,6 +1014,7 @@
         }
         goto(state.page + 1);
       };
+      if (isReview()) addReviewNote();
       focusFirst("#ex-title");
     }
   }
@@ -1020,6 +1077,8 @@
     save();
 
     btn.disabled = true;
+    var backBtn = app.querySelector(".btn-back");
+    if (backBtn) backBtn.disabled = true; // nicht mitten in die Reaktion der App zurückspringen
     app.querySelectorAll(".lp-panel input, .note").forEach(function (el) { el.disabled = true; });
     var stage = app.querySelector(".lp-stage"), panel = app.querySelector(".lp-panel");
     var body = app.querySelector(".screen-body");
@@ -1117,10 +1176,12 @@
     if (isB) {
       focusFirst("#fb");
       btn.onclick = function () {
+        if (isReview()) { goto(state.page + 1); return; }
         if (r && r.seconds == null) r.seconds = secondsSince(state.pageStart);
         if (r) dbSave(it.id, it.id, r, r.seconds);
         goto(state.page + 1);
       };
+      if (isReview()) addReviewNote();
       return;
     }
     focusFirst("#ctx");
@@ -1236,7 +1297,7 @@
       '<div class="lp-foot"><button class="btn" id="next" type="button">' + esc(E.button) + "</button></div></div>";
     focusFirst("h1");
     app.querySelector("#next").addEventListener("click", function () {
-      state.pageSeconds.einordnung = secondsSince(state.pageStart);
+      if (!isReview()) state.pageSeconds.einordnung = secondsSince(state.pageStart);
       goto(state.page + 1);
     });
   }
