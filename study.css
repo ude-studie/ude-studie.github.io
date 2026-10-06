@@ -52,8 +52,8 @@
 
 .nav-row { display: flex; gap: 10px; margin-top: 22px; }
 .nav-row .btn { flex: 1; }
-/* Zurück: schmaler als Weiter, auf gleicher Höhe */
-.nav-row .btn.secondary { flex: 0 0 30%; margin-top: 0; font-weight: 600; }
+/* Zurück und Weiter gleich groß und auf gleicher Höhe */
+.nav-row .btn.secondary { flex: 1; margin-top: 0; }
 .btn.secondary:hover { background: #eef1f6; }
 
 .linklike {
