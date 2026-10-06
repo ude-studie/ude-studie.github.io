@@ -53,7 +53,9 @@
 .nav-row { display: flex; gap: 10px; margin-top: 22px; }
 .nav-row .btn { flex: 1; }
 /* Zurück und Weiter gleich groß und auf gleicher Höhe */
-.nav-row .btn.secondary { flex: 1; margin-top: 0; }
+.nav-row { align-items: stretch; }
+.nav-row .btn { box-sizing: border-box; flex: 1 1 0; min-width: 0; }
+.nav-row .btn.secondary { margin-top: 0; }
 .btn.secondary:hover { background: #eef1f6; }
 
 .linklike {
