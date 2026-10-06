@@ -70,8 +70,9 @@
 .rec-mark-abs { outline: 3px solid #d6342c; outline-offset: 3px; border-radius: 10px; }
 
 /* Dunkler Video-Feed: Hinweis auf nächstes Video */
+.rec-snap-sub { padding: 14px 14px 4px; font-weight: 700; font-size: 14px; color: #111; }
 .rec-next-hint { position: absolute; left: 50%; transform: translateX(-50%); bottom: 86px;
-  background: rgba(255,255,255,0.16); color: #fff; padding: 6px 12px; border-radius: 999px; font-size: 13px; white-space: nowrap; }
+  background: rgba(0,0,0,0.62); color: #fff; padding: 6px 12px; border-radius: 999px; font-size: 13px; white-space: nowrap; }
 /* Endloses Scrollen: Anfang des nächsten Videos ragt unten ins Bild */
 .rec-peek { position: absolute; left: 0; right: 0; bottom: 0; height: 120px; z-index: 2;
   border-top: 4px solid #000; overflow: hidden; }
@@ -119,3 +120,6 @@
 /* Kopfzeile Snapchat mit Suchfeld/Zahnrad */
 .snap-head { display: flex; align-items: center; gap: 10px; }
 .snap-head span:first-child { flex: 0 0 auto; }
+
+/* Fotos statt Initialen: Buchstabe ausblenden, wenn ein Profilfoto da ist */
+.avatar.has-photo, .st-av.has-photo { color: transparent !important; }

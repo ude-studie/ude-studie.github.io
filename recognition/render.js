@@ -26,12 +26,42 @@
     for (var i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) % 997;
     return h;
   }
+  // Fotos (CC0/gemeinfrei, Wikimedia Commons; Quellen in assets/sources.json).
+  // Bewusst KEIN Foto aus der Schulung (Auftrag v3: kein Bild doppelt).
+  var BASE = ((document.currentScript && document.currentScript.src) || "").replace(/[^\/]*$/, "") + "assets/";
+  var PHOTOS = ["fb-buch", "fb-fest", "fb-floh", "fb-garten", "fb-grill", "fb-meme", "fb-nachbar", "fb-theater", "fb-video",
+    "ig-kaffee", "ig-kino", "ig-nebel", "ig-ramen", "ig-regal", "ig-see", "ig-wandern", "rl-backen", "rl-skate", "rl-skate-next",
+    "tt-hund2", "tt-koch", "tt-reel-bg", "tt-sale", "tt-tanz", "tt-tanz-next", "x-stadt",
+    "xp0a", "xp1b", "xp2c", "xp3d", "xp4e", "xp5f", "xp6g", "xp7h", "xp8i"];
+  // Profilbild-Raster der TikTok-Profilseite (T2-2): Fotos aus anderen Sets
+  var ALIAS = { ttp0: "fb-grill", ttp1: "ig-kino", ttp2: "fb-garten", ttp3: "ig-kaffee", ttp4: "fb-buch", ttp5: "x-stadt" };
+  var AVATARS = ["alte-wg", "ayla-m", "aylin", "b-cherschrank-s-dviertel", "bahn-ansagen", "basti-baut", "ben", "ben-tanzt",
+    "berg-und-tal", "cafe-eckhaus", "campus-garten", "can", "chris", "chris-89", "deals-daily", "deine-story", "deniz", "du",
+    "elif", "essen-isst", "finn-ok", "flo-fotografiert", "flohmarkt-r-ttenscheid", "h-rsaal-memes", "hanna", "jonas-b", "jule",
+    "jule-moves", "kochtmit", "kursgruppe-bwl", "lauftreff-essen", "lea", "lea-backt", "lena-unterwegs", "leyla", "mara", "mara-b",
+    "marko", "mensa-update", "miri-zeichnet", "nachbarschaft-holsterhausen", "niko", "noa", "noa-zeigt", "nora-liest", "oma-gisela",
+    "papa", "paula", "prokrastinations-memes", "ruhrpott-rezepte", "sam", "sam-skatet", "stadt-essen", "stadtfest-essen", "struppi-tv",
+    "system", "theater-ag", "timo", "timo-rollt", "tonio-fit", "uni-duisburg-essen", "unikino-essen", "wg-rezepte"];
+  function slug(s) { return String(s || "").toLowerCase().replace(/^@/, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""); }
+  function photoStyle(file) { return "background:#ccc center / cover no-repeat url('" + BASE + file + ".jpg')"; }
+  // Profilbild: Foto, falls vorhanden, sonst farbiger Kreis mit Initiale
+  function avatarStyle(name) {
+    var s = slug(name);
+    return AVATARS.indexOf(s) >= 0 ? photoStyle("av-" + s) : "";
+  }
   function avatar(name, extra) {
     var clean = String(name || "").replace(/^@/, "");
     var n = hashCode(clean) % 6;
-    return '<span class="avatar avc' + n + (extra ? " " + extra : "") + '" aria-hidden="true">' + esc(clean.charAt(0).toUpperCase()) + "</span>";
+    var st = avatarStyle(clean);
+    return '<span class="avatar avc' + n + (extra ? " " + extra : "") + (st ? " has-photo" : "") + '"' +
+      (st ? ' style="' + st + '"' : "") + ' aria-hidden="true">' + esc(clean.charAt(0).toUpperCase()) + "</span>";
   }
-  // Neutrale Bildfläche: Farbverlauf je Kennung (nie ein Schulungsfoto)
+  // Story-Kreis: Foto, sonst farbige Fläche mit Initiale
+  function stAvOpen(user, i) {
+    var st = avatarStyle(user);
+    return '<span class="st-av av' + (i % 5) + (st ? " has-photo" : "") + '"' + (st ? ' style="' + st + '"' : "") + ' aria-hidden="true">';
+  }
+  // Rückfall ohne Foto: Farbverlauf je Kennung
   var GRADS = [
     "linear-gradient(135deg,#b8c6d8,#8fa3bb)", "linear-gradient(135deg,#d8c6b8,#bba38f)",
     "linear-gradient(135deg,#c2d8b8,#9bbb8f)", "linear-gradient(135deg,#d8b8c9,#bb8fa7)",
@@ -39,7 +69,9 @@
     "linear-gradient(135deg,#9aa7c4,#6f7fa3)", "linear-gradient(135deg,#c4b39a,#a38d6f)"
   ];
   function pic(id, cls) {
-    return '<div class="' + cls + '" style="background:' + GRADS[hashCode(String(id)) % GRADS.length] + '"></div>';
+    var file = ALIAS[id] || id;
+    var style = PHOTOS.indexOf(file) >= 0 ? photoStyle(file) : "background:" + GRADS[hashCode(String(id)) % GRADS.length];
+    return '<div class="' + cls + '" style="' + style + '"></div>';
   }
   var ICON = {
     heart: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7.5-4.6-9.6-9.2C.9 8.4 3 4.5 6.7 4.5c2.1 0 3.6 1.1 5.3 3 1.7-1.9 3.2-3 5.3-3 3.7 0 5.8 3.9 4.3 7.3C19.5 16.4 12 21 12 21z"/></svg>',
@@ -121,7 +153,7 @@
     }
     if (o.stories) {
       var strip = '<div class="st-bar">' + o.stories.map(function (st, i) {
-        return '<div class="st"><span class="st-ring' + (st.own ? " own" : "") + '"><span class="st-av av' + (i % 5) + '" aria-hidden="true">' +
+        return '<div class="st"><span class="st-ring' + (st.own ? " own" : "") + '">' + stAvOpen(st.own ? "du" : st.user, i) +
           esc(st.user.charAt(0).toUpperCase()) + "</span>" + (st.own ? '<span class="st-plus" aria-hidden="true">+</span>' : "") +
           '</span><span class="st-name">' + esc(st.user) + "</span></div>";
       }).join("") + "</div>" + (o.expiry ? '<div class="st-expiry">' + esc(o.expiry) + "</div>" : "");
@@ -231,7 +263,18 @@
       (o.search != null ? (o.markSearch ? mark('<span class="rec-search dark">' + ICON.search + "<i>" + esc(o.search) + "</i></span>") : '<span class="rec-search dark">' + ICON.search + "<i>" + esc(o.search) + "</i></span>") : "") +
       (o.gear ? (o.markGear ? mark('<span class="rec-gearicon">' + ICON.gear + "</span>") : '<span class="rec-gearicon">' + ICON.gear + "</span>") : "") +
       "</div>";
-    var rows = (o.rows || []).map(function (row) {
+    // Weitere Chats ohne Markierung, damit die Liste wie eine echte Chatliste gefüllt ist
+    var FILL = [
+      { user: "Leyla", status: "Chat empfangen · 2 Std." }, { user: "Marko", status: "Geöffnet · 5 Std." },
+      { user: "Hanna", status: "Snap empfangen · gestern", streak: "🔥 4" }, { user: "Niko", status: "Gesendet · gestern" },
+      { user: "Deniz", status: "Geöffnet · 2 Tage" }, { user: "Papa", status: "Chat empfangen · 3 Tage" },
+      { user: "Alte WG", status: "Neuer Chat · 4 Tage" }
+    ];
+    var have = (o.rows || []).map(function (r) { return r.user; });
+    var allRows = (o.rows || []).concat(FILL.filter(function (f) { return have.indexOf(f.user) < 0; }))
+      .slice(0, Math.max((o.rows || []).length, o.stories ? 4 : 8));
+    if (o.stories && !(o.rows || []).length) allRows = allRows.map(function (r) { return { user: r.user, status: r.status }; });
+    var rows = (o.stories ? '<div class="rec-snap-sub">Freunde</div>' : "") + allRows.map(function (row) {
       var streak = row.streak ? '<span class="streak">' + esc(row.streak) + "</span>" : "";
       return '<div class="snap-row">' + avatar(row.user, "bitmoji") + '<div class="snap-text"><div class="user">' + esc(row.user) +
         '</div><div class="status">' + esc(row.status) + "</div></div>" + (row.marked ? mark(streak) : streak) + "</div>";
@@ -239,7 +282,7 @@
     var stories = "";
     if (o.stories) {
       var strip = '<div class="st-bar dark">' + o.stories.map(function (st, i) {
-        return '<div class="st"><span class="st-ring"><span class="st-av av' + (i % 5) + '" aria-hidden="true">' + esc(st.user.charAt(0).toUpperCase()) +
+        return '<div class="st"><span class="st-ring">' + stAvOpen(st.user, i) + esc(st.user.charAt(0).toUpperCase()) +
           '</span></span><span class="st-name">' + esc(st.user) + "</span></div>";
       }).join("") + "</div>" + (o.expiry ? '<div class="st-expiry dark">' + esc(o.expiry) + "</div>" : "");
       stories = o.markStories ? mark(strip, true) : strip;
