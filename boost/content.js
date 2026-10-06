@@ -30,7 +30,7 @@
  * assets/<kennung>.jpg oder .png vor, wird sie statt des Farbverlaufs gezeigt.
  */
 window.CONTENT = {
-  version: "boost-v2",
+  version: "boost-v3", // v3 (06.10.): Überarbeitung nach Feedback-Call, neue Instagram-Optik, Zurück-Ansicht
 
   // Apps, die beim Aufruf übergeben (apps=ig,tt,…) oder auf dem zweiten Einleitungsbildschirm gewählt werden.
   // Reihenfolge = Reihenfolge der Kacheln.

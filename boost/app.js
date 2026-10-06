@@ -1350,7 +1350,7 @@
       max += it.type === "spots" ? w1Runtime(it).targets.length : (it.maxPoints || 0);
       var r = state.recognition[it.id];
       if (!r) return;
-      y += it.type === "spots" ? r.hits : (r.isCorrect ? 1 : 0);
+      y += r.hits || 0; // W1: gefundene Stellen, W2: richtig eingeordnete Meldungen (je 1 Punkt)
     });
     return { x: x, n: ids.length, y: y, max: max };
   }
