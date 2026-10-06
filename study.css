@@ -56,6 +56,8 @@
 .nav-row { align-items: stretch; }
 .nav-row .btn { box-sizing: border-box; flex: 1 1 0; min-width: 0; }
 .nav-row .btn.secondary { margin-top: 0; }
+/* unsichtbarer Rahmen, damit Weiter exakt so groß ist wie das umrandete Zurück */
+.nav-row .btn:not(.secondary) { border: 2px solid transparent; }
 .btn.secondary:hover { background: #eef1f6; }
 
 .linklike {

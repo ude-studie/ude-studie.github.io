@@ -1011,6 +1011,8 @@ div.card { cursor: default; }
 /* Zurück-Knopf neben dem Hauptknopf; Hinweis auf zurückgeblätterten Seiten */
 .lp-foot.with-back { display: flex; flex-wrap: wrap; gap: 10px; }
 .lp-foot.with-back > .btn { flex: 1 1 0; min-width: 0; box-sizing: border-box; }
+/* unsichtbarer Rahmen, damit Weiter exakt so groß ist wie das umrandete Zurück */
+.lp-foot.with-back > .btn:not(.secondary) { border: 2px solid transparent; }
 .lp-foot.with-back > .btn-back { margin-top: 0; } /* gleich groß wie Weiter (flex: 1 1 0) */
 .btn.secondary:hover { background: #eef1f6; }
 .lp-foot.with-back > .status-line { flex-basis: 100%; }
