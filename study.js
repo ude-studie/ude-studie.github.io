@@ -242,9 +242,13 @@
 
     // Navigation
     var nav = el("div", "nav-row");
-    if (hist.length && !p.terminal) {
+    // Auf der ersten Seite eines Blocks führt Zurück in den vorigen Block,
+    // falls der Block das vorsieht (T0 → Link-Seite der Anmeldung)
+    var backToBlock = !hist.length && p.id === def.start && def.backTo && window[def.backTo.def];
+    if ((hist.length || backToBlock) && !p.terminal) {
       var back = el("button", "btn secondary", "Zurück");
       back.addEventListener("click", function () {
+        if (!hist.length) { runBlock(window[def.backTo.def], def.backTo.page); return; }
         var prev = hist.pop();
         renderPage(def, prev, answers, hist);
       });
@@ -752,7 +756,14 @@
   }
 
   function showBoostHandoff() {
-    var box = el("div", "chooser");
+    var box = el("div", "nav-row");
+    // Noch vor der Schulung: zurück in den ersten Fragebogen (letzte Seite)
+    var back = el("button", "btn secondary", "Zurück");
+    back.addEventListener("click", function () {
+      var pages = window.PAGES_T0.pages;
+      runBlock(window.PAGES_T0, pages[pages.length - 1].id);
+    });
+    box.appendChild(back);
     var b = el("button", "btn", "Schulung starten");
     b.addEventListener("click", function () {
       var ret = personalLink(ctx.code) + (ctx.pilot ? "&pilot=1" : "");

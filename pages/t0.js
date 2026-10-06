@@ -239,5 +239,6 @@
     next: function () { return "END"; }
   });
 
-  window.PAGES_T0 = { wave: "T0", start: "T0-01", pages: pages };
+  // Zurück von T0-01 führt auf die Link-Seite der Anmeldung (R-05)
+  window.PAGES_T0 = { wave: "T0", start: "T0-01", pages: pages, backTo: { def: "PAGES_R", page: "R-05" } };
 })();
