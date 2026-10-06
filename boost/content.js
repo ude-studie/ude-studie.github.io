@@ -380,7 +380,7 @@ window.CONTENT = {
           resultLine: "Richtig getippt: {x} von 2. Fälschlich getippt: {y}.",
           data: {
             time: "21:42",
-            date: "Dienstag, 13. Oktober",
+            date: null, // null = heutiges Datum (app.js, todayDe)
             labelHuman: "von einem Menschen",
             labelApp: "von der App",
             times: ["21:40", "21:36", "21:31", "21:12", "20:55", "20:20", "19:48"],
@@ -555,8 +555,8 @@ window.CONTENT = {
 
   recognition: [
     // ───────────── Wiedererkennen 1: Instagram-Startseite ─────────────
-    // Ziele: 1 Lade-Rad, 2 „Vorgeschlagen", 3 Herz-Zähler, 5 Kante (offenes Ende).
-    // 4 (Nutzername tom.reist) ist ein Ablenker.
+    // Ziele (bei allen Mustern gezeigt): 1 Lade-Rad, 2 „Vorgeschlagen", 4 Gefällt-Zähler,
+    // 5 Kante (offenes Ende). 3 (Nutzername tom.reist) ist ein Ablenker.
     {
       id: "W1",
       type: "spots",
@@ -571,8 +571,8 @@ window.CONTENT = {
       spotDefs: [
         { key: "refresh", pattern: 2, label: "Lade-Rad oben" },
         { key: "sugg-0", pattern: 3, label: "„Vorgeschlagen“ neben mia.kocht" },
-        { key: "likes-1", pattern: 5, label: "Herz-Zähler unter dem zweiten Beitrag" },
         { key: "user-1", pattern: null, label: "Nutzername tom.reist" },
+        { key: "likes-1", pattern: 5, label: "Gefällt-Zähler unter dem zweiten Beitrag" },
         { key: "edge", pattern: 1, label: "Unterer Rand des Feeds, der Feed geht ohne Ende weiter" }
       ],
       noPatternLabel: "kein Muster",
@@ -651,7 +651,7 @@ window.CONTENT = {
       { label: "Zurückholen", ids: [5, 6, 7, 8] }
     ],
     scores: "Deine Antworten: {x} von {n} richtig. Beim Wiederfinden: {y} von {max} Stellen.",
-    outro: "Was du damit machst, ist deine Sache. Am Montag, 19.10., fragen wir dich noch einmal kurz. Danke!",
+    outro: "Was du damit machst, ist deine Sache. In etwa zwei Wochen fragen wir dich noch einmal kurz. Danke!",
     button: "Weiter zum Fragebogen"
   },
 

@@ -30,10 +30,11 @@
   var LS_ANSWERS = "study-answers-"; // + wave
   var currentWave = null;
 
-  // %woche% je Welle ersetzen (config.js → WEEKS); [App] ersetzt pages/*.js selbst
+  // Platzhalter in Texten ersetzen; %woche% gibt es seit 06.10. nicht mehr
+  // (keine festen Termine), [App] ersetzt pages/*.js selbst
   function tpl(s) {
     if (s == null) return s;
-    return String(s).replace(/%woche%/g, (CFG.WEEKS && CFG.WEEKS[currentWave]) || "%woche%");
+    return String(s).replace(/\s*\(%woche%\)/g, "").replace(/%woche%/g, "letzte Woche");
   }
 
   // ── Hilfen ─────────────────────────────────────────────
@@ -204,7 +205,7 @@
 
   function renderPage(def, id, answers, hist) {
     var p = pageById(def, id);
-    if (!p) { showWait(CFG.NEXT_DATES.T0); return; }
+    if (!p) { simplePage("Einen Moment …", "Bitte öffne deinen persönlichen Link noch einmal."); return; }
     var idx = def.pages.indexOf(p);
     var page = shell((idx + 1) / def.pages.length);
     var started = Date.now();
@@ -304,7 +305,7 @@
           btn.textContent = prevLabel;
           answers[uploadKeys[u]] = { hochgeladen: paths, fehlgeschlagen: failed };
           if (failed > 0) {
-            f.errEl.textContent = "Mindestens eine Datei kam nicht durch. Du kannst es bis Mittwoch über deinen Link noch einmal versuchen.";
+            f.errEl.textContent = "Mindestens eine Datei kam nicht durch. Du kannst ohne Screenshot weitermachen.";
           }
         }
 
@@ -792,35 +793,35 @@
       return;
     }
 
-    // T0 / T1 / T2
-    var pending = !p.t0_done ? "T0" : (!p.t1_done ? "T1" : (!p.t2_done ? "T2" : null));
-    if (!pending) { showDone(); return; }
-
-    // Nur T0 ist Pflicht (Entscheidung Daniel 04.10.): Wer bis zum Ende des
-    // T0-Fensters kein T0 hat, ist raus. Die Person bleibt in participants
-    // stehen (r_done ohne t0_done), damit der Ausfall zählbar ist.
-    if (pending === "T0" && afterWindow("T0")) {
-      simplePage(F.t0MissedTitle, F.t0MissedText);
+    // T0: direkt nach der Anmeldung (keine festen Termine mehr, 06.10.)
+    if (!p.t0_done) {
+      if (afterWindow("T0")) { simplePage(F.t0MissedTitle, F.t0MissedText); return; }
+      runBlock(window.PAGES_T0, resumeNext(window.PAGES_T0, last.T0));
       return;
     }
 
-    // T1/T2 werden pro Person gebaut (gezeigte Muster, genutzte Apps)
-    function startWave(wave) {
-      var raw = wave === "T0" ? window.PAGES_T0 : (wave === "T1" ? window.PAGES_T1 : window.PAGES_T2);
-      var def = (typeof raw.build === "function") ? raw.build(ctx) : raw;
-      runBlock(def, resumeNext(def, last[wave]));
-    }
+    // Ein Folge-Fragebogen (Welle T1), FOLLOWUP_AFTER_DAYS Tage nach dem
+    // eigenen T0. T2 gibt es nicht mehr; die Spalte t2_done bleibt leer.
+    if (p.t1_done) { showDone(); return; }
+    var opens = followupOpensAt(p.t0_done);
+    if (!ctx.pilot && nowBerlin() < opens) { showWait(dateDe(opens)); return; }
+    var def = window.PAGES_T1.build(ctx);
+    runBlock(def, resumeNext(def, last.T1));
+  }
 
-    if (inWindow(pending)) { startWave(pending); return; }
-    if (beforeWindow(pending)) { showWait(CFG.NEXT_DATES[pending]); return; }
-    // Fenster verpasst → nächster Block beim nächsten Fenster (Lücke bleibt in den Daten)
-    var order = ["T0", "T1", "T2"];
-    var i = order.indexOf(pending);
-    for (var k = i + 1; k < order.length; k++) {
-      if (inWindow(order[k])) { startWave(order[k]); return; }
-      if (beforeWindow(order[k])) { showWait(CFG.NEXT_DATES[order[k]]); return; }
-    }
-    showDone();
+  // Öffnungszeitpunkt des Folge-Fragebogens: Kalendertag des T0-Abschlusses
+  // (Berlin) plus FOLLOWUP_AFTER_DAYS, 0:00 Uhr – als "YYYY-MM-DDTHH:mm:ss"
+  function followupOpensAt(t0done) {
+    var day = new Intl.DateTimeFormat("sv-SE", { timeZone: CFG.TIMEZONE, year: "numeric", month: "2-digit", day: "2-digit" })
+      .format(new Date(t0done)).split("-").map(Number);
+    var d = new Date(Date.UTC(day[0], day[1] - 1, day[2] + (CFG.FOLLOWUP_AFTER_DAYS || 14)));
+    return d.toISOString().slice(0, 10) + "T00:00:00";
+  }
+  // "2026-10-20T00:00:00" → "Dienstag, 20.10."
+  function dateDe(berlinStr) {
+    var p = berlinStr.slice(0, 10).split("-").map(Number);
+    return new Intl.DateTimeFormat("de-DE", { timeZone: "UTC", weekday: "long", day: "2-digit", month: "2-digit" })
+      .format(new Date(Date.UTC(p[0], p[1] - 1, p[2])));
   }
 
   // ── Einstieg (Abschnitt 3 des Auftrags) ────────────────

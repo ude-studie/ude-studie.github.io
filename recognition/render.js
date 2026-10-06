@@ -62,6 +62,20 @@
   function mark(html, area) {
     return '<span class="' + (area ? "rec-mark-area" : "rec-mark") + '">' + html + "</span>";
   }
+  // Für absolut positionierte Elemente: Rahmen direkt am Element, nicht an
+  // einer Hülle (eine Hülle hätte die Höhe 0, der Rahmen wäre unsichtbar)
+  function markSelf(html) {
+    return html.replace('class="', 'class="rec-mark-abs ');
+  }
+  // Datum auf nachgestellten Sperrbildschirmen: immer heute
+  function todayDe() {
+    try { return new Intl.DateTimeFormat("de-DE", { weekday: "long", day: "numeric", month: "long" }).format(new Date()); }
+    catch (e) { return ""; }
+  }
+  function igNav() {
+    return '<div class="nav ig-reels-nav" aria-hidden="true"><span>' + ICON.home + "</span><span>" + ICON.search +
+      "</span><span>" + ICON.plus + "</span><span>" + ICON.play + "</span><span>" + ICON.profile + "</span></div>";
+  }
   function igHead(title) {
     return '<div class="ig-head"><span class="ig-plus" aria-hidden="true">' + ICON.plus + "</span>" +
       (title ? '<span class="ig-title">' + esc(title) + "</span>" : "") +
@@ -162,9 +176,16 @@
       '<div class="side"><span>' + (o.markLikes ? mark(ICON.heart + esc(o.likes)) : ICON.heart + esc(o.likes)) + "</span>" +
       "<span>" + ICON.comment + esc(o.comments) + "</span><span>" + ICON.share + esc(o.shares) + "</span></div>" +
       (o.bar ? '<div class="bar"><span class="run" style="animation-duration:6s"></span></div>' : "") +
-      (o.nextHint ? (o.markNext ? mark('<div class="rec-next-hint">' + esc(o.nextHint) + "</div>", true) : '<div class="rec-next-hint">' + esc(o.nextHint) + "</div>") : "") +
-      "</div></div>" + (o.markSeamZone ? mark('<div class="rec-seam-zone"></div>', true) : "") + "</div>";
-    html += ttNav();
+      (o.nextHint ? (o.markNext ? markSelf('<div class="rec-next-hint">' + esc(o.nextHint) + "</div>") : '<div class="rec-next-hint">' + esc(o.nextHint) + "</div>") : "") +
+      "</div></div>";
+    // Endloses Scrollen: das nächste Video ragt unten schon herein, ohne Ende-Markierung
+    if (o.peek) {
+      var peek = '<div class="rec-peek">' + pic(o.peek.picId, "rec-peek-bg") +
+        '<div class="rec-peek-user">' + esc(o.peek.user) + "</div></div>";
+      html += o.markPeek ? markSelf(peek) : peek;
+    }
+    html += "</div>";
+    html += o.nav === "ig" ? igNav() : ttNav();
     return { cls: "tt", html: html };
   };
 
@@ -193,7 +214,7 @@
 
   // Sperrbildschirm mit einer markierten Mitteilung
   B.lock = function (o) {
-    var html = '<div class="lock-clock">' + esc(o.time) + '</div><div class="lock-date">' + esc(o.date) + '</div><div class="lock-list">';
+    var html = '<div class="lock-clock">' + esc(o.time) + '</div><div class="lock-date">' + esc(o.date || todayDe()) + '</div><div class="lock-list">';
     o.items.forEach(function (it) {
       var inner = '<span class="app-icon ' + it.icon + '" aria-hidden="true"></span>' +
         '<span class="note-main"><span class="note-top"><strong>' + esc(it.app) + "</strong><span>" + esc(it.when) + "</span></span>" +
@@ -264,10 +285,11 @@
     },
     "T0-4": function () { // m1: Instagram Reels, endloses Scrollen
       return B.darkVideo({ picId: "rl-skate", user: "timo.rollt", caption: "Erster Versuch nach dem Regen 🛹",
-        likes: "22,4k", comments: "318", shares: "Teilen", markSeamZone: true });
+        likes: "22,4k", comments: "318", shares: "Teilen", nav: "ig",
+        peek: { picId: "rl-skate-next", user: "sam.skatet" }, markPeek: true });
     },
     "T0-5": function () { // m6: Sperrbildschirm, TikTok-Meldung
-      return B.lock({ time: "21:47", date: "Mittwoch, 7. Oktober",
+      return B.lock({ time: "21:47", date: null, 
         items: [
           { app: "TikTok", icon: "ai-tt", when: "vor 12 Min.", text: "🔥 Dein Video von gestern geht gerade ab – sieh nach!", marked: true },
           { app: "Nachrichten", icon: "ai-fb", when: "vor 26 Min.", text: "Mama: Bis Sonntag!" }
@@ -332,7 +354,7 @@
         seam: { user: "stadt.essen", picId: "x-stadt", line: "" }, markSeam: true });
     },
     "T1-4": function () { // m6: Sperrbildschirm, Snapchat-Meldung
-      return B.lock({ time: "18:03", date: "Dienstag, 20. Oktober",
+      return B.lock({ time: "18:03", date: null, 
         items: [
           { app: "Snapchat", icon: "ai-sc", when: "vor 3 Min.", text: "👻 Deine Freunde haben etwas gepostet, das du verpasst hast", marked: true },
           { app: "Kalender", icon: "ai-fb", when: "vor 1 Std.", text: "Morgen 10:00: Statistik-Übung" }
@@ -393,7 +415,7 @@
       return B.snapGearOnTT();
     },
     "T2-3": function () { // m6: Sperrbildschirm, Instagram-Meldung
-      return B.lock({ time: "22:19", date: "Dienstag, 27. Oktober",
+      return B.lock({ time: "22:19", date: null, 
         items: [
           { app: "Instagram", icon: "ai-ig", when: "vor 5 Min.", text: "❤️ deniz.foto und 11 andere haben auf deine Story reagiert", marked: true },
           { app: "Wetter", icon: "ai-x", when: "vor 2 Std.", text: "Morgen früh Regen in Essen" }
@@ -401,7 +423,8 @@
     },
     "T2-4": function () { // m1: TikTok endlos
       return B.darkVideo({ picId: "tt-tanz", user: "jule.moves", caption: "Noch ein Versuch, dann gebe ich auf (gelogen)",
-        likes: "31,7k", comments: "540", shares: "Teilen", markSeamZone: true,
+        likes: "31,7k", comments: "540", shares: "Teilen",
+        peek: { picId: "tt-tanz-next", user: "ben.tanzt" }, markPeek: true,
         tabs: ["Folge ich", "Für dich"], activeTab: 1 });
     },
     "T2-5": function () { // m8: Instagram Story-Ring
@@ -443,7 +466,7 @@
     "T2-11": function () { // m4: Instagram Reels Autoplay
       return B.darkVideo({ picId: "rl-backen", user: "lea.backt", caption: "Der Teig ist IMMER zu klebrig??",
         likes: "12,9k", comments: "207", shares: "Teilen", bar: true, time: "0:02 · läuft",
-        nextHint: "Nächstes Reel startet gleich …", markNext: true });
+        nextHint: "Nächstes Reel startet gleich …", markNext: true, nav: "ig" });
     }
   };
 

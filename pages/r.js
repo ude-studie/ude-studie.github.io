@@ -100,7 +100,8 @@
           { type: "linkbox" },  // persönlicher Link + Kopieren/Startbildschirm/Mail (study.js)
           { type: "text", text: T.r05.abschied }
         ],
-        finishWave: true,  // markDone('R') beim Weiter
+        finishWave: true,  // markDone('R') beim Weiter; der Router startet dann direkt T0
+        nextLabel: "Weiter zum Fragebogen",
         next: function () { return "END"; }
       }
     ]

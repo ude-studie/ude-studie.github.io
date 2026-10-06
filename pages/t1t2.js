@@ -42,7 +42,7 @@
         { type: "text", text: T.start }
       ], next: null });
 
-      // Screenshot (wie T0-04, %woche% je Welle)
+      // Screenshot (wie T0-04, jeweils die letzte Woche)
       pages.push({ id: id(pageNo++), items: [
         { type: "title", text: "Screenshot deiner Bildschirmzeit" },
         { type: "steps", byOs: { ios: T0.t04.schritte_ios, android: T0.t04.schritte_android } },
@@ -143,20 +143,17 @@
         return out;
       }, next: null });
 
-      // Nur T2: zwei offene Fragen
-      if (wave === "T2") {
-        pages.push({ id: id(pageNo++), items: [
-          { type: "title", text: "Zwei Fragen zum Schluss" },
-          { type: "textarea", key: "QU03", label: T.QU03, rows: 5 },
-          { type: "textarea", key: "QU04", label: T.QU04, rows: 5 }
-        ], next: null });
-      }
+      // Zwei offene Fragen zum Schluss (seit 06.10. im einzigen Folge-Fragebogen)
+      pages.push({ id: id(pageNo++), items: [
+        { type: "title", text: "Zwei Fragen zum Schluss" },
+        { type: "textarea", key: "QU03", label: T.QU03, rows: 5 },
+        { type: "textarea", key: "QU04", label: T.QU04, rows: 5 }
+      ], next: null });
 
-      // Ende
-      pages.push({ id: id(pageNo++), items: wave === "T1"
-        ? [{ type: "title", text: T.t1EndTitle }, { type: "text", text: T.t1EndText }]
-        : [{ type: "title", text: T.t2EndTitle }, { type: "text", text: T.t2EndText }],
-        finishWave: true, next: function () { return "END"; } });
+      // Ende der Studie
+      pages.push({ id: id(pageNo++), items: [
+        { type: "title", text: T.t1EndTitle }, { type: "text", text: T.t1EndText }
+      ], finishWave: true, next: function () { return "END"; } });
 
       // next = jeweils nächste Seite in der Liste (Endseite behält END)
       pages.forEach(function (p, i) {
@@ -169,6 +166,6 @@
     };
   }
 
+  // Seit 06.10. gibt es nur einen Folge-Fragebogen (Welle T1, Erkennens-Set T1).
   window.PAGES_T1 = { wave: "T1", build: buildWave("T1") };
-  window.PAGES_T2 = { wave: "T2", build: buildWave("T2") };
 })();

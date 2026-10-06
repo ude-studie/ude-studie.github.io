@@ -56,10 +56,28 @@
 .rec-videobar { position: absolute; left: 0; right: 0; bottom: 0; height: 4px; background: rgba(0,0,0,0.25); display: block; }
 .rec-videobar i { display: block; height: 100%; width: 38%; background: #d6342c; }
 
-/* Dunkler Video-Feed: Hinweis auf nächstes Video + Nahtzone */
+/* Rahmen direkt an absolut positionierten Elementen (markSelf in render.js) */
+.rec-mark-abs { outline: 3px solid #d6342c; outline-offset: 3px; border-radius: 10px; }
+
+/* Dunkler Video-Feed: Hinweis auf nächstes Video */
 .rec-next-hint { position: absolute; left: 50%; transform: translateX(-50%); bottom: 86px;
   background: rgba(255,255,255,0.16); color: #fff; padding: 6px 12px; border-radius: 999px; font-size: 13px; white-space: nowrap; }
-.rec-seam-zone { position: absolute; left: 10px; right: 10px; bottom: 6px; height: 56px; }
+/* Endloses Scrollen: Anfang des nächsten Videos ragt unten ins Bild */
+.rec-peek { position: absolute; left: 0; right: 0; bottom: 0; height: 120px; z-index: 2;
+  border-top: 4px solid #000; overflow: hidden; }
+.rec-peek-bg { position: absolute; inset: 0; }
+.rec-peek-user { position: absolute; left: 14px; top: 12px; color: #fff; font-weight: 700; font-size: 14px;
+  text-shadow: 0 1px 3px rgba(0,0,0,.5); }
+/* Rahmen als oberste Ebene, sonst malt das Videobild darüber */
+.rec-peek.rec-mark-abs { outline: none; }
+.rec-peek.rec-mark-abs::after {
+  content: ""; position: absolute; inset: 5px; z-index: 3;
+  border: 3px solid #d6342c; border-radius: 8px; pointer-events: none;
+}
+/* das aktuelle Video ist schon ein Stück nach oben gewischt */
+.feed:has(.rec-peek) .track { transform: translateY(-120px); }
+/* Instagram-Reels: Leiste nur mit Symbolen */
+.ig-reels-nav span { justify-content: center; }
 
 /* TikTok-Posteingang */
 .rec-inbox { color: #ececec; padding: 0 0 70px; }

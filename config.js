@@ -10,28 +10,17 @@ window.STUDY_CONFIG = {
 
   STORAGE_BUCKET: "screenshots",
 
-  // --- Zeitfenster, jeweils einschließlich, Ortszeit Europe/Berlin ---
+  // --- Ablauf (seit 06.10.: keine festen Termine mehr) ---
+  // Anmeldung, Fragebogen T0, Schulung und Feedback laufen direkt
+  // hintereinander, solange die Anmeldung offen ist. Es gibt EINEN
+  // Folge-Fragebogen (gespeichert als Welle T1), der sich für jede Person
+  // FOLLOWUP_AFTER_DAYS Tage nach ihrem T0 öffnet (ab 0:00 Uhr Berlin).
   TIMEZONE: "Europe/Berlin",
   WINDOWS: {
-    R:  { from: "2026-10-01T00:00:00", to: "2026-10-14T23:59:59" }, // "ab sofort"
-    T0: { from: "2026-10-12T00:00:00", to: "2026-10-14T23:59:59" },
-    T1: { from: "2026-10-19T00:00:00", to: "2026-10-21T23:59:59" },
-    T2: { from: "2026-10-26T00:00:00", to: "2026-10-28T23:59:59" }
+    R:  { from: "2026-10-01T00:00:00", to: "2026-12-31T23:59:59" },
+    T0: { from: "2026-10-01T00:00:00", to: "2026-12-31T23:59:59" }
   },
-
-  // %woche% je Welle (T0-03, Screenshot-Seiten, KG/RE-Items)
-  WEEKS: {
-    T0: "05. bis 11.10.",
-    T1: "12. bis 18.10.",
-    T2: "19. bis 25.10."
-  },
-
-  // Für Wartesite und Abschlusstexte
-  NEXT_DATES: {
-    T0: "Montag, 12.10.",
-    T1: "Montag, 19.10.",
-    T2: "Montag, 26.10."
-  },
+  FOLLOWUP_AFTER_DAYS: 14,
 
   // --- Code-System ---
   CODE_ALPHABET: "23456789ABCDEFGHJKLMNPQRSTUVWXYZ", // keine 0/O/1/I

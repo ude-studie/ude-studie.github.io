@@ -462,16 +462,14 @@ button, input { font: inherit; }
   background-size: cover;
   background-position: center;
 }
-/* Bild als eigene Ebene mit langsamem Zoom, damit es nach Video aussieht */
+/* Videobild als eigene Ebene; steht still (kein Zoom, Feedback 06.10.) */
 .tt .post, .rl .post { overflow: hidden; }
 .post-bg {
   position: absolute;
   inset: 0;
   background-size: cover;
   background-position: center;
-  animation: kenburns 15s ease-in-out infinite alternate;
 }
-@keyframes kenburns { from { transform: scale(1); } to { transform: scale(1.12) translate(-1.5%, -1%); } }
 /* dunkler Verlauf unten, damit weiße Schrift auf hellen Bildern lesbar bleibt */
 .tt .post::after, .rl .post::after {
   content: "";
@@ -624,16 +622,38 @@ button, input { font: inherit; }
   gap: 10px;
   padding: 8px 14px;
 }
-.ig-post-head .user { font-weight: 600; position: relative; }
-.ig-post-head .sugg { margin-left: auto; font-size: 0.8125rem; color: #555; position: relative; }
+.ig-post-head .avatar { width: 34px; height: 34px; flex: 0 0 auto; box-shadow: 0 0 0 2px #fff, 0 0 0 4px #d6d9de; }
+.ig-who { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; min-width: 0; }
+.ig-post-head .user { font-weight: 600; font-size: 0.875rem; position: relative; }
+.ig-post-head .sugg { font-size: 0.75rem; color: #555; position: relative; }
+.ig-dots { margin-left: auto; font-size: 1.25rem; line-height: 1; color: #111; letter-spacing: 1px; }
 .ig-img { height: 300px; background-size: cover; background-position: center; }
 .ig-img.short { height: 60px; }
-/* Muster 1 in Instagram: Zone um den Übergang zwischen zwei Beiträgen (Ziel der Markierung) */
-/* reicht von der Zeile unter Beitrag 41 bis unter die Kopfzeile von Beitrag 42, damit die Umrandung keinen Text schneidet */
-.ig-seam { position: relative; height: 92px; margin: -38px 0 -54px; pointer-events: none; }
-.w1 .ig-img { height: 150px; }
-.w1 .ig-img.short { height: 48px; }
-.ig-line { position: relative; padding: 6px 14px 10px; font-size: 0.9375rem; }
+/* Aktionsleiste und Texte unter dem Bild wie bei Instagram */
+.ig-actions { display: flex; align-items: center; gap: 14px; padding: 9px 14px 2px; color: #111; }
+.ig-actions svg { width: 24px; height: 24px; }
+.ig-actions .ig-save { margin-left: auto; display: inline-flex; }
+.ig-line { position: relative; padding: 4px 14px 0; font-size: 0.875rem; min-height: 4px; }
+.ig-likes { font-weight: 600; }
+.ig-cap { padding: 3px 14px 12px; font-size: 0.875rem; line-height: 1.4; }
+.ig-cap b { font-weight: 600; }
+.ig-refresh-in { display: inline-flex; align-items: center; gap: 8px; }
+/* Muster 2, Zustand B: die Meldung ersetzt den Hinweistext, statt ihn zu überdecken */
+.ig-refresh:has(.toast) .ig-refresh-in > span:last-child { visibility: hidden; }
+/* Untere Leiste: steht unten im Screen, auch wenn der Inhalt scrollt */
+/* z-index über den Nummern (.spot: 3), damit keine Nummer über der Leiste schwebt */
+.ig-nav {
+  position: sticky; bottom: 0; z-index: 5;
+  display: flex; justify-content: space-around; align-items: center;
+  height: 50px; background: #fff; border-top: 1px solid var(--line); color: #111;
+}
+.ig-nav svg { width: 26px; height: 26px; }
+.ig-nav .ig-nav-av { width: 26px; height: 26px; font-size: 0.75rem; }
+/* Muster 1 in Instagram: Zone um den Übergang zwischen zwei Beiträgen (Ziel der Markierung),
+   vom Ende der Bildunterschrift bis unter die Kopfzeile des nächsten Beitrags */
+.ig-seam { position: relative; height: 62px; margin: -10px 0 -52px; pointer-events: none; }
+.w1 .ig-img { height: 180px; }
+.w1 .ig-img.short { height: 56px; }
 
 /* ── Vorlage: Instagram-Stories (Muster 8) ─────────────── */
 .st-bar { display: flex; gap: 12px; padding: 10px 12px 4px; overflow: hidden; }
@@ -820,23 +840,27 @@ button.spot[aria-pressed="true"] > span { box-shadow: 0 0 0 2px #fff, 0 0 0 6px 
 .spot.target > span { background: var(--human); }
 .spot.miss > span { background: #6b7280; }
 .spot.mine > span { box-shadow: 0 0 0 2px #fff, 0 0 0 6px var(--select); }
-/* Marker sitzen IM Element, direkt neben dem, was sie bezeichnen
-   (Feedback-Call 05.10.: Positionen müssen exakt stimmen) */
-.spot-refresh, .spot-sugg-0, .spot-likes-1, .spot-user-1 {
-  position: static;
+/* Jede Stelle ist ein gestrichelt umrahmtes Element; die Nummer sitzt auf
+   der Ecke des Rahmens, so ist eindeutig, wozu sie gehört (Feedback 06.10.) */
+.w1t {
+  position: relative;
   display: inline-flex;
-  vertical-align: middle;
-  margin-left: 6px;
-  transform: none;
+  align-items: center;
+  outline: 2px dashed var(--primary);
+  outline-offset: 4px;
+  border-radius: 6px;
 }
-.ig-more { position: relative; }
-.ig-more .spot-edge { left: 50%; top: 4px; transform: translateX(-50%); }
-.ig-more::before {
-  content: "";
+.w1t > .spot {
   position: absolute;
-  left: 0; right: 0; top: 0;
-  border-top: 2px dashed #b8bec6;
+  top: 50%; right: -42px;
+  transform: translateY(-50%);
+  width: 36px; height: 36px;
 }
+.w1t > .spot > span { width: 26px; height: 26px; font-size: 0.875rem; }
+.w1t.w1t-left > .spot { right: auto; left: -24px; }
+.w1t.w1t-block { display: block; outline-offset: -3px; border-radius: 8px; }
+.w1t.w1t-block > .spot { top: -14px; right: auto; left: 50%; transform: translateX(-50%); }
+.ig-more { position: relative; }
 
 /* ── Wiedererkennen 2: drei Meldungen ──────────────────── */
 .cards { background: #fff; color: #111; }
@@ -955,13 +979,22 @@ div.card { cursor: default; }
 .story-reply svg { width: 22px; height: 22px; fill: #fff; }
 
 /* Wiederfinden 2: Mensch/App-Auswahl je Meldung */
-.w2-card { border: 1px solid #d7dce2; margin: 0; padding: 12px; }
-.w2-choice { display: flex; gap: 8px; margin-top: 10px; width: 100%; }
-.w2-choice label { flex: 1; cursor: pointer; }
+.w2-card {
+  display: block; min-width: 0; margin: 0; padding: 14px;
+  border: 1px solid #d7dce2; border-radius: 14px; background: #fff;
+}
+.w2-card.is-good { border-color: #9cc9a7; }
+.w2-card.is-wrong { border-color: #e2b4b4; }
+.w2-top { display: flex; align-items: flex-start; gap: 12px; }
+.w2-top .app-icon { flex: 0 0 auto; width: 36px; height: 36px; border-radius: 9px; }
+.w2-top .card-text { flex: 1 1 auto; min-width: 0; }
+.w2-choice { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
+.w2-choice label { position: relative; cursor: pointer; }
 .w2-choice input { position: absolute; opacity: 0; }
 .w2-choice span {
-  display: block; text-align: center; padding: 9px 6px;
-  border: 1px solid #c6cdd6; border-radius: 9px; font-size: 0.875rem; background: #fff;
+  display: flex; align-items: center; justify-content: center; height: 100%; min-height: 44px;
+  text-align: center; padding: 8px 6px; line-height: 1.25;
+  border: 1px solid #c6cdd6; border-radius: 10px; font-size: 0.875rem; background: #fff;
 }
 .w2-choice input:checked + span {
   background: var(--primary); color: #fff; border-color: var(--primary); font-weight: 600;

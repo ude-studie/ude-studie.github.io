@@ -1,7 +1,7 @@
 /*
  * items.js – alle Fragetexte, Skalen und Anker der Studie.
  * Nichts davon steht hartcodiert in der Logik. Wortlaute aus Auftrag v3.
- * %woche% wird zur Laufzeit je Welle ersetzt (config.js → WEEKS).
+ * Keine festen Termine (seit 06.10.): Folge-Fragebogen etwa zwei Wochen nach T0.
  *
  * Stand: Block R komplett (Abnahme 1). T0/FB/T1/T2 folgen in Abnahme 2/3.
  */
@@ -18,10 +18,10 @@ window.ITEMS = {
   // ── Rahmentexte (Router, Wartesite, Code-Seiten) ───────
   frame: {
     waitTitle: "Danke!",
-    // %datum% wird ersetzt, z. B. "Montag, 19.10."
-    waitText: "Danke, dein nächster Termin ist %datum% Du bekommst eine Erinnerung per Mail.",
+    // %datum% wird je Person ersetzt (T0-Abschluss + 14 Tage), z. B. "Dienstag, 20.10."
+    waitText: "Danke! Dein zweiter Fragebogen ist ab %datum% für dich freigeschaltet, etwa zwei Wochen nach deinem ersten. Du bekommst dann eine Erinnerung per Mail.",
     doneTitle: "Das war's.",
-    doneText: "Du hast alle Termine geschafft. Deine persönliche Auswertung kommt nach dem 28.10. per Mail.",
+    doneText: "Du hast alles geschafft. Deine persönliche Auswertung kommt nach dem Ende der Studie per Mail.",
     unknownCodeTitle: "Code unbekannt",
     unknownCodeText: "Diesen Code kennen wir nicht. Prüfe den Link aus deiner Mail oder gib deinen Code ein.",
     codeInputLabel: "Dein Code (6 Zeichen)",
@@ -30,7 +30,7 @@ window.ITEMS = {
     startNew: "Ich bin neu",
     startHaveCode: "Ich habe schon einen Code",
     t0MissedTitle: "Danke für dein Interesse",
-    t0MissedText: "Die Studie hat ohne dich begonnen, danke trotzdem für dein Interesse.",
+    t0MissedText: "Die Anmeldung zur Studie ist inzwischen geschlossen. Danke trotzdem für dein Interesse.",
     offlineHint: "Verbindung schwach, deine Antworten werden gespeichert, sobald sie wieder da ist.",
     noConnectionRegister: "Gerade besteht keine Verbindung zum Server. Bitte öffne die Seite später noch einmal – die Anmeldung braucht einmal kurz Internet.",
     registrationClosed: "Die Anmeldung zur Studie ist leider geschlossen."
@@ -40,7 +40,7 @@ window.ITEMS = {
   R: {
     r01: {
       title: "Schön, dass du da bist",
-      text: "Danke, dass du dabei bist. Diese Studie untersucht eine kurze Online-Schulung darüber, wie Social-Media-Apps gebaut sind. Was auf dich zukommt: heute 3 Minuten Anmeldung. Am Montag, 12.10., ein Fragebogen und die Schulung (zusammen etwa 35 Minuten). Am 19.10. und am 26.10. je ein kürzerer Fragebogen (10 bis 12 Minuten). Alles am Handy. Du bekommst am Ende deine eigene Bildschirmzeit über die drei Wochen als kleine Auswertung.",
+      text: "Danke, dass du dabei bist. Diese Studie untersucht eine kurze Online-Schulung darüber, wie Social-Media-Apps gebaut sind. Was auf dich zukommt: jetzt eine kurze Anmeldung, ein Fragebogen und die Schulung (zusammen etwa 40 Minuten, am besten am Stück). Etwa zwei Wochen später ein zweiter, kürzerer Fragebogen (10 bis 15 Minuten). Alles am Handy. Am Ende bekommst du deine eigene Bildschirmzeit als kleine Auswertung.",
       infoLink: "Teilnahmeinformation und Datenschutz",
       infoHref: "teilnahme.html",
       EW01: "Ich habe die Teilnahmeinformation gelesen und willige ein, an der Studie teilzunehmen.",
@@ -64,13 +64,7 @@ window.ITEMS = {
         { v: "ios", label: "iPhone" },
         { v: "android", label: "Android" },
         { v: "anderes", label: "anderes" }
-      ],
-      SC05: "Hast du vor, an allen drei Terminen teilzunehmen (12.10., 19.10., 26.10.)?",
-      SC05_options: [
-        { v: "ja", label: "Ja" },
-        { v: "eher_nicht", label: "Eher nicht" }
-      ],
-      SC05_hinweis: "Dann ist die Studie wahrscheinlich nichts für dich. Du kannst trotzdem weitermachen."
+      ]
     },
     rx: {
       title: "Danke für dein Interesse",
@@ -78,7 +72,7 @@ window.ITEMS = {
     },
     r03: {
       title: "Deine E-Mail",
-      EM01: "Deine E-Mail-Adresse. Wir nutzen sie nur für die drei Erinnerungen und die Auswertung am Ende, getrennt von deinen Antworten.",
+      EM01: "Deine E-Mail-Adresse. Wir nutzen sie nur für die Erinnerung an den zweiten Fragebogen und die Auswertung am Ende, getrennt von deinen Antworten.",
       error: "Das sieht nicht nach einer E-Mail-Adresse aus. Bitte prüfe die Eingabe."
     },
     r04: {
@@ -91,20 +85,20 @@ window.ITEMS = {
         { v: "jetzt_eingeschaltet", label: "Jetzt eingeschaltet" },
         { v: "finde_ich_nicht", label: "Finde ich nicht" }
       ],
-      findehilfe_ios: "Kein Problem. Öffne die Einstellungen-App (graues Zahnrad) und tippe in der Liste auf „Bildschirmzeit“. Wenn dort „Bildschirmzeit aktivieren“ steht, tippe darauf und bestätige. Falls du es jetzt nicht findest: Wir versuchen es am 12.10. einfach noch einmal zusammen.",
-      findehilfe_android: "Kein Problem. Öffne die Einstellungen-App und tippe oben in die Suche. Such nach „Wohlbefinden“ (Samsung) oder „Digital Wellbeing“. Öffne den Eintrag einmal, dann beginnt dein Handy zu zählen. Falls du es jetzt nicht findest: Wir versuchen es am 12.10. einfach noch einmal zusammen."
+      findehilfe_ios: "Kein Problem. Öffne die Einstellungen-App (graues Zahnrad) und tippe in der Liste auf „Bildschirmzeit“. Wenn dort „Bildschirmzeit aktivieren“ steht, tippe darauf und bestätige. Falls du es jetzt nicht findest, mach einfach weiter.",
+      findehilfe_android: "Kein Problem. Öffne die Einstellungen-App und tippe oben in die Suche. Such nach „Wohlbefinden“ (Samsung) oder „Digital Wellbeing“. Öffne den Eintrag einmal, dann beginnt dein Handy zu zählen. Falls du es jetzt nicht findest, mach einfach weiter."
     },
     r05: {
       title: "Dein Link",
-      text: "Das ist dein persönlicher Link. Öffne ihn an jedem Termin. Er enthält deinen Code, du musst dir nichts merken.",
+      text: "Das ist dein persönlicher Link. Speichere ihn dir: In etwa zwei Wochen öffnest du damit den zweiten Fragebogen. Er enthält deinen Code, du musst dir nichts merken.",
       copy: "Link kopieren",
       copied: "Kopiert!",
       homescreen: "Zum Startbildschirm hinzufügen",
       homescreen_ios: "Öffne diesen Link in Safari und tippe unten auf das Teilen-Symbol (Viereck mit Pfeil). Wähle „Zum Home-Bildschirm“, dann liegt die Studie wie eine App auf deinem Startbildschirm.",
       homescreen_android: "Tippe in Chrome oben rechts auf die drei Punkte. Wähle „Zum Startbildschirm hinzufügen“, dann liegt die Studie wie eine App auf deinem Startbildschirm.",
       mail: "Ich habe den Link per Mail bekommen",
-      mail_hinweis: "Gut – jede Erinnerungsmail enthält genau diesen Link. Du kannst ihn einfach immer aus der neuesten Mail öffnen.",
-      abschied: "Bis Montag, 12.10. Du bekommst am Sonntagabend eine Erinnerung."
+      mail_hinweis: "Gut – die Erinnerungsmail enthält genau diesen Link. Du kannst ihn einfach aus der Mail öffnen.",
+      abschied: "Jetzt geht es direkt weiter mit dem ersten Fragebogen."
     }
   }
 };
@@ -112,8 +106,8 @@ window.ITEMS = {
 // ── Block T0: Fragebogen (Wortlaute aus Auftrag v3, Abschnitt 5) ──────────
 window.ITEMS.T0 = {
   t01: {
-    title: "Willkommen zurück",
-    text: "Schön, dass du wieder da bist. Heute: Fragebogen (etwa 15 Minuten) und direkt danach die Schulung (15 bis 20 Minuten). Bitte am Stück."
+    title: "Der erste Fragebogen",
+    text: "Jetzt kommt der erste Fragebogen (etwa 15 Minuten) und direkt danach die Schulung (15 bis 20 Minuten). Bitte am Stück."
   },
   t02: {
     AP01: "Welche dieser Apps nutzt du? Wähl alle aus, die du mindestens ab und zu öffnest.",
@@ -127,13 +121,13 @@ window.ITEMS.T0 = {
     ]
   },
   t03: {
-    NU01: "Wie viele Minuten pro Tag hast du in der letzten Woche (%woche%) ungefähr in diesen Apps zusammen verbracht? Bitte schätze, ohne nachzusehen."
+    NU01: "Wie viele Minuten pro Tag hast du in der letzten Woche ungefähr in diesen Apps zusammen verbracht? Bitte schätze, ohne nachzusehen."
   },
   t04: {
     schritte_ios: [
       "Einstellungen → Bildschirmzeit",
       "Alle Aktivitäten anzeigen",
-      "Oben „Woche“ wählen und mit dem Pfeil zur Woche %woche% blättern",
+      "Oben „Woche“ wählen und mit dem Pfeil zur letzten Woche zurückblättern",
       "Screenshot, auf dem die App-Liste mit Minuten zu sehen ist"
     ],
     zusatz_ios: "Wenn nicht alle deine Apps sichtbar sind, scrolle und mache einen zweiten Screenshot.",
@@ -147,7 +141,7 @@ window.ITEMS.T0 = {
     zusatz_android: "Wenn dein Handy nur Tageswerte zeigt: je ein Screenshot pro Tag ist zu viel, mach nur den der Wochenansicht, falls es sie gibt, sonst den der letzten 7 Tage im Akku- oder Nutzungsmenü.",
     SU01: "Konntest du den Screenshot machen?",
     SU02_label: "Screenshot hochladen (bis 3 Dateien, je 10 MB)",
-    SU02_hinweis_leer: "Ohne Screenshot fehlt uns der wichtigste Wert. Du kannst ihn bis Mittwoch über deinen Link nachreichen.",
+    SU02_hinweis_leer: "Ohne Screenshot fehlt uns der wichtigste Wert. Wenn es gerade nicht klappt, kannst du trotzdem weitermachen.",
     SU03: "Warum nicht?",
     SU03_options: [
       { v: "aus", label: "Bildschirmzeit ist aus" },
@@ -159,7 +153,7 @@ window.ITEMS.T0 = {
   },
   t05: {
     intro: "Tipp bitte die Wochenwerte aus deinem Bericht ab, für jede deiner Apps.",
-    MI01: "Minuten in der Woche %woche%",
+    MI01: "Minuten in der letzten Woche",
     MI01_hinweis: "Stunden und Minuten? Rechne um: 5 Std 12 Min = 312",
     OE01: "Öffnungen (falls angezeigt)",
     MI01_total: "Gesamt-Bildschirmzeit der Woche, falls angezeigt"
@@ -193,9 +187,9 @@ window.ITEMS.T0 = {
     SF01_03: "… dazu führt, dass du andere Dinge aufschiebst, die du tun willst oder musst?"
   },
   kgre: {
-    KG01: "Wie sehr hattest du in der letzten Woche (%woche%) das Gefühl, selbst zu bestimmen, wie du deine Zeit in [App] verbringst?",
+    KG01: "Wie sehr hattest du in der letzten Woche das Gefühl, selbst zu bestimmen, wie du deine Zeit in [App] verbringst?",
     KG01_anker: ["überhaupt nicht", "völlig"],
-    RE01: "Wie oft hast du in der letzten Woche (%woche%) die Zeit bereut, die du in [App] verbracht hast?",
+    RE01: "Wie oft hast du in der letzten Woche die Zeit bereut, die du in [App] verbracht hast?",
     RE01_skala: [
       { v: 1, label: "1 – nie" }, { v: 2, label: "2 – selten" },
       { v: 3, label: "3 – manchmal" }, { v: 4, label: "4 – oft" },
@@ -267,14 +261,14 @@ window.ITEMS.FB = {
   FB04: "Was war unklar oder überflüssig?",
   FB05: "Wie willst du jetzt damit umgehen?",
   endTitle: "Danke!",
-  endText: "Danke! Am Montag, 19.10., kommt der zweite Fragebogen (etwa 10 Minuten). Mach dann bitte wieder einen Screenshot deiner Bildschirmzeit für die Woche 12. bis 18.10. Du bekommst eine Erinnerung."
+  endText: "Danke! In etwa zwei Wochen kommt der zweite und letzte Fragebogen (10 bis 15 Minuten). Mach dann bitte wieder einen Screenshot deiner Bildschirmzeit für die letzte Woche. Du bekommst eine Erinnerung per Mail."
 };
 
 // ── Blöcke T1/T2 (Auftrag v3, Abschnitt 5) ────────────────────────────────
 window.ITEMS.T12 = {
-  start: "Willkommen zurück. Heute etwa 10 Minuten.",
+  start: "Willkommen zurück. Das ist der zweite und letzte Fragebogen, etwa 10 bis 15 Minuten.",
   startTitle: "Willkommen zurück",
-  SH01: "Hast du seit dem 12.10. etwas an deinem Handy oder in deinen Apps geändert?",
+  SH01: "Hast du seit der Schulung etwas an deinem Handy oder in deinen Apps geändert?",
   SH01_options: [
     { v: "zeitlimit", label: "Zeitlimit für eine App gesetzt" },
     { v: "benachrichtigungen", label: "Benachrichtigungen einer App ausgeschaltet" },
@@ -285,10 +279,8 @@ window.ITEMS.T12 = {
     { v: "anderes", label: "anderes", text: true }
   ],
   SH02: "Magst du einen Screenshot davon hochladen?",
-  t1EndTitle: "Danke!",
-  t1EndText: "Danke! Letzter Termin: Montag, 26.10. Wieder mit Screenshot für die Woche 19. bis 25.10.",
+  t1EndTitle: "Das war's.",
+  t1EndText: "Das war's. Danke fürs Mitmachen. Deine persönliche Auswertung kommt nach dem Ende der Studie per Mail.",
   QU03: "Hat sich in den letzten zwei Wochen etwas daran verändert, wie du deine Apps nutzt oder wie du sie wahrnimmst? Was, und woran lag es?",
-  QU04: "Was glaubst du, wollte diese Studie herausfinden?",
-  t2EndTitle: "Das war's.",
-  t2EndText: "Das war's. Danke fürs Durchhalten. Deine persönliche Auswertung kommt nach dem 28.10. per Mail."
+  QU04: "Was glaubst du, wollte diese Studie herausfinden?"
 };

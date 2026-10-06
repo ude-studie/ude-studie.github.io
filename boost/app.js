@@ -386,6 +386,12 @@
     profile: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a4.5 4.5 0 110 9 4.5 4.5 0 010-9zm0 11c5 0 8 2.5 8 6v1H4v-1c0-3.5 3-6 8-6z"/></svg>',
     play: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M10 8l6 4-6 4z"/></svg>',
     check: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.5 16.2L5.3 12l-1.4 1.4 5.6 5.6L20.1 8.4 18.7 7z"/></svg>',
+    commentLine: '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" d="M20.5 11.5a8.5 8.5 0 01-12.4 7.6L3.5 20.5l1.4-4.4A8.5 8.5 0 1120.5 11.5z"/></svg>',
+    bookmark: '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" d="M6 3h12v18l-6-5-6 5z"/></svg>',
+    reels: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5" fill="none" stroke="currentColor" stroke-width="2"/><path fill="none" stroke="currentColor" stroke-width="2" d="M3 8.5h18M8 3l3 5.5M14 3l3 5.5"/><path d="M10 12l5 3-5 3z"/></svg>',
+    plusSquare: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5" fill="none" stroke="currentColor" stroke-width="2"/><path fill="none" stroke="currentColor" stroke-width="2" d="M12 7.5v9M7.5 12h9"/></svg>',
+    homeLine: '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" d="M3.5 10.5L12 3.5l8.5 7V20.5h-6v-6h-5v6h-6z"/></svg>',
+    searchLine: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="2"/><path stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M15.5 15.5l5 5"/></svg>',
     status: '<svg viewBox="0 0 58 14" aria-hidden="true"><rect x="0" y="9" width="3" height="5" rx="1"/><rect x="5" y="6" width="3" height="8" rx="1"/><rect x="10" y="3" width="3" height="11" rx="1"/><rect x="15" y="0" width="3" height="14" rx="1"/><path d="M27 4.5a9 9 0 0112 0l-1.4 1.5a7 7 0 00-9.2 0zM29.4 7.2a5.5 5.5 0 017.2 0L35.2 8.7a3.5 3.5 0 00-4.4 0zM33 12.5l-1.7-1.8a2.4 2.4 0 013.4 0z"/><rect x="42" y="2" width="14" height="10" rx="3" fill="none" stroke="currentColor" stroke-width="1.4"/><rect x="44" y="4" width="9" height="6" rx="1.5"/></svg>'
   };
   function iconClass(key) { return (C.apps[key] || {}).icon || ""; }
@@ -403,6 +409,12 @@
     return '<div class="nav" aria-hidden="true">' + d.nav.map(function (n, i) {
       return '<span class="' + (i === 2 ? "plus" : "") + '">' + navIcons[i] + (i === 2 ? "" : esc(n)) + "</span>";
     }).join("") + "</div>";
+  }
+
+  // Datum des Sperrbildschirms: immer heute, z. B. „Dienstag, 6. Oktober"
+  function todayDe() {
+    try { return new Intl.DateTimeFormat("de-DE", { weekday: "long", day: "numeric", month: "long" }).format(new Date()); }
+    catch (e) { return ""; }
   }
 
   // „0:02 · läuft" → 2 Sekunden
@@ -462,29 +474,47 @@
       render: function (p, isB, opt) {
         var d = p.data;
         var spot = (opt && opt.spot) || function () { return ""; };
+        // Wiederfinden 1: Element gestrichelt umrahmen, Nummer sitzt auf der Ecke des Rahmens
+        var tgt = function (key, inner, cls) {
+          var s = spot(key);
+          return s ? '<span class="w1t ' + (cls || "") + '">' + inner + s + "</span>" : inner;
+        };
         var markAttr = function (key) { return isB && d.mark === key ? ' data-mark="' + (d.markPlace || "below") + '"' : ""; };
         var html = igHead(d);
         html += '<div class="ig-content' + (opt && opt.animate && d.toast ? " settle" : "") + '">';
         if (d.refresh) {
-          html += '<div class="ig-refresh"' + markAttr("refresh") + '><span class="spinner" aria-hidden="true"></span><span>' + esc(d.refresh) + "</span>" +
+          html += '<div class="ig-refresh"' + markAttr("refresh") + ">" +
+            tgt("refresh", '<span class="ig-refresh-in"><span class="spinner" aria-hidden="true"></span><span>' + esc(d.refresh) + "</span></span>") +
             (isB && d.toast ? '<span class="toast' + (opt && opt.animate ? " fade-in" : "") + '">' + esc(d.toast) + "</span>" : "") +
-            spot("refresh") + "</div>";
+            "</div>";
         }
         var posts = d.scrollFeed && isB ? d.posts.slice(1) : d.posts;
         posts.forEach(function (post, j) {
           var i = d.scrollFeed && isB ? j + 1 : j;
           if (d.scrollFeed && isB && i === 2) html += '<div class="ig-seam"' + markAttr("seam-1") + "></div>";
+          // „♡ 1.204 · Pasta in 10 Minuten" → Gefällt-Zeile + Bildunterschrift wie bei Instagram
+          var m = /^♡\s*([^·]+?)\s*·\s*(.*)$/.exec(post.line || "");
+          var likes = m ? m[1] : "", cap = m ? m[2] : (post.line || "");
           html += '<div class="ig-post"><div class="ig-post-head"' + markAttr("head-" + i) + ">" + avatar(post.user) +
-            '<span class="user">' + esc(post.user) + spot("user-" + i) + "</span>" +
-            (post.suggested ? '<span class="sugg">' + esc(post.suggested) + spot("sugg-" + i) + "</span>" : "") + "</div>" +
+            '<span class="ig-who">' + tgt("user-" + i, '<span class="user">' + esc(post.user) + "</span>") +
+            (post.suggested ? tgt("sugg-" + i, '<span class="sugg">' + esc(post.suggested) + "</span>") : "") + "</span>" +
+            '<span class="ig-dots" aria-hidden="true">⋯</span></div>' +
             '<div class="ig-img"' + assetAttr(post.asset) + "></div>" +
-            '<div class="ig-line">' + esc(post.line) + spot("likes-" + i) + "</div></div>";
+            '<div class="ig-actions" aria-hidden="true">' + ICON.heartLine + ICON.commentLine + ICON.send +
+            '<span class="ig-save">' + ICON.bookmark + "</span></div>" +
+            '<div class="ig-line">' + (likes ? tgt("likes-" + i, '<b class="ig-likes">Gefällt ' + esc(likes) + " Mal</b>") : "") + "</div>" +
+            (cap ? '<div class="ig-cap"><b>' + esc(post.user) + "</b> " + esc(cap) + "</div>" : "") + "</div>";
         });
         if (d.more) {
-          html += '<div class="ig-post ig-more">' + spot("edge") + '<div class="ig-post-head">' + avatar(d.more.user) + '<span class="user">' +
-            esc(d.more.user) + '</span></div><div class="ig-img short"' + assetAttr(d.more.asset) + "></div></div>";
+          html += tgt("edge", '<div class="ig-post ig-more"><div class="ig-post-head">' + avatar(d.more.user) + '<span class="user">' +
+            esc(d.more.user) + '</span><span class="ig-dots" aria-hidden="true">⋯</span></div><div class="ig-img short"' +
+            assetAttr(d.more.asset) + "></div></div>", "w1t-block");
         }
-        return html + "</div>";
+        html += "</div>";
+        // Untere Leiste wie bei Instagram (nur Symbole)
+        html += '<div class="ig-nav" aria-hidden="true">' + ICON.homeLine + ICON.searchLine + ICON.plusSquare + ICON.reels +
+          avatar("du", "ig-nav-av") + "</div>";
+        return html;
       },
       toB: function (body, p) {
         if (p.data.scrollFeed) {
@@ -561,7 +591,7 @@
       render: function (p, isB, opt) {
         var d = p.data;
         var r = state.patterns[p.id];
-        var html = isB ? "" : '<div class="lock-clock">' + esc(d.time) + '</div><div class="lock-date">' + esc(d.date) + "</div>";
+        var html = isB ? "" : '<div class="lock-clock">' + esc(d.time) + '</div><div class="lock-date">' + esc(d.date || todayDe()) + "</div>";
         html += '<div class="lock-list">';
         d.items.forEach(function (it, i) {
           var n = i + 1;
@@ -1049,11 +1079,12 @@
       var cards = w2Cards(it);
       middle = '<div class="cards-list">' + cards.map(function (c, i) {
         var n = i + 1;
-        var inner = '<span class="app-icon ' + iconClass(c.app) + '" aria-hidden="true"></span>' +
-          '<span class="card-text"><strong>' + esc(appLabel(c.app)) + "</strong><span>" + esc(c.text) + "</span></span>";
+        // Kopf (App-Symbol + Meldung) über die volle Breite, darunter Auswahl bzw. Auflösung
+        var inner = '<div class="w2-top"><span class="app-icon ' + iconClass(c.app) + '" aria-hidden="true"></span>' +
+          '<span class="card-text"><strong>' + esc(appLabel(c.app)) + "</strong><span>" + esc(c.text) + "</span></span></div>";
         if (!isB) {
-          // je Meldung zwei Optionen: Von einem Menschen / Von der App
-          return '<fieldset class="card w2-card"><legend class="sr-only">' + esc(c.text) + "</legend>" + inner +
+          // je Meldung zwei gleich breite Optionen: Von einem Menschen / Von der App
+          return '<fieldset class="w2-card"><legend class="sr-only">' + esc(c.text) + "</legend>" + inner +
             '<div class="w2-choice" role="radiogroup">' +
             '<label><input type="radio" name="w2-' + n + '" value="human"><span>' + esc(it.labelHuman) + "</span></label>" +
             '<label><input type="radio" name="w2-' + n + '" value="app"><span>' + esc(it.labelApp) + "</span></label>" +
@@ -1063,7 +1094,7 @@
         var ok = a && a.correct;
         var verdict = exportMode || !a ? "" :
           '<span class="w2-verdict ' + (ok ? "good" : "neutral") + '">' + esc(ok ? it.verdictRight : it.verdictWrong) + "</span>";
-        return '<div class="card w2-card solved">' + inner +
+        return '<div class="w2-card solved' + (a && !exportMode ? (ok ? " is-good" : " is-wrong") : "") + '">' + inner +
           '<div class="w2-why">' + verdict + esc((a && !exportMode ? (c.human ? it.labelHuman : it.labelApp) + ". " : "") + c.why) + "</div></div>";
       }).join("") + "</div>";
     }
