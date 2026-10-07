@@ -18,9 +18,9 @@ window.ITEMS = {
   // ── Rahmentexte (Router, Wartesite, Code-Seiten) ───────
   frame: {
     waitTitle: "Vielen Dank",
-    waitText: "Dein zweiter Fragebogen wird in etwa zwei Wochen für dich freigeschaltet. Du bekommst dann eine Erinnerung per Mail.",
+    waitText: "In etwa zwei Wochen folgt der zweite und letzte Fragebogen (etwa %dauer_t1% Minuten). Du bekommst dann eine Erinnerung per Mail. Mach dafür bitte wieder einen Screenshot deiner Bildschirmzeit für die letzte Woche.",
     doneTitle: "Vielen Dank für deine Teilnahme",
-    doneText: "Du hast alles geschafft. Deine persönliche Auswertung kommt nach dem Ende der Studie per Mail.",
+    doneText: "Du hast alles geschafft. Deine persönliche Auswertung bekommst du nach dem Ende der Studie per Mail.",
     unknownCodeTitle: "Code unbekannt",
     unknownCodeText: "Diesen Code kennen wir nicht. Prüfe den Link aus deiner Mail oder gib deinen Code ein.",
     codeInputLabel: "Dein Code (6 Zeichen)",
@@ -154,8 +154,7 @@ window.ITEMS.T0 = {
       { v: "nein", label: "Nein" },
       { v: "weiss_nicht", label: "Weiß nicht" }
     ],
-    ERb: "Wie? Beschreibe in einem Satz, was das Element macht und was die App damit erreichen will.",
-    ERb_short: "Bitte beschreib kurz, was das Element macht.",
+    ERb: "Wie? Beschreibe in einem Satz, was das Element macht und was die App damit erreichen will. (freiwillig)",
     ERc: "Was sind deine Gedanken dazu? (freiwillig)",
     screenOf: "Screen {x} von {n}"
   },
@@ -244,9 +243,7 @@ window.ITEMS.FB = {
   FB02: "Bei welchem Muster oder an welcher Stelle?",
   FB03: "Was davon war neu für dich?",
   FB04: "Was war unklar oder überflüssig?",
-  FB05: "Wie willst du jetzt damit umgehen?",
-  endTitle: "Vielen Dank",
-  endText: "In etwa zwei Wochen folgt der zweite und letzte Fragebogen (etwa %dauer_t1% Minuten). Mach dann bitte wieder einen Screenshot deiner Bildschirmzeit für die letzte Woche. Du bekommst dazu eine Erinnerung per Mail."
+  FB05: "Wie willst du jetzt damit umgehen?"
 };
 
 // ── Folge-Fragebogen T1 (Rework 07.10., Abschnitt 8) ────────────────────────────────
@@ -264,8 +261,6 @@ window.ITEMS.T12 = {
     { v: "anderes", label: "anderes", text: true }
   ],
   SH02: "Magst du einen Screenshot davon hochladen?",
-  t1EndTitle: "Vielen Dank für deine Teilnahme",
-  t1EndText: "Deine persönliche Auswertung bekommst du nach dem Ende der Studie per Mail.",
   QU03: "Hat sich in den letzten zwei Wochen etwas daran verändert, wie du deine Apps nutzt oder wie du sie wahrnimmst? Was, und woran lag es?",
   QU04: "Was glaubst du, wollte diese Studie herausfinden?"
 };

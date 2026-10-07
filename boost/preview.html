@@ -27,7 +27,7 @@
 <body>
   <header>
     <h1>Vorschau aller Zustände</h1>
-    <p>Jeder Rahmen zeigt eine Seite der Schulung in 390 × 780 px. Je Muster sind alle gebauten App-Varianten zu sehen, jeweils in fünf Schritten: 1 Einschätzung (rot umrahmtes Element), 2 Bewertung, 3 Frage (mit „Screen noch einmal ansehen"), 4 Reaktion mit Markierung, 5 Erklärung. Darunter die drei Ablenker. Unter jedem Muster steht, für welche Apps der Person welcher Screen als Fallback gezeigt wird. In Schritt 3 und 4 ist eine falsche Beispielantwort eingesetzt (bei Muster 6 die Auswahl 1, 2, 4; bei W1 die Stellen 1, 2, 4; bei W2 eine gemischte Beispiel-Einordnung). Nichts hier wird gespeichert.</p>
+    <p>Jeder Rahmen zeigt eine Seite der Schulung in 390 × 780 px. Je Muster sind alle gebauten App-Varianten zu sehen, jeweils in vier Schritten: 1 Einschätzung (rot umrahmtes Element), 2 Frage (mit „Bild vergrößern"), 3 Reaktion mit Markierung, 4 Erklärung. Darunter die drei Ablenker. Unter jedem Muster steht, für welche Apps der Person welcher Screen als Fallback gezeigt wird. In Schritt 3 und 4 ist eine falsche Beispielantwort eingesetzt (bei Muster 6 die Auswahl 1, 2, 4; bei W1 die Stellen 1, 2, 4; bei W2 eine gemischte Beispiel-Einordnung). Nichts hier wird gespeichert.</p>
     <p>„Exportansicht" blendet Buttons und alles Persönliche aus (Antwort-Zeile, eigene Auswahl, eigene Zahlen), damit sich die Zustände als Ersatzbilder für das Umfragetool abfotografieren lassen. „Einzeln öffnen" zeigt eine Seite allein.</p>
     <div class="controls">
       <label><input type="checkbox" id="export"> Exportansicht</label>
@@ -101,7 +101,7 @@
       // Seit dem Rework 07.10. ohne Einleitung und App-Abfrage: die Schulung beginnt mit Screen 1
       var html = "";
 
-      var steps = [["L", "1 Einschätzung"], ["K", "2 Bewertung"], ["A", "3 Frage"], ["B", "4 Reaktion"], ["E", "5 Erklärung"]];
+      var steps = [["L", "1 Einschätzung"], ["A", "2 Frage"], ["B", "3 Reaktion"], ["E", "4 Erklärung"]];
       C.patterns.forEach(function (p) {
         html += "<h2>Muster " + p.id + " · " + esc(p.name) + "</h2>";
         var built = Object.keys(p.variants);

@@ -72,8 +72,7 @@
         items.push({ type: "screen", entry: entry });
         items.push({ type: "radio", key: "ER_" + tag + "a", label: E.ERa, options: E.ERa_options,
                      required: true, meta: meta });
-        items.push({ type: "textarea", key: "ER_" + tag + "b", label: E.ERb, rows: 3, required: true,
-                     minWords: 3, minWordsMsg: E.ERb_short, saveHidden: true, meta: meta,
+        items.push({ type: "textarea", key: "ER_" + tag + "b", label: E.ERb, rows: 3, saveHidden: true, meta: meta,
                      visibleIf: { key: "ER_" + tag + "a", equals: "ja" } });
         items.push({ type: "textarea", key: "ER_" + tag + "c", label: E.ERc, rows: 3, saveHidden: true, meta: meta,
                      visibleIf: { key: "ER_" + tag + "a", equals: ["nein", "weiss_nicht"] } });
@@ -133,12 +132,7 @@
         { type: "hint", text: T0.offen.diktat },
         { type: "textarea", key: "QU03", label: T.QU03, rows: 5 },
         { type: "textarea", key: "QU04", label: T.QU04, rows: 5 }
-      ] });
-
-      // Ende der Studie
-      pages.push({ id: id(pageNo++), items: [
-        { type: "title", text: T.t1EndTitle }, { type: "text", text: T.t1EndText }
-      ], finishWave: true, next: function () { return "END"; } });
+      ], finishWave: true, next: function () { return "END"; } }); // danach die eine Abschlussseite des Routers
 
       // next = jeweils nächste Seite (Endseite behält END)
       pages.forEach(function (p, i) {

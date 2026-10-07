@@ -1074,3 +1074,10 @@ div.card { cursor: default; }
 /* Kontaktzeile unter dem Hauptknopf (Rework 6.3) */
 .lp-foot .contact-line { flex-basis: 100%; margin: 8px 0 0; font-size: 0.78rem; color: #6b7280; text-align: center; }
 .lp-foot .contact-line a { color: inherit; }
+
+/* Rework 08.10.: schlankere Knöpfe, Fortschrittsbalken unten in der Schulung */
+.btn { min-height: 46px; padding: 10px 14px; font-size: 1rem; font-weight: 600; border-radius: 12px; line-height: 1.25; }
+.btn.secondary { border-width: 1.5px; }
+.lp-foot.with-back > .btn:not(.secondary), .nav-row .btn:not(.secondary) { border-width: 1.5px; }
+.lp-foot .progress-track { flex-basis: 100%; height: 4px; margin: 10px 0 0; background: #e3e8ee; border-radius: 2px; overflow: hidden; }
+.lp-foot .progress-fill { height: 100%; background: var(--primary); transition: width 300ms ease; }

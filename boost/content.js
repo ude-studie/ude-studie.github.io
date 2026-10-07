@@ -30,7 +30,7 @@
  * assets/<kennung>.jpg oder .png vor, wird sie statt des Farbverlaufs gezeigt.
  */
 window.CONTENT = {
-  version: "boost-v3", // v3 (06.10.): Überarbeitung nach Feedback-Call, neue Instagram-Optik, Zurück-Ansicht
+  version: "boost-v4", // v4 (08.10.): Zurück Schritt für Schritt, Fortschrittsbalken, ohne Bewertungsfragen, Freitext freiwillig
 
   // Apps, die beim Aufruf übergeben (apps=ig,tt,…) oder auf dem zweiten Einleitungsbildschirm gewählt werden.
   // Reihenfolge = Reihenfolge der Kacheln.
@@ -60,15 +60,11 @@ window.CONTENT = {
     // Einschätzung und Bewertung je Screen (Rework 07.10., Abschnitt 4.1; gespeichert mit wave T0)
     estQ: "Versucht das rot umrahmte Element, dein Verhalten zu beeinflussen?",
     estOptions: [{ v: "ja", label: "Ja" }, { v: "nein", label: "Nein" }, { v: "weiss_nicht", label: "Weiß nicht" }],
-    estB: "Wie? Beschreibe in einem Satz, was das Element macht und was die App damit erreichen will.",
-    estBShort: "Bitte beschreib kurz, was das Element macht.",
+    estB: "Wie? Beschreibe in einem Satz, was das Element macht und was die App damit erreichen will. (freiwillig)",
     estC: "Was sind deine Gedanken dazu? (freiwillig)",
     estLabels: { ja: "Ja, beeinflusst", nein: "Nein", weiss_nicht: "Weiß nicht" },
     estSummary: "Deine Einschätzung: {x}",
-    ak1: "Wie stark würde dich dieses Element beeinflussen, länger in der App zu bleiben oder öfter zurückzukommen?",
-    ak1Options: [{ v: 1, label: "gar nicht" }, { v: 2, label: "kaum" }, { v: 3, label: "etwas" }, { v: 4, label: "stark" }, { v: 5, label: "sehr stark" }],
-    ak2: "Findest du es in Ordnung, dass die App das so macht?",
-    ak2Options: [{ v: 1, label: "gar nicht in Ordnung" }, { v: 2, label: "eher nicht in Ordnung" }, { v: 3, label: "teils, teils" }, { v: 4, label: "eher in Ordnung" }, { v: 5, label: "völlig in Ordnung" }],
+    relook: "Bild vergrößern",
     missing: "Bitte beantworte diese Frage.",
     missingN: "Es fehlen noch {n} Antworten.",
     noPattern: "Hier steckt kein Muster.",

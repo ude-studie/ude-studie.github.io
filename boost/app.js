@@ -24,7 +24,7 @@
 
   var C = window.CONTENT;
   var STUDY_APPS = C.appOrder; // Instagram, TikTok, Snapchat
-  var STORE_KEY = "boost-state-" + C.version + "-r4"; // r4: Einschätzung + Ablenker (Rework 07.10.)
+  var STORE_KEY = "boost-state-" + C.version; // boost-v4: Schritt-Navigation, ohne Bewertung (08.10.)
   var app = document.getElementById("app");
 
   // ── Aufrufparameter ────────────────────────────────────
@@ -259,7 +259,6 @@
       bStart: null,
       patterns: {},      // id -> Ergebnis
       est: {},           // Seiten-Key -> Einschätzung { a, b, c } (gespeichert mit wave T0)
-      ak: {},            // Seiten-Key -> { ak1, ak2 } (gespeichert mit wave T0)
       recognition: {},   // id -> Ergebnis
       pageSeconds: {}
     };
@@ -269,18 +268,52 @@
   }
   function save() {
     if (previewKey) return;
-    if (state.maxPage == null || state.page > state.maxPage) state.maxPage = state.page;
-    if (state.page === state.maxPage) state.maxSub = state.sub;
+    if (state.maxPage == null || state.page > state.maxPage) { state.maxPage = state.page; state.maxSub = state.sub; }
+    else if (state.page === state.maxPage && stepIndex(state.page, state.sub) > stepIndex(state.page, state.maxSub)) state.maxSub = state.sub;
     try { sessionStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch (e) { /* ohne Zwischenstand weiter */ }
   }
-  // Ansichtsmodus: eine schon abgeschlossene Seite, zu der man zurückgeblättert hat
-  function isReview() { return !previewKey && state.maxPage != null && state.page < state.maxPage; }
-  // Abgeschlossene Seiten zeigen ihren aufgelösten Zustand
-  function reviewSub(pg) {
-    if (pg.type === "pattern") return "explain";
-    if (pg.type === "distractor") return "dres";
-    if (pg.type === "recognition") return "react";
-    return "look";
+  // Schritte je Seite (Rework 08.10.): Zurück geht immer genau einen Schritt zurück,
+  // auch innerhalb eines Screens; Weiter führt Schritt für Schritt bis zur aktuellen Stelle
+  function stepsOf(pg) {
+    if (!pg) return ["look"];
+    if (pg.type === "pattern") return ["est", "ask", "react", "explain"];
+    if (pg.type === "distractor") return ["est", "dres"];
+    if (pg.type === "recognition") return ["look", "react"];
+    return ["look"];
+  }
+  function stepIndex(page, sub) {
+    var i = stepsOf(pages[page]).indexOf(sub || "look");
+    return i < 0 ? 0 : i;
+  }
+  // Ansichtsmodus: ein schon abgeschlossener Schritt, zu dem man zurückgegangen ist
+  function isReview() {
+    if (previewKey || state.maxPage == null) return false;
+    return state.page < state.maxPage ||
+      (state.page === state.maxPage && stepIndex(state.page, state.sub) < stepIndex(state.page, state.maxSub));
+  }
+  function setStep(page, sub) {
+    state.page = Math.max(0, Math.min(page, pages.length - 1));
+    state.sub = sub;
+    state.pageStart = Date.now();
+    state.bStart = null;
+    // Ansicht einer früheren Auswahl (Muster 6, Wiederfinden 1): die damalige Auswahl zeigen
+    var pg = pages[state.page], r = null;
+    if (pg.type === "pattern" && pg.pattern.type === "multi") r = state.patterns[pg.pattern.id];
+    if (pg.type === "recognition") r = state.recognition[pg.item.id];
+    picks = isReview() && r && r.selected ? r.selected.slice() : [];
+    save();
+    render();
+  }
+  function stepForward() {
+    var s = stepsOf(pages[state.page]), i = stepIndex(state.page, state.sub);
+    if (i < s.length - 1) setStep(state.page, s[i + 1]);
+    else setStep(state.page + 1, stepsOf(pages[state.page + 1])[0]);
+  }
+  function stepBack() {
+    var s = stepsOf(pages[state.page]), i = stepIndex(state.page, state.sub);
+    if (i > 0) { setStep(state.page, s[i - 1]); return; }
+    var ps = stepsOf(pages[state.page - 1]);
+    setStep(state.page - 1, ps[ps.length - 1]);
   }
   function secondsSince(t) { return Math.max(0, Math.round((Date.now() - t) / 1000)); }
   function isoNow() { return new Date().toISOString().replace(/\.\d{3}Z$/, "Z"); }
@@ -288,9 +321,8 @@
   function goto(i) {
     state.page = Math.max(0, Math.min(i, pages.length - 1));
     var max = state.maxPage == null ? state.page : state.maxPage;
-    if (state.page < max) state.sub = reviewSub(pages[state.page]);       // zurückgeblättert
-    else if (state.page === max && state.maxSub) state.sub = state.maxSub; // zurück an der aktuellen Stelle
-    else state.sub = "look";
+    if (state.page === max && state.maxSub) state.sub = state.maxSub; // zurück an der aktuellen Stelle
+    else state.sub = stepsOf(pages[state.page])[0];
     state.pageStart = Date.now();
     state.bStart = null;
     picks = [];
@@ -908,6 +940,7 @@
     applyAssets(app);
     addBackButton();
     addContactLine();
+    updateProgress();
   }
   // Kontaktzeile unter dem Knopf (Rework 6.3), Adresse aus ../config.js
   function addContactLine() {
@@ -947,9 +980,7 @@
       if (q.getAttribute("data-req") === "radio") {
         if (!q.querySelector("input:checked")) msg = C.ui.missing;
       } else {
-        var t = q.querySelector("textarea").value.trim();
-        if (!t) msg = C.ui.missing;
-        else if (t.split(/\s+/).length < 3) msg = C.ui.estBShort;
+        if (!q.querySelector("textarea").value.trim()) msg = C.ui.missing;
       }
       if (quiet && !q.classList.contains("missing")) return;
       q.classList.toggle("missing", !!msg);
@@ -982,14 +1013,6 @@
     if (c) dbSaveWave("T0", page, key + "c", Object.assign({ wert: c }, meta), secs);
     state.est[pg.key] = { a: a, b: b, c: c };
   }
-  function saveAk(pg, panel) {
-    var v1 = Number((panel.querySelector('input[name="ak1"]:checked') || {}).value);
-    var v2 = Number((panel.querySelector('input[name="ak2"]:checked') || {}).value);
-    var meta = estMeta(pg), secs = secondsSince(state.pageStart), page = "s" + pg.pos;
-    dbSaveWave("T0", page, "AK01_m" + pg.pattern.id, Object.assign({ wert: v1 }, meta), secs);
-    dbSaveWave("T0", page, "AK02_m" + pg.pattern.id, Object.assign({ wert: v2 }, meta), secs);
-    state.ak[pg.key] = { ak1: v1, ak2: v2 };
-  }
 
   // Hinweis über dem Inhalt einer zurückgeblätterten Seite
   function addReviewNote() {
@@ -1006,8 +1029,9 @@
   function addBackButton() {
     if (previewKey) return;
     // Erster Screen: zurück auf die letzte Seite des Fragebogens (noch vor der Schulung)
-    var toSurvey = state.page === 0 && returnUrl;
-    if (state.page === 0 && !toSurvey) return;
+    var first = state.page === 0 && stepIndex(0, state.sub) === 0;
+    var toSurvey = first && returnUrl;
+    if (first && !toSurvey) return;
     var foot = app.querySelector(".lp-foot");
     if (!foot || foot.querySelector(".btn-back")) return;
     var b = document.createElement("button");
@@ -1016,7 +1040,7 @@
     b.textContent = C.ui.back;
     b.addEventListener("click", function () {
       if (toSurvey) { location.href = returnUrl + (returnUrl.indexOf("?") >= 0 ? "&" : "?") + "zurueck=1"; return; }
-      goto(state.page - 1);
+      stepBack();
     });
     foot.classList.add("with-back");
     foot.insertBefore(b, foot.firstChild);
@@ -1158,17 +1182,10 @@
       return '<p class="miss-note" hidden role="alert"></p>' +
         '<fieldset class="q-card" data-req="radio"><legend class="q" id="q">' + esc(U.estQ) + "</legend>" +
         radioGroup("est", U.estOptions) + '<p class="q-err"></p></fieldset>' +
-        '<div class="q-card est-b" data-req="words" hidden><label class="q" for="estb">' + esc(U.estB) + "</label>" +
+        '<div class="q-card est-b" hidden><label class="q" for="estb">' + esc(U.estB) + "</label>" +
         '<textarea id="estb" rows="3"></textarea><p class="q-err"></p></div>' +
         '<div class="q-card est-c" hidden><label class="q" for="estc">' + esc(U.estC) + "</label>" +
         '<textarea id="estc" rows="3"></textarea></div>';
-    }
-    if (phase === "ak") {
-      return '<p class="miss-note" hidden role="alert"></p>' +
-        '<fieldset class="q-card" data-req="radio"><legend class="q" id="q">' + esc(U.ak1) + "</legend>" +
-        radioGroup("ak1", U.ak1Options) + '<p class="q-err"></p></fieldset>' +
-        '<fieldset class="q-card" data-req="radio"><legend class="q">' + esc(U.ak2) + "</legend>" +
-        radioGroup("ak2", U.ak2Options) + '<p class="q-err"></p></fieldset>';
     }
     if (phase === "dres") {
       var pg0 = pages[state.page];
@@ -1226,27 +1243,14 @@
       btn.textContent = C.ui.next;
       bindEst(panel);
       btn.onclick = function () {
-        if (isReview()) { goto(state.page + 1); return; }
         if (!checkPanel(panel)) return;
         saveEst(pg, panel);
-        state.sub = pg.type === "distractor" ? "dres" : "ak";
+        state.sub = pg.type === "distractor" ? "dres" : "ask";
         state.pageStart = Date.now();
         save(); showPhase(pg, state.sub, true);
       };
       addRelookButton(pg, phase);
       focusFirst("#ctx");
-    } else if (phase === "ak") {
-      btn.textContent = C.ui.next;
-      bindLiveCheck(panel);
-      btn.onclick = function () {
-        if (!checkPanel(panel)) return;
-        saveAk(pg, panel);
-        state.sub = "ask";
-        state.pageStart = Date.now();
-        save(); showPhase(pg, "ask", true);
-      };
-      addRelookButton(pg, phase);
-      focusFirst("#q");
     } else if (phase === "dres") {
       btn.textContent = C.ui.next;
       btn.onclick = function () { goto(state.page + 1); };
@@ -1273,7 +1277,6 @@
     } else {
       btn.textContent = C.ui.next;
       btn.onclick = function () {
-        if (isReview()) { goto(state.page + 1); return; }
         var r = state.patterns[p.id];
         if (r && r.secondsB == null) r.secondsB = secondsSince(state.bStart || state.pageStart);
         if (r) {
@@ -1288,6 +1291,50 @@
       if (isReview()) addReviewNote();
       focusFirst("#ex-title");
     }
+    if (isReview()) reviewPhase(pg, phase, panel, btn);
+    updateProgress();
+  }
+
+  // Zurückgegangen: frühere Antworten zeigen, nichts mehr änderbar, Weiter = nächster Schritt
+  function reviewPhase(pg, phase, panel, btn) {
+    var p = pg.pattern;
+    if (phase === "est") {
+      var e = state.est[pg.key] || {};
+      var radio = panel.querySelector('input[name="est"][value="' + e.a + '"]');
+      if (radio) radio.checked = true;
+      panel.querySelector("#estb").value = e.b || "";
+      panel.querySelector("#estc").value = e.c || "";
+      panel.querySelector(".est-b").hidden = e.a !== "ja";
+      panel.querySelector(".est-c").hidden = !e.a || e.a === "ja";
+    }
+    if (phase === "ask" && p.type !== "multi") {
+      var r = state.patterns[p.id] || {};
+      var ans = panel.querySelector('input[name="ans"][value="' + r.answer + '"]');
+      if (ans) ans.checked = true;
+    }
+    app.querySelectorAll(".lp-panel input, .lp-panel textarea, .screen-body .note").forEach(function (el) { el.disabled = true; });
+    btn.disabled = false;
+    btn.textContent = C.ui.next;
+    btn.onclick = stepForward;
+    addReviewNote();
+  }
+
+  // Fortschrittsbalken der Schulung (Rework 08.10.): Seiten und Schritte, ohne Text
+  function updateProgress() {
+    var foot = app.querySelector(".lp-foot");
+    if (!foot || !pages.length) return;
+    var bar = foot.querySelector(".progress-track");
+    if (!bar) {
+      bar = document.createElement("div");
+      bar.className = "progress-track";
+      bar.setAttribute("aria-hidden", "true");
+      bar.innerHTML = '<div class="progress-fill"></div>';
+      var line = foot.querySelector(".contact-line");
+      foot.insertBefore(bar, line || null);
+    }
+    var s = stepsOf(pages[state.page]);
+    var done = state.page + (stepIndex(state.page, state.sub) + 1) / s.length;
+    bar.firstChild.style.width = Math.round(100 * done / pages.length) + "%";
   }
 
   // „Screen noch einmal ansehen": zeigt den Screen (Zustand A) in voller Größe
@@ -1295,14 +1342,14 @@
   function addRelookButton(pg, phase) {
     var p = pg.pattern;
     if (p.type === "multi" && phase === "ask") return; // Muster 6: der Screen ist ohnehin groß zu sehen
-    var withMark = phase === "est" || phase === "ak";
+    var withMark = phase === "est";
     var panel = app.querySelector(".lp-panel");
     if (!panel || panel.querySelector(".relook")) return;
     var tpl = SCREENS[p.screen];
     var b = document.createElement("button");
     b.type = "button";
     b.className = "relook";
-    b.textContent = "Screen noch einmal ansehen";
+    b.textContent = C.ui.relook;
     b.addEventListener("click", function () {
       var ov = document.createElement("div");
       ov.className = "relook-overlay";
@@ -1449,7 +1496,7 @@
     if (isB) {
       focusFirst("#fb");
       btn.onclick = function () {
-        if (isReview()) { goto(state.page + 1); return; }
+        if (isReview()) { stepForward(); return; }
         if (r && r.seconds == null) r.seconds = secondsSince(state.pageStart);
         if (r) dbSave(it.id, it.id, r, r.seconds);
         goto(state.page + 1);
@@ -1458,6 +1505,17 @@
       return;
     }
     focusFirst("#ctx");
+    if (isReview()) {
+      if (r && r.answers) r.answers.forEach(function (a, i) {
+        var x = app.querySelector('input[name="w2-' + (i + 1) + '"][value="' + (a.saidHuman ? "human" : "app") + '"]');
+        if (x) x.checked = true;
+      });
+      app.querySelectorAll(".spot, .w2-choice input").forEach(function (el) { el.disabled = true; });
+      btn.textContent = C.ui.next;
+      btn.onclick = stepForward;
+      addReviewNote();
+      return;
+    }
     btn.disabled = true;
     if (it.type === "spots") {
       bindToggles(".spot", function () { btn.disabled = picks.length === 0; });

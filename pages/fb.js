@@ -22,14 +22,7 @@
           { type: "textarea", key: "FB04", label: T.FB04, rows: 3 },
           { type: "textarea", key: "FB05", label: T.FB05, rows: 3 }
         ],
-        next: function () { return "FB-02"; }
-      },
-      {
-        id: "FB-02",
-        items: [
-          { type: "title", text: T.endTitle },
-          { type: "text", text: T.endText }
-        ],
+        // Eine Seite; danach zeigt der Router die eine Abschlussseite (Wartesite)
         extraEvents: [{ key: "FB_DONE", value: true }],
         next: function () { return "END"; }
       }

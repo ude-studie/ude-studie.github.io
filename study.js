@@ -130,7 +130,7 @@
 
   // ── Statische Ansichten ────────────────────────────────
   function showWait() {
-    simplePage(F.waitTitle, F.waitText);
+    simplePage(F.waitTitle, tpl(F.waitText));
   }
   function showDone() { simplePage(F.doneTitle, F.doneText); }
   function showRegistrationClosed() { simplePage(F.waitTitle, F.registrationClosed); }
@@ -930,8 +930,9 @@
     if (p.t0_done && !p.boost_done) { showBoostHandoff(); return; }
 
     // Feedback zur Schulung: direkt danach, am selben Tag. Es gibt keine
-    // fb_done-Spalte; fertig ist, wer die Endseite FB-02 erreicht hat.
-    if (p.boost_done && last.FB !== "FB-02") {
+    // fb_done-Spalte; fertig ist, wer FB-01 abgeschickt hat (seit 08.10. die
+    // einzige FB-Seite, FB-02 von früher zählt ebenso).
+    if (p.boost_done && !last.FB) {
       runBlock(window.PAGES_FB, resumeNext(window.PAGES_FB, last.FB));
       return;
     }
