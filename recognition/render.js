@@ -533,10 +533,15 @@
       return wrap;
     }
     var scr = build();
+    // Kopfzeile (Instagram/Snapchat) als eigene Zeile über dem scrollbaren Inhalt,
+    // untere Leiste als eigene Zeile darunter: beide bleiben beim Scrollen stehen
+    var head = "", foot = "", html = scr.html;
+    html = html.replace(/^<div class="(ig-head|snap-head)">[\s\S]*?<\/div>/, function (m) { head = m; return ""; });
+    html = html.replace(/<div class="nav[^"]*" aria-hidden="true">[\s\S]*?<\/div>$/, function (m) { foot = m; return ""; });
     wrap.innerHTML = '<div class="device-wrap rec" data-size="full"><div class="device ' + scr.cls + '">' +
       '<div class="device-status"><span class="device-tag">Nachgestellt</span>' +
       '<span class="device-time">09:41</span><span class="device-icons">' + ICON.status + "</span></div>" +
-      '<div class="screen-body' + (scr.scroll ? " scroll" : "") + '">' + scr.html + "</div></div></div>";
+      head + '<div class="screen-body' + (scr.scroll ? " scroll" : "") + '">' + html + "</div>" + foot + "</div></div>";
     return wrap;
   }
 

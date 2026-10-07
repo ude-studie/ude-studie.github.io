@@ -34,7 +34,7 @@ window.CONTENT = {
 
   // Apps, die beim Aufruf übergeben (apps=ig,tt,…) oder auf dem zweiten Einleitungsbildschirm gewählt werden.
   // Reihenfolge = Reihenfolge der Kacheln.
-  appOrder: ["ig", "tt", "sc", "fb", "x"],
+  appOrder: ["ig", "tt", "sc"], // Facebook und X entfallen (Rework 07.10.); ihre Varianten bleiben im Code, sind aber nicht erreichbar
   apps: {
     ig: { label: "Instagram", icon: "ai-ig" },
     tt: { label: "TikTok", icon: "ai-tt" },
@@ -600,11 +600,10 @@ window.CONTENT = {
       id: "W2",
       type: "cards",
       app: "",
-      ctx: "Drei Meldungen, wie sie auf deinem Sperrbildschirm stehen könnten. Entscheide bei jeder, ob sie von einem Menschen kommt oder von der App.",
+      ctx: "{count} Meldungen, wie sie auf deinem Sperrbildschirm stehen könnten. Entscheide bei jeder, ob sie von einem Menschen kommt oder von der App.",
       action: "Auflösen",
       labelHuman: "Von einem Menschen",
       labelApp: "Von der App",
-      maxPoints: 3,
       feedbackScore: "{k} von {n} richtig eingeordnet.",
       verdictRight: "Richtig",
       verdictWrong: "Nicht ganz",
@@ -623,6 +622,8 @@ window.CONTENT = {
           why: "Die App erinnert an sich selbst; einen Absender gibt es nicht." },
         { app: "sc", human: true, pattern: null, text: "mara.w hat dir einen Snap gesendet",
           why: "Eine echte Person hat dir direkt etwas geschickt." },
+        { app: "tt", human: true, pattern: null, text: "mara.w hat auf deinen Kommentar geantwortet",
+          why: "Eine echte Person hat dir geantwortet; die Meldung nennt sie beim Namen." },
         { app: "tt", human: false, pattern: 6, text: "Neue Videos für dich: Das könnte dir gefallen",
           why: "Eine automatische Empfehlung der App; eine Person steckt nicht dahinter." }
       ]

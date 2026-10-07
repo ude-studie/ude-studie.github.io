@@ -661,9 +661,9 @@ button, input { font: inherit; }
 /* Muster 2, Zustand B: die Meldung ersetzt den Hinweistext, statt ihn zu überdecken */
 .ig-refresh:has(.toast) .ig-refresh-in > span:last-child { visibility: hidden; }
 /* Untere Leiste: steht unten im Screen, auch wenn der Inhalt scrollt */
-/* z-index über den Nummern (.spot: 3), damit keine Nummer über der Leiste schwebt */
+/* Fußleiste als eigene Zeile des Handy-Rahmens (deviceHtml), nicht im Scrollbereich */
 .ig-nav {
-  position: sticky; bottom: 0; z-index: 5;
+  position: relative; z-index: 5;
   display: flex; justify-content: space-around; align-items: center;
   height: 50px; background: #fff; border-top: 1px solid var(--line); color: #111;
 }

@@ -123,3 +123,7 @@
 
 /* Fotos statt Initialen: Buchstabe ausblenden, wenn ein Profilfoto da ist */
 .avatar.has-photo, .st-av.has-photo { color: transparent !important; }
+
+/* Kopfzeile und untere Leiste sind eigene Zeilen des Handy-Rahmens (render.js) */
+.device-wrap.rec .device > .ig-head, .device-wrap.rec .device > .snap-head,
+.device-wrap.rec .device > .nav { flex: 0 0 auto; }

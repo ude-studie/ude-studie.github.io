@@ -23,6 +23,7 @@
   "use strict";
 
   var C = window.CONTENT;
+  var STUDY_APPS = C.appOrder; // Instagram, TikTok, Snapchat
   var STORE_KEY = "boost-state-" + C.version;
   var app = document.getElementById("app");
 
@@ -746,11 +747,21 @@
   // und dann passend skaliert: groß zum Ansehen, klein über der Frage.
   var DEVICE_W = 410, DEVICE_H = 800;
 
+  // Nur der scrollbare Inhalt (ohne Kopf- und Fußleiste), für Neuzeichnen im Rahmen
+  function bodyOnly(html) {
+    return html.replace(/^<div class="ig-head">[\s\S]*?<\/div>/, "").replace(/<div class="ig-nav"[\s\S]*?<\/div>$/, "");
+  }
+  // Handy-Rahmen als feste Spalte: Statusleiste, Kopfzeile, Inhalt (scrollt allein),
+  // Fußleiste. Kopf- und Fußleiste der Instagram-Screens werden aus dem Inhalt
+  // herausgelöst, damit sie beim Scrollen fest oben bzw. unten bleiben.
   function deviceHtml(cls, bodyHtml, scroll, time) {
+    var head = "", foot = "";
+    bodyHtml = bodyHtml.replace(/^<div class="ig-head">[\s\S]*?<\/div>/, function (m) { head = m; return ""; });
+    bodyHtml = bodyHtml.replace(/<div class="ig-nav"[\s\S]*?<\/div>$/, function (m) { foot = m; return ""; });
     return '<div class="device-wrap" data-size="full"><div class="device ' + cls + '">' +
       '<div class="device-status"><span class="device-tag">' + esc(C.ui.screenTag) + '</span>' +
       '<span class="device-time">' + esc(time || C.ui.statusTime) + '</span><span class="device-icons">' + ICON.status + "</span></div>" +
-      '<div class="screen-body' + (scroll ? " scroll" : "") + '">' + bodyHtml + "</div></div></div>";
+      head + '<div class="screen-body' + (scroll ? " scroll" : "") + '">' + bodyHtml + "</div>" + foot + "</div></div>";
   }
 
   // Größe des Handys an den freien Platz anpassen. size: "full" | "small"
@@ -1139,7 +1150,7 @@
       return tpl.toB(body, p);
     }).then(function () {
       // Endzustand zeichnen, dann Markierung und Hinweis zusammen einblenden (< 400 ms)
-      body.innerHTML = tpl.render(p, true, { animate: true });
+      body.innerHTML = bodyOnly(tpl.render(p, true, { animate: true }));
       applyAssets(body);
       placeMark(body);
       panel.classList.remove("reserved");
@@ -1204,7 +1215,7 @@
         : '<p class="feedback' + feedbackClass(it, r) + (previewKey ? "" : " fade-in") + '" id="fb">' + esc(feedbackText(it, r)) + "</p>";
     }
     app.innerHTML = '<div class="page lp">' + head +
-      '<main class="lp-stage" data-phase="' + (isB ? "react" : "ask") + '"><p class="lp-ctx" id="ctx">' + esc(it.ctx) + "</p>" +
+      '<main class="lp-stage" data-phase="' + (isB ? "react" : "ask") + '"><p class="lp-ctx" id="ctx">' + esc(recCtx(it)) + "</p>" +
       middle + '<div class="lp-panel">' + panel + "</div></main>" +
       '<div class="lp-foot"><button class="btn" id="main" type="button">' + esc(isB ? C.ui.next : it.action) + "</button></div></div>";
     var wrap = app.querySelector(".device-wrap");
@@ -1230,7 +1241,7 @@
     } else {
       // „Auflösen" erst, wenn alle drei Meldungen eingeordnet sind
       var allAnswered = function () {
-        return [1, 2, 3].every(function (n) { return app.querySelector('input[name="w2-' + n + '"]:checked'); });
+        return cards.every(function (c, i) { return app.querySelector('input[name="w2-' + (i + 1) + '"]:checked'); });
       };
       app.querySelectorAll('.w2-choice input').forEach(function (inp) {
         inp.addEventListener("change", function () { btn.disabled = !allAnswered(); });
@@ -1242,12 +1253,12 @@
         if (!picks.length) return;
         state.recognition[it.id] = spotsResult(it, picks);
       } else {
-        var choices = [1, 2, 3].map(function (n) {
-          var sel = app.querySelector('input[name="w2-' + n + '"]:checked');
+        var choices = cards.map(function (c, i) {
+          var sel = app.querySelector('input[name="w2-' + (i + 1) + '"]:checked');
           return sel ? sel.value : null;
         });
         if (choices.indexOf(null) >= 0) return;
-        state.recognition[it.id] = w2Result(it, w2Cards(it), choices);
+        state.recognition[it.id] = w2Result(it, cards, choices);
       }
       state.sub = "react";
       save();
@@ -1271,28 +1282,40 @@
       esc(label + (mine ? ", " + C.ui.selectedByYou : "")) + '"><span>' + n + "</span></span>";
   }
 
-  // Wiederfinden 2: drei Karten aus dem Pool – nur genutzte Apps, nur gezeigte
-  // Muster, mindestens eine Meldung von einem Menschen, fest je Teilnehmercode.
+  // Wiederfinden 2: zwei bis drei Karten aus dem Pool – nur genutzte Apps
+  // (Instagram, TikTok, Snapchat), nur gezeigte Muster, immer mindestens eine
+  // Meldung von einem Menschen und eine von der App, fest je Teilnehmercode.
+  // Fehlt für die Apps der Person eine Sorte, kommt die Instagram-Variante.
   function w2Cards(it) {
     var ids = shownIds();
-    var used = state.apps || ["ig"];
-    var pool = it.cardPool.filter(function (c) {
-      return used.indexOf(c.app) >= 0 && (c.pattern == null || ids.indexOf(c.pattern) >= 0);
-    });
-    if (!pool.length) pool = it.cardPool.filter(function (c) { return c.pattern == null || ids.indexOf(c.pattern) >= 0; });
+    var used = (state.apps || []).filter(function (a) { return STUDY_APPS.indexOf(a) >= 0; });
+    if (!used.length) used = ["ig"];
+    var fits = function (c) { return c.pattern == null || ids.indexOf(c.pattern) >= 0; };
+    var pool = it.cardPool.filter(function (c) { return used.indexOf(c.app) >= 0 && fits(c); });
     var rnd = seededRandom(hashCode(String(state.code || "") + "w2"));
     function shuffled(list) {
       var l = list.slice();
       for (var i = l.length - 1; i > 0; i--) { var j = Math.floor(rnd() * (i + 1)); var t = l[i]; l[i] = l[j]; l[j] = t; }
       return l;
     }
+    var igOf = function (human) {
+      return it.cardPool.filter(function (c) { return c.app === "ig" && !!c.human === human && fits(c); });
+    };
     var humans = shuffled(pool.filter(function (c) { return c.human; }));
     var apps = shuffled(pool.filter(function (c) { return !c.human; }));
-    var out = [];
-    if (humans.length) out.push(humans.shift());
+    if (!humans.length) humans = shuffled(igOf(true));
+    if (!apps.length) apps = shuffled(igOf(false));
+    var out = [humans.shift(), apps.shift()].filter(Boolean);
     while (out.length < 3 && apps.length) out.push(apps.shift());
     while (out.length < 3 && humans.length) out.push(humans.shift());
     return shuffled(out);
+  }
+  // Einleitungssatz einer Wiederfinden-Seite; {count} = Zahl der angezeigten Meldungen als Wort
+  function recCtx(it) {
+    if (it.type !== "cards") return it.ctx;
+    var n = w2Cards(it).length;
+    var word = { 2: "Zwei", 3: "Drei" }[n] || String(n);
+    return fill(it.ctx, { count: word });
   }
   function w2Result(it, cards, choices) {
     var answers = cards.map(function (c, i) {
@@ -1347,7 +1370,7 @@
     var x = 0, y = 0, max = 0, ids = shownIds();
     ids.forEach(function (id) { if (patternCorrect(state.patterns[id])) x++; });
     C.recognition.forEach(function (it) {
-      max += it.type === "spots" ? w1Runtime(it).targets.length : (it.maxPoints || 0);
+      max += it.type === "spots" ? w1Runtime(it).targets.length : w2Cards(it).length;
       var r = state.recognition[it.id];
       if (!r) return;
       y += r.hits || 0; // W1: gefundene Stellen, W2: richtig eingeordnete Meldungen (je 1 Punkt)
