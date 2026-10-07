@@ -22,15 +22,18 @@ window.STUDY_CONFIG = {
   },
   FOLLOWUP_AFTER_DAYS: 14,
 
-  // Zeitangaben in den Texten (%dauer_t0%, %dauer_t1%). ENTWURF bis zur Zeitmessung.
-  DAUER_T0_MIN: "30",
-  DAUER_T1_MIN: "10",
+  // Zeitangaben in den Texten (%dauer_t0%, %dauer_t1%). T0 = 20 Minuten (Entscheidung Daniel 07.10.)
+  DAUER_T0_MIN: "20",
+  DAUER_T1_MIN: "15",
 
   // Fassung des Fragebogens; wird mit jedem Event gespeichert (Spalte events.version).
   // SEND_VERSION erst auf true setzen, wenn ADD-VERSION-SPALTE.sql in Supabase gelaufen ist –
   // sonst lehnt die Datenbank jede Zeile mit unbekannter Spalte ab.
   SURVEY_VERSION: "survey-v2",
-  SEND_VERSION: false,
+  SEND_VERSION: true, // Spalte events.version existiert seit 07.10.
+
+  // Kontaktzeile unter jeder Seite (Rework 6.3)
+  CONTACT_EMAIL: "daniel.davydov@stud.uni-due.de",
 
   // --- Code-System ---
   CODE_ALPHABET: "23456789ABCDEFGHJKLMNPQRSTUVWXYZ", // keine 0/O/1/I

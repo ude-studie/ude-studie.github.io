@@ -84,24 +84,41 @@
   });
 
   // ── Grundgerüst je Ansicht ─────────────────────────────
+  // Seitengerüst: scrollender Inhalt, darunter fest am Kartenrand der schmale
+  // Fortschrittsbalken (ohne Text, Rework 6.2) und die Kontaktzeile (6.3)
   function shell(progress) {
     app.innerHTML = "";
     var wrap = el("div", "study");
-    if (progress) {
-      var bar = el("div", "progress-track");
-      var fill = el("div", "progress-fill");
-      fill.style.width = Math.round(progress * 100) + "%";
-      bar.appendChild(fill);
-      wrap.appendChild(bar);
-    }
     statusBar = el("div", "offline-bar");
     statusBar.hidden = true;
     wrap.appendChild(statusBar);
     var page = el("div", "page study-page");
     wrap.appendChild(page);
     app.appendChild(wrap);
+    app.appendChild(studyFoot(progress));
     window.scrollTo(0, 0);
     return page;
+  }
+  function studyFoot(progress) {
+    var foot = el("div", "study-foot");
+    if (progress) {
+      var bar = el("div", "progress-track");
+      bar.setAttribute("aria-hidden", "true");
+      var fillEl = el("div", "progress-fill");
+      fillEl.style.width = Math.round(progress * 100) + "%";
+      bar.appendChild(fillEl);
+      foot.appendChild(bar);
+    }
+    var mail = CFG.CONTACT_EMAIL;
+    if (mail) {
+      var line = el("p", "contact-line");
+      line.appendChild(document.createTextNode("Technische Probleme? Schreib an "));
+      var a = el("a", null, mail); a.href = "mailto:" + mail;
+      line.appendChild(a); line.appendChild(document.createTextNode("."));
+      foot.appendChild(line);
+    }
+    if (ctx.pilot) foot.appendChild(el("p", "pilot-line", "Pilotmodus: Antworten werden als Test gespeichert."));
+    return foot;
   }
 
   function simplePage(title, text, extra) {
@@ -181,26 +198,6 @@
     renderPage(def, first, answers, history_);
   }
 
-  // Gezeigte Muster deterministisch aus der App-Liste – exakt die Regel der
-  // Schulung (Reihenfolgen aus boost/content.js, Tabelle 3 des Research
-  // Designs). Abweichung vom Auftrag ("aus events, wave=BOOST") gemeldet:
-  // das Ergebnis ist identisch, braucht aber keinen Lesezugriff.
-  var MUSTER_ORDER = {
-    m1: ["tt", "ig", "fb", "x", "sc"], m2: ["ig", "fb", "x", "tt"],
-    m3: ["ig", "tt", "fb", "x", "sc"], m4: ["ig", "tt", "fb", "x", "sc"],
-    m5: ["ig", "tt", "fb", "x", "sc"], m7: ["sc"], m8: ["ig", "sc", "fb", "tt"]
-  };
-  function shownMuster(apps) {
-    var out = [];
-    ["m1", "m2", "m3", "m4", "m5"].forEach(function (m) {
-      if (MUSTER_ORDER[m].some(function (a) { return apps.indexOf(a) >= 0; })) out.push(m);
-    });
-    out.push("m6"); // Rückhol-Benachrichtigungen werden immer gezeigt
-    if (MUSTER_ORDER.m7.some(function (a) { return apps.indexOf(a) >= 0; })) out.push("m7");
-    if (MUSTER_ORDER.m8.some(function (a) { return apps.indexOf(a) >= 0; })) out.push("m8");
-    return out;
-  }
-  window.STUDY_SHOWN_MUSTER = shownMuster;
 
   function pageById(def, id) {
     return def.pages.filter(function (p) { return p.id === id; })[0];
@@ -216,7 +213,7 @@
     var p = pageById(def, id);
     if (!p) { simplePage("Einen Moment …", "Bitte öffne deinen persönlichen Link noch einmal."); return; }
     var idx = def.pages.indexOf(p);
-    var page = shell((idx + 1) / def.pages.length);
+    var page = shell(idx > 0 ? (idx + 1) / def.pages.length : null);
     var started = Date.now();
     var fields = {}; // key → {get, validate, errEl}
 
@@ -226,7 +223,7 @@
     itemList.forEach(function (item) {
       var node = renderItem(item, answers, fields, page);
       if (!node) return;
-      if (item.key && fields[item.key]) fields[item.key].wrapper = node;
+      if (item.key && fields[item.key]) { fields[item.key].wrapper = node; fields[item.key].item = item; node.setAttribute("data-key", item.key); }
       if (item.visibleIf) {
         var upd = function () {
           var v = currentValue(fields, answers, item.visibleIf.key);
@@ -265,7 +262,7 @@
       if (scroll || missNote) {
         if (!missNote) { missNote = el("div", "miss-note"); missNote.setAttribute("role", "alert"); page.insertBefore(missNote, page.firstChild.nextSibling); }
         missNote.hidden = shown < 2;
-        missNote.textContent = "Es fehlen noch " + shown + " Antworten.";
+        missNote.textContent = shown === 1 ? "Es fehlt noch eine Antwort." : "Es fehlen noch " + shown + " Antworten.";
       }
       if (scroll && bad.length) bad[0].scrollIntoView({ block: "center", behavior: "smooth" });
       return bad.length === 0;
@@ -334,19 +331,20 @@
           var paths = [], failed = 0;
           var list = f.files();
           for (var fi = 0; fi < list.length; fi++) {
-            var res = await window.DB.uploadScreenshot(ctx.code, def.wave, list[fi]);
+            var res = await window.DB.uploadScreenshot(ctx.code, def.wave, list[fi], fi + 1);
             if (res.ok) paths.push(res.path); else failed++;
           }
           btn.disabled = false;
           btn.textContent = prevLabel;
           answers[uploadKeys[u]] = { hochgeladen: paths, fehlgeschlagen: failed };
           if (failed > 0) {
-            f.errEl.textContent = "Mindestens eine Datei kam nicht durch. Du kannst ohne Screenshot weitermachen.";
+            f.errEl.textContent = "Mindestens eine Datei konnte nicht hochgeladen werden. Du kannst ohne Screenshot weitermachen.";
           }
         }
 
+        var keepHidden = function (f) { return f.item && f.item.saveHidden; };
         Object.keys(fields).forEach(function (k) {
-          if (fields[k].upload || hidden(fields[k])) return;
+          if (fields[k].upload || (hidden(fields[k]) && !keepHidden(fields[k]))) return;
           answers[k] = fields[k].get();
         });
         saveWaveAnswers(def.wave, answers);
@@ -354,9 +352,14 @@
         var secs = (Date.now() - started) / 1000;
         var skip = p.skipEventKeys || [];
         Object.keys(fields).forEach(function (k) {
-          if (skip.indexOf(k) >= 0 || hidden(fields[k])) return;
+          var f = fields[k];
+          if (skip.indexOf(k) >= 0) return;
+          // ausgeblendet: nur speichern, wenn das Feld Text behalten soll und welchen hat
+          if (hidden(f) && !(keepHidden(f) && answers[k])) return;
           if (answers[k] === undefined) return;
-          window.DB.saveEvent(ctx.code, def.wave, p.id, k, answers[k], secs, ctx.pilot);
+          // Zusatzangaben (Muster, App, Bild, Position) mit in die Zeile
+          var val = f.item && f.item.meta ? Object.assign({ wert: answers[k] }, f.item.meta) : answers[k];
+          window.DB.saveEvent(ctx.code, def.wave, p.id, k, val, secs, ctx.pilot);
         });
         (p.extraEvents || []).forEach(function (ev) {
           window.DB.saveEvent(ctx.code, def.wave, p.id, ev.key, ev.value, secs, ctx.pilot);
@@ -646,7 +649,10 @@
           errEl: errA,
           get: function () { return ta.value.trim() || null; },
           validate: function () {
-            return item.required && !ta.value.trim() ? MISSING : "";
+            var v = ta.value.trim();
+            if (item.required && !v) return MISSING;
+            if (v && item.minWords && v.split(/\s+/).length < item.minWords) return item.minWordsMsg || MISSING;
+            return "";
           }
         };
         return boxA;
@@ -775,7 +781,7 @@
       }
 
       case "screen": {
-        var entry = item.entry || (window.RECOGNITION.SETS[item.set] || [])[item.index] || {};
+        var entry = item.entry || {};
         if (window.RECOGNITION.render) {
           var stage = window.RECOGNITION.render(entry, { mini: !!item.mini });
           if (!item.mini) return stage;

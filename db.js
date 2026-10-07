@@ -215,10 +215,13 @@
   }
 
   // Screenshot hochladen: screenshots/CODE/WELLE/<zeit>-<name>
-  async function uploadScreenshot(code, wave, file) {
+  // Pfad: [code]/[welle]/[zeitstempel]-[laufende Nummer].[endung] – ohne den
+  // Original-Dateinamen (Rework 9.2), der persönliche Angaben enthalten kann
+  async function uploadScreenshot(code, wave, file, nr) {
     if (!sb) return { ok: false, dry: true, error: new Error("keine Verbindung konfiguriert") };
-    var safeName = String(file.name || "bild").replace(/[^A-Za-z0-9._-]/g, "_").slice(-60);
-    var path = code + "/" + wave + "/" + Date.now() + "-" + safeName;
+    var m = /\.([A-Za-z0-9]{2,5})$/.exec(String(file.name || ""));
+    var ext = m ? m[1].toLowerCase() : (String(file.type || "").split("/")[1] || "bin").replace(/[^a-z0-9]/g, "");
+    var path = code + "/" + wave + "/" + Date.now() + "-" + (nr || 1) + "." + ext;
     var delays = CFG.RETRY_DELAYS_SECONDS || [1, 3, 9];
     var lastErr = null;
     for (var i = 0; i <= delays.length; i++) {

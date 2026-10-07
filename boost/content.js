@@ -693,7 +693,7 @@ window.CONTENT = {
         { app: "fb", human: false, pattern: 6, text: "Du hast neue Benachrichtigungen verpasst",
           why: "Die App erinnert an sich selbst; einen Absender gibt es nicht." },
         { app: "sc", human: true, pattern: null, text: "mara.w hat dir einen Snap gesendet",
-          why: "Eine echte Person hat dir direkt etwas geschickt." },
+          why: "Eine echte Person hat dir etwas geschickt." },
         { app: "tt", human: true, pattern: null, text: "mara.w hat auf deinen Kommentar geantwortet",
           why: "Eine echte Person hat dir geantwortet; die Meldung nennt sie beim Namen." },
         { app: "tt", human: false, pattern: 6, text: "Dein Für-dich-Feed wurde aktualisiert. Schau dir die neuen Videos an.",
@@ -726,7 +726,7 @@ window.CONTENT = {
       { label: "Zurückholen", ids: [5, 6, 7, 8] }
     ],
     scores: "Deine Antworten: {x} von {n} richtig. Beim Wiederfinden: {y} von {max} Stellen.",
-    outro: "Was du damit machst, ist deine Sache. In etwa zwei Wochen fragen wir dich noch einmal kurz. Danke!",
+    outro: "Was du damit machst, entscheidest du selbst. In etwa zwei Wochen folgt ein zweiter, kürzerer Fragebogen.",
     button: "Weiter zum Fragebogen"
   },
 

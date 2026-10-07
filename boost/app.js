@@ -907,6 +907,17 @@
     else renderSummary();
     applyAssets(app);
     addBackButton();
+    addContactLine();
+  }
+  // Kontaktzeile unter dem Knopf (Rework 6.3), Adresse aus ../config.js
+  function addContactLine() {
+    var mail = window.STUDY_CONFIG && window.STUDY_CONFIG.CONTACT_EMAIL;
+    var foot = app.querySelector(".lp-foot");
+    if (!mail || !foot || previewKey || foot.querySelector(".contact-line")) return;
+    var p = document.createElement("p");
+    p.className = "contact-line";
+    p.innerHTML = 'Technische Probleme? Schreib an <a href="mailto:' + esc(mail) + '">' + esc(mail) + "</a>.";
+    foot.appendChild(p);
   }
 
   // ── Einschätzung und Bewertung: Prüfen und Speichern (Rework 4.1, 4.3, 6.1) ──

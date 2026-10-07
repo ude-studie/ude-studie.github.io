@@ -1070,3 +1070,7 @@ div.card { cursor: default; }
 .est-list li { display: flex; flex-direction: column; padding: 8px 12px; border-radius: 10px; background: var(--card, #fff); font-size: 0.9rem; }
 .est-list li b { font-weight: 600; }
 .est-list li span { color: #4b5563; }
+
+/* Kontaktzeile unter dem Hauptknopf (Rework 6.3) */
+.lp-foot .contact-line { flex-basis: 100%; margin: 8px 0 0; font-size: 0.78rem; color: #6b7280; text-align: center; }
+.lp-foot .contact-line a { color: inherit; }

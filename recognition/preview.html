@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex, nofollow">
-  <title>Erkennens-Sets – Durchsicht</title>
-  <link rel="stylesheet" href="../styles.css">
+  <title>Folge-Screens</title>
+  <link rel="stylesheet" href="../boost/styles.css">
   <link rel="stylesheet" href="rec.css">
   <style>
     body { background: #e9ecef; margin: 0; font-family: "Segoe UI", system-ui, sans-serif; }
@@ -24,37 +24,49 @@
 </head>
 <body>
 <div class="wrap">
-  <h1>Erkennens-Sets T0 / T1 / T2 – Durchsicht (nur intern)</h1>
-  <p>Jede Karte: Set-Position, Muster bzw. Distraktor, App, rot markiertes Ziel.
-     Reihenfolge = feste Reihenfolge im Fragebogen.</p>
+  <h1>Screens im Folge-Fragebogen – Durchsicht (nur intern)</h1>
+  <p>Oben die Zuordnung je App-Kombination (Reihenfolge wie im Fragebogen), darunter alle
+     Screens des Pools je Muster und alle Ablenker je App.</p>
+  <div id="combos"></div>
   <div id="out"></div>
 </div>
 <script src="sets.js"></script>
 <script src="render.js"></script>
 <script>
 (function () {
-  var APP = { ig: "Instagram", tt: "TikTok", sc: "Snapchat", fb: "Facebook", x: "X", lock: "Sperrbildschirm" };
+  var R = window.RECOGNITION;
+  var APP = { ig: "Instagram", tt: "TikTok", sc: "Snapchat", lock: "Sperrbildschirm" };
+  var byId = {};
+  ["T0", "T1", "T2"].forEach(function (k) { R.SETS[k].forEach(function (e) { byId[e.id] = e; }); });
+  // Zuordnung je Kombination
+  var combos = [["ig"], ["tt"], ["sc"], ["ig", "tt"], ["ig", "sc"], ["tt", "sc"], ["ig", "tt", "sc"]];
+  var tbl = '<table border="1" cellpadding="4" style="border-collapse:collapse;background:#fff;font-size:.8rem"><tr><th>Apps</th><th>Reihenfolge (Position: Muster = Screen, App; S: App in der Schulung)</th></tr>';
+  combos.forEach(function (c) {
+    tbl += "<tr><td>" + c.join("+") + "</td><td>" + R.followupSet(c).map(function (e) {
+      return e.position + ": " + e.muster + " = " + e.id + " (" + e.app + (e.schulungApp ? ", S: " + e.schulungApp : "") + ")";
+    }).join(" · ") + "</td></tr>";
+  });
+  document.getElementById("combos").innerHTML = tbl + "</table>";
   var out = document.getElementById("out");
-  ["T0", "T1", "T2"].forEach(function (set) {
-    var h = document.createElement("h2");
-    h.textContent = "Set " + set;
-    out.appendChild(h);
-    var grid = document.createElement("div");
-    grid.className = "grid";
-    window.RECOGNITION.SETS[set].forEach(function (entry, i) {
-      var cell = document.createElement("div");
-      cell.className = "cell";
-      var info = document.createElement("div");
-      info.className = "info";
-      info.innerHTML = "<b>" + (i + 1) + ". " + entry.id + "</b>" +
-        (entry.distraktor ? '<span class="tagd">Distraktor</span>'
-          : '<span class="tagm">' + window.RECOGNITION.MUSTER[entry.muster] + "</span>") +
-        "<br>App: " + (APP[entry.app] || entry.app) + " · Ziel: " + entry.target;
-      cell.appendChild(info);
-      cell.appendChild(window.RECOGNITION.render(entry, {}));
-      grid.appendChild(cell);
+  function cell(grid, entry, label, tag, dist) {
+    var c = document.createElement("div"); c.className = "cell";
+    var info = document.createElement("div"); info.className = "info";
+    info.innerHTML = "<b>" + label + "</b>" + '<span class="' + (dist ? "tagd" : "tagm") + '">' + tag + "</span><br>App: " + (APP[entry.app] || entry.app);
+    c.appendChild(info); c.appendChild(R.render(entry, {})); grid.appendChild(c);
+  }
+  function section(title) {
+    var h = document.createElement("h2"); h.textContent = title; out.appendChild(h);
+    var g = document.createElement("div"); g.className = "grid"; out.appendChild(g); return g;
+  }
+  var g1 = section("Muster-Pool");
+  Object.keys(R.FOLLOWUP_POOL).forEach(function (m) {
+    R.FOLLOWUP_POOL[m].forEach(function (e) {
+      cell(g1, { id: e.id, app: e.app }, m + " · " + e.id + (byId[e.id] ? " · " + byId[e.id].target : ""), R.MUSTER[m], false);
     });
-    out.appendChild(grid);
+  });
+  var g2 = section("Ablenker");
+  Object.keys(R.FOLLOWUP_DISTRACTORS).forEach(function (a) {
+    R.FOLLOWUP_DISTRACTORS[a].forEach(function (d) { cell(g2, { id: d.id, app: a }, d.id + " · " + d.name, "Ablenker", true); });
   });
 })();
 </script>

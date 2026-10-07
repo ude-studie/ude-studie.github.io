@@ -127,3 +127,14 @@
 /* Kopfzeile und untere Leiste sind eigene Zeilen des Handy-Rahmens (render.js) */
 .device-wrap.rec .device > .ig-head, .device-wrap.rec .device > .snap-head,
 .device-wrap.rec .device > .nav { flex: 0 0 auto; }
+
+/* Folge-Fragebogen (Rework 07.10.): größeres Zahnrad, Snapchat-Leiste unten */
+.rec-gearicon.big svg { width: 30px; height: 30px; }
+.device-wrap.rec .device > .snap-nav, .snap-nav { flex: 0 0 auto; display: flex; justify-content: space-around; align-items: center;
+  background: #fff; border-top: 1px solid #e6e6e6; padding: 6px 0 22px; font-size: 0.6875rem; color: #8a8a8a; }
+.snap-nav span { display: inline-flex; flex-direction: column; align-items: center; gap: 2px; min-width: 48px; }
+.snap-nav svg { width: 24px; height: 24px; fill: currentColor; }
+.snap-nav span.on { color: #111; }
+.snap-nav span.cam svg { width: 28px; height: 28px; }
+.snap-nav .rec-mark, .tt .nav .rec-mark { display: inline-flex; }
+.snap-head .rec-search.dark { background: rgba(0,0,0,0.08); color: #333; }

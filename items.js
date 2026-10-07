@@ -3,7 +3,7 @@
  * Nichts davon steht hartcodiert in der Logik. Wortlaute aus Auftrag v3.
  * Keine festen Termine (seit 06.10.): Folge-Fragebogen etwa zwei Wochen nach T0.
  *
- * Stand: Block R komplett (Abnahme 1). T0/FB/T1/T2 folgen in Abnahme 2/3.
+ * Stand: survey-v2 (Rework 07.10.): Blöcke R, T0, FB und ein Folge-Fragebogen T1.
  */
 window.ITEMS = {
 
@@ -19,7 +19,7 @@ window.ITEMS = {
   frame: {
     waitTitle: "Vielen Dank",
     waitText: "Dein zweiter Fragebogen wird in etwa zwei Wochen für dich freigeschaltet. Du bekommst dann eine Erinnerung per Mail.",
-    doneTitle: "Das war's.",
+    doneTitle: "Vielen Dank für deine Teilnahme",
     doneText: "Du hast alles geschafft. Deine persönliche Auswertung kommt nach dem Ende der Studie per Mail.",
     unknownCodeTitle: "Code unbekannt",
     unknownCodeText: "Diesen Code kennen wir nicht. Prüfe den Link aus deiner Mail oder gib deinen Code ein.",
@@ -30,15 +30,15 @@ window.ITEMS = {
     startHaveCode: "Ich habe schon einen Code",
     t0MissedTitle: "Danke für dein Interesse",
     t0MissedText: "Die Anmeldung zur Studie ist inzwischen geschlossen. Danke trotzdem für dein Interesse.",
-    offlineHint: "Verbindung schwach, deine Antworten werden gespeichert, sobald sie wieder da ist.",
-    noConnectionRegister: "Gerade besteht keine Verbindung zum Server. Bitte öffne die Seite später noch einmal – die Anmeldung braucht einmal kurz Internet.",
+    offlineHint: "Die Verbindung ist schwach. Deine Antworten werden gespeichert, sobald sie wieder besteht.",
+    noConnectionRegister: "Gerade besteht keine Verbindung zum Server. Bitte öffne die Seite später noch einmal; für die Anmeldung wird eine Internetverbindung benötigt.",
     registrationClosed: "Die Anmeldung zur Studie ist leider geschlossen."
   },
 
   // ── Block R: Registrierung (Rework 07.10., survey-v2) ───
   R: {
     r01: {
-      title: "Schön, dass du da bist",
+      title: "Willkommen zur Studie",
       // ENTWURF Zeitangabe: wird nach der Zeitmessung (Rework Abschnitt 10) gesetzt
       text: "Diese Studie der Universität Duisburg-Essen (Wirtschaftsinformatik) untersucht, wie Social-Media-Apps gestaltet sind, damit man länger in ihnen bleibt und öfter zurückkommt. Was auf dich zukommt: Nach der Anmeldung beantwortest du einen Fragebogen und siehst eine Schulung mit nachgestellten Screens aus deinen Apps; zusammen dauert das etwa %dauer_t0% Minuten. Etwa zwei Wochen später folgt ein zweiter, kürzerer Fragebogen. Am Ende bekommst du deine eigene Bildschirmzeit als Auswertung per Mail.",
       infoLink: "Teilnahmeinformation und Datenschutz",
@@ -117,20 +117,6 @@ window.ITEMS.T0 = {
     // ENTWURF Zeitangabe (%dauer_t0%, config.js): Rework Abschnitt 10 misst sie
     text: "Heute beantwortest du einige Fragen zu deiner Social-Media-Nutzung und siehst danach nachgestellte Screens aus deinen Apps. Bei jedem Screen schätzt du zuerst ein, ob ein markiertes Element dein Verhalten beeinflussen soll, danach erklären wir, was dahintersteckt. Das ist kein Test. Insgesamt dauert es etwa %dauer_t0% Minuten. Gespeichert werden nur deine Antworten, keine Nutzungs- oder Gerätedaten."
   },
-  t02: {
-    AP01: "Welche dieser Apps nutzt du? Wähl alle aus, die du mindestens ab und zu öffnest.",
-    options: [
-      { v: "ig", label: "Instagram" },
-      { v: "tt", label: "TikTok" },
-      { v: "sc", label: "Snapchat" },
-      { v: "fb", label: "Facebook" },
-      { v: "x",  label: "X" },
-      { v: "andere", label: "andere, nämlich", text: true }
-    ]
-  },
-  t03: {
-    NU01: "Wie viele Minuten pro Tag hast du in der letzten Woche ungefähr in diesen Apps zusammen verbracht? Bitte schätze, ohne nachzusehen."
-  },
   t04: {
     schritte_ios: [
       "Einstellungen → Bildschirmzeit",
@@ -149,35 +135,32 @@ window.ITEMS.T0 = {
     zusatz_android: "Wenn dein Handy nur Tageswerte zeigt: je ein Screenshot pro Tag ist zu viel, mach nur den der Wochenansicht, falls es sie gibt, sonst den der letzten 7 Tage im Akku- oder Nutzungsmenü.",
     SU01: "Konntest du den Screenshot machen?",
     SU02_label: "Screenshot hochladen (bis 3 Dateien, je 10 MB)",
-    SU02_hinweis_leer: "Ohne Screenshot fehlt uns der wichtigste Wert. Wenn es gerade nicht klappt, kannst du trotzdem weitermachen.",
+    SU02_hinweis_leer: "Ohne Screenshot fehlt uns der wichtigste Wert. Falls das Hochladen gerade nicht möglich ist, kannst du trotzdem weitermachen.",
     SU03: "Warum nicht?",
     SU03_options: [
       { v: "aus", label: "Die Bildschirmzeit war bei mir ausgeschaltet." },
-      { v: "finde_nicht", label: "finde die Ansicht nicht" },
-      { v: "upload", label: "Upload klappt nicht" },
-      { v: "moechte_nicht", label: "möchte ich nicht" },
-      { v: "anderes", label: "anderes", text: true }
+      { v: "finde_nicht", label: "Ich finde die Ansicht nicht." },
+      { v: "upload", label: "Das Hochladen funktioniert nicht." },
+      { v: "moechte_nicht", label: "Ich möchte keinen Screenshot hochladen." },
+      { v: "anderes", label: "Anderer Grund:", text: true }
     ]
   },
-  t05: {
-    intro: "Tipp bitte die Wochenwerte aus deinem Bericht ab, für jede deiner Apps.",
-    MI01: "Minuten in der letzten Woche",
-    MI01_hinweis: "Stunden und Minuten? Rechne um: 5 Std 12 Min = 312",
-    OE01: "Öffnungen (falls angezeigt)",
-    MI01_total: "Gesamt-Bildschirmzeit der Woche, falls angezeigt"
-  },
+  // Erkennen im Folge-Fragebogen: gleiches Format wie in der Schulung (Rework 07.10., 4.1 und 8)
   erkennen: {
-    instruktion: "Du siehst jetzt 11 Bildschirmfotos aus Social-Media-Apps. In jedem ist ein Element rot umrahmt. Sag uns, ob dieses Element aus deiner Sicht versucht, dein Verhalten zu beeinflussen. Nicht jedes Bild enthält so ein Element.",
+    instruktion: "Du siehst jetzt {n} nachgestellte Screens aus Social-Media-Apps. In jedem ist ein Element rot umrahmt. Sag uns, ob dieses Element aus deiner Sicht versucht, dein Verhalten zu beeinflussen. Nicht jeder Screen enthält so ein Element.",
     ERa: "Versucht das rot umrahmte Element, dein Verhalten zu beeinflussen?",
     ERa_options: [
       { v: "ja", label: "Ja" },
       { v: "nein", label: "Nein" },
       { v: "weiss_nicht", label: "Weiß nicht" }
     ],
-    ERb: "Wie? Beschreibe in einem Satz, was das Element macht und was die App damit erreichen will."
+    ERb: "Wie? Beschreibe in einem Satz, was das Element macht und was die App damit erreichen will.",
+    ERb_short: "Bitte beschreib kurz, was das Element macht.",
+    ERc: "Was sind deine Gedanken dazu? (freiwillig)",
+    screenOf: "Screen {x} von {n}"
   },
   t17: {
-    intro: "Zum Abschluss dieses Teils: die Elemente noch einmal.",
+    intro: "Die Elemente mit Muster noch einmal. Unter jedem Bild kannst du es vergrößern.",
     AK01: "Wie stark würde dich dieses Element beeinflussen, länger in der App zu bleiben oder öfter zurückzukommen?",
     AK01_skala: [
       { v: 1, label: "gar nicht" }, { v: 2, label: "kaum" }, { v: 3, label: "etwas" },
@@ -195,6 +178,9 @@ window.ITEMS.T0 = {
       { v: 1, label: "fast nie" }, { v: 2, label: "selten" }, { v: 3, label: "manchmal" },
       { v: 4, label: "oft" }, { v: 5, label: "sehr oft" }
     ],
+    // Kontrollfrage im Folge-Fragebogen (Rework 07.10., 8); richtig ist Stufe 2. Nur markieren.
+    ATT02: "Dies ist eine Kontrollfrage. Bitte wähle hier „selten“.",
+    ATT02_richtig: 2,
     SF01_01: "… mit anderen Zielen in Konflikt steht (zum Beispiel: etwas für Uni oder Arbeit erledigen)?",
     SF01_02: "… dazu führt, dass du deine Zeit weniger effizient nutzt?",
     SF01_03: "… dazu führt, dass du andere Dinge aufschiebst, die du tun willst oder musst?"
@@ -243,49 +229,29 @@ window.ITEMS.T0 = {
     diktat: "Tipp: Du kannst deine Antworten auch einsprechen. Tippe dazu auf das Mikrofon-Symbol deiner Tastatur.",
     QU01: "Welche Funktionen in deinen Apps sind deiner Meinung nach so gebaut, dass du länger bleibst oder öfter zurückkommst? Nenne alles, was dir einfällt.",
     QU02: "Wie gehst du damit um? Und unterscheidet sich das davon, wie du gern damit umgehen würdest?"
-  },
-  demo: {
-    title: "Angaben zu dir",
-    DE01: "Alter",
-    DE02: "Geschlecht",
-    DE02_options: [
-      { v: "weiblich", label: "weiblich" }, { v: "maennlich", label: "männlich" },
-      { v: "divers", label: "divers" }, { v: "keine_angabe", label: "keine Angabe" }
-    ],
-    DE03: "Studiengang",
-    DE04: "Fachsemester",
-    DE05: "Hochschule",
-    DE05_options: [
-      { v: "ude", label: "Universität Duisburg-Essen" },
-      { v: "andere", label: "andere, nämlich", text: true }
-    ]
-  },
-  t23: {
-    text: "Danke. Jetzt kommt die Schulung, etwa 15 bis 20 Minuten. Bitte direkt weiter.",
-    button: "Schulung starten"
   }
 };
 
 // ── Block FB: Feedback zur Schulung (Auftrag v3, Abschnitt 5) ─────────────
 window.ITEMS.FB = {
-  title: "Kurz zur Schulung",
-  FB01: "Gab es während der Schulung einen Moment, in dem dir plötzlich etwas klar wurde, so ein Aha-Erlebnis?",
+  title: "Rückmeldung zur Schulung",
+  FB01: "Hattest du während der Schulung ein Aha-Erlebnis? Gemeint ist ein Moment, in dem dir plötzlich etwas klar wurde, das du vorher nicht gesehen hattest.",
   FB01_options: [
     { v: "ja_deutlich", label: "Ja, deutlich" },
-    { v: "ja_bisschen", label: "Ja, ein bisschen" },
+    { v: "ja_ansatzweise", label: "Ja, ansatzweise" },
     { v: "nein", label: "Nein" }
   ],
   FB02: "Bei welchem Muster oder an welcher Stelle?",
   FB03: "Was davon war neu für dich?",
   FB04: "Was war unklar oder überflüssig?",
   FB05: "Wie willst du jetzt damit umgehen?",
-  endTitle: "Danke!",
-  endText: "Danke! In etwa zwei Wochen kommt der zweite und letzte Fragebogen (10 bis 15 Minuten). Mach dann bitte wieder einen Screenshot deiner Bildschirmzeit für die letzte Woche. Du bekommst eine Erinnerung per Mail."
+  endTitle: "Vielen Dank",
+  endText: "In etwa zwei Wochen folgt der zweite und letzte Fragebogen (etwa %dauer_t1% Minuten). Mach dann bitte wieder einen Screenshot deiner Bildschirmzeit für die letzte Woche. Du bekommst dazu eine Erinnerung per Mail."
 };
 
-// ── Blöcke T1/T2 (Auftrag v3, Abschnitt 5) ────────────────────────────────
+// ── Folge-Fragebogen T1 (Rework 07.10., Abschnitt 8) ────────────────────────────────
 window.ITEMS.T12 = {
-  start: "Willkommen zurück. Das ist der zweite und letzte Fragebogen, etwa 10 bis 15 Minuten.",
+  start: "Willkommen zurück. Das ist der zweite und letzte Fragebogen; er dauert etwa %dauer_t1% Minuten.",
   startTitle: "Willkommen zurück",
   SH01: "Hast du seit der Schulung etwas an deinem Handy oder in deinen Apps geändert?",
   SH01_options: [
@@ -298,8 +264,8 @@ window.ITEMS.T12 = {
     { v: "anderes", label: "anderes", text: true }
   ],
   SH02: "Magst du einen Screenshot davon hochladen?",
-  t1EndTitle: "Das war's.",
-  t1EndText: "Das war's. Danke fürs Mitmachen. Deine persönliche Auswertung kommt nach dem Ende der Studie per Mail.",
+  t1EndTitle: "Vielen Dank für deine Teilnahme",
+  t1EndText: "Deine persönliche Auswertung bekommst du nach dem Ende der Studie per Mail.",
   QU03: "Hat sich in den letzten zwei Wochen etwas daran verändert, wie du deine Apps nutzt oder wie du sie wahrnimmst? Was, und woran lag es?",
   QU04: "Was glaubst du, wollte diese Studie herausfinden?"
 };

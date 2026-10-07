@@ -1,0 +1,6 @@
+# Nie ins Repository: Schlüssel und heruntergeladene Studiendaten
+tools/.service-key
+*.service-key
+.env
+.env.*
+daten/

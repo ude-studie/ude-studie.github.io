@@ -10,10 +10,7 @@
 }
 .study > .study-page { flex: 0 0 auto; }
 
-.progress-track {
-  height: 4px; background: #e3e8ee; border-radius: 2px;
-  margin: 10px 12px 0; overflow: hidden; flex: 0 0 auto;
-}
+.progress-track { height: 4px; background: #e3e8ee; overflow: hidden; }
 .progress-fill { height: 100%; background: var(--primary, #1f3a5f); transition: width 300ms ease; }
 
 .offline-bar {
@@ -117,3 +114,13 @@
 .field.missing { outline: 2px solid #c0392b; outline-offset: 6px; border-radius: 10px; }
 .field.missing .error { color: #b02a1e; font-weight: 600; }
 .miss-note { margin: 0 0 14px; padding: 10px 12px; border-radius: 10px; background: #fdeeee; color: #9c2f2f; font-weight: 600; }
+
+/* Fuß der Karte: Fortschrittsbalken (Rework 6.2), Kontaktzeile (6.3), Pilot-Hinweis */
+.study-foot { flex: 0 0 auto; padding: 0 16px 10px; }
+.study-foot .progress-track { margin: 0 0 8px; border-radius: 2px; }
+.contact-line { margin: 0; font-size: 0.78rem; color: #6b7280; text-align: center; }
+.contact-line a { color: inherit; }
+.pilot-line { margin: 4px 0 0; font-size: 0.72rem; color: #9a6700; text-align: center; }
+
+/* Textfelder in der Schrift der Seite (sonst Browser-Standard Monospace) */
+textarea, select { font: inherit; }

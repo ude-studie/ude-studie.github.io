@@ -89,6 +89,11 @@
     back: '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" d="M15 4l-8 8 8 8"/></svg>',
     menu: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16v2H4zm0 5h16v2H4zm0 5h16v2H4z"/></svg>',
     play: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M10 8l6 4-6 4z"/></svg>',
+    plusThin: '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M12 4v16M4 12h16"/></svg>',
+    pin: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a7 7 0 017 7c0 5-7 13-7 13S5 14 5 9a7 7 0 017-7zm0 4.5a2.5 2.5 0 100 5 2.5 2.5 0 000-5z"/></svg>',
+    chat: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3c5 0 9 3.4 9 7.6s-4 7.6-9 7.6c-1 0-2-.1-2.9-.4L4 20l1.3-4C4 14.6 3 12.7 3 10.6 3 6.4 7 3 12 3z"/></svg>',
+    camera: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4h6l1.6 2.2H20a2 2 0 012 2V18a2 2 0 01-2 2H4a2 2 0 01-2-2V8.2a2 2 0 012-2h3.4zm3 4.4a4.3 4.3 0 100 8.6 4.3 4.3 0 000-8.6z"/></svg>',
+    friends: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4a3.5 3.5 0 110 7 3.5 3.5 0 010-7zm7.5 1.5a3 3 0 110 6 3 3 0 010-6zM9 12.5c4 0 6.5 2 6.5 5V19h-13v-1.5c0-3 2.5-5 6.5-5zm7.8.3c3 .2 4.7 1.8 4.7 4.2V19h-4.5v-1.5c0-1.9-.7-3.5-1.9-4.7z"/></svg>',
     status: '<svg viewBox="0 0 58 14" aria-hidden="true"><rect x="0" y="9" width="3" height="5" rx="1"/><rect x="5" y="6" width="3" height="8" rx="1"/><rect x="10" y="3" width="3" height="11" rx="1"/><rect x="15" y="0" width="3" height="14" rx="1"/><path d="M27 4.5a9 9 0 0112 0l-1.4 1.5a7 7 0 00-9.2 0zM29.4 7.2a5.5 5.5 0 017.2 0L35.2 8.7a3.5 3.5 0 00-4.4 0zM33 12.5l-1.7-1.8a2.4 2.4 0 013.4 0z"/><rect x="42" y="2" width="14" height="10" rx="3" fill="none" stroke="currentColor" stroke-width="1.4"/><rect x="44" y="4" width="9" height="6" rx="1.5"/></svg>'
   };
   function mark(html, area) {
@@ -108,14 +113,23 @@
     return '<div class="nav ig-reels-nav" aria-hidden="true"><span>' + ICON.home + "</span><span>" + ICON.search +
       "</span><span>" + ICON.plus + "</span><span>" + ICON.play + "</span><span>" + ICON.profile + "</span></div>";
   }
-  function igHead(title) {
-    return '<div class="ig-head"><span class="ig-plus" aria-hidden="true">' + ICON.plus + "</span>" +
+  function igHead(title, markPlus) {
+    var plus = '<span class="ig-plus" aria-hidden="true">' + ICON.plusThin + "</span>";
+    return '<div class="ig-head">' + (markPlus ? mark(plus) : plus) +
       (title ? '<span class="ig-title">' + esc(title) + "</span>" : "") +
       '<span class="ig-icons">' + ICON.heartLine + ICON.send + "</span></div>";
   }
-  function ttNav() {
-    return '<div class="nav" aria-hidden="true"><span>' + ICON.home + "Start</span><span>" + ICON.search +
-      'Entdecken</span><span class="plus">' + ICON.plus + "</span><span>" + ICON.inbox + "Posteingang</span><span>" + ICON.profile + "Profil</span></div>";
+  function ttNav(markIdx) {
+    var items = ["<span>" + ICON.home + "Start</span>", "<span>" + ICON.search + "Entdecken</span>",
+      '<span class="plus">' + ICON.plus + "</span>", "<span>" + ICON.inbox + "Posteingang</span>", "<span>" + ICON.profile + "Profil</span>"];
+    return '<div class="nav" aria-hidden="true">' + items.map(function (it, i) { return i === markIdx ? mark(it) : it; }).join("") + "</div>";
+  }
+  // Untere Leiste von Snapchat: Karte, Chat, Kamera, Stories, Spotlight (Kamera in der Mitte)
+  function snapNav(markIdx, active) {
+    var items = [["pin", "Karte"], ["chat", "Chat"], ["camera", "Kamera"], ["friends", "Stories"], ["play", "Spotlight"]].map(function (d, i) {
+      return '<span class="' + (i === active ? "on" : "") + (d[0] === "camera" ? " cam" : "") + '">' + ICON[d[0]] + esc(d[1]) + "</span>";
+    });
+    return '<div class="nav snap-nav" aria-hidden="true">' + items.map(function (it, i) { return i === markIdx ? mark(it) : it; }).join("") + "</div>";
   }
   function igPost(o) {
     return '<div class="ig-post"><div class="ig-post-head">' +
@@ -144,7 +158,7 @@
         (o.markMenu ? mark('<span class="rec-menuicon">' + ICON.menu + "</span>") : (o.menu ? '<span class="rec-menuicon">' + ICON.menu + "</span>" : "")) +
         "</div>";
     } else {
-      html += igHead(o.title);
+      html += igHead(o.title, o.markPlus);
     }
     html += '<div class="ig-content">';
     if (o.refresh) {
@@ -217,7 +231,7 @@
       html += o.markPeek ? markSelf(peek) : peek;
     }
     html += "</div>";
-    html += o.nav === "ig" ? igNav() : ttNav();
+    html += o.nav === "ig" ? igNav() : ttNav(o.markNav);
     return { cls: "tt", html: html };
   };
 
@@ -287,7 +301,7 @@
       }).join("") + "</div>" + (o.expiry ? '<div class="st-expiry dark">' + esc(o.expiry) + "</div>" : "");
       stories = o.markStories ? mark(strip, true) : strip;
     }
-    return { cls: "snap", scroll: true, html: head + stories + rows };
+    return { cls: "snap", scroll: true, html: head + stories + rows + (o.nav ? snapNav(o.markNav, 1) : "") };
   };
 
   // Explore-Raster (Instagram)
@@ -296,8 +310,9 @@
       return pic("xp" + i + c, "rec-explore-cell");
     }).join("");
     var grid = '<div class="rec-explore">' + cells + "</div>";
-    var head = '<div class="ig-head"><span class="rec-search">' + ICON.search + "<i>" + esc(o.search) + "</i></span></div>";
-    var hint = '<div class="rec-explore-hint">' + esc(o.hint) + "</div>";
+    var sb = '<span class="rec-search">' + ICON.search + "<i>" + esc(o.search) + "</i></span>";
+    var head = '<div class="ig-head">' + (o.markSearch ? mark(sb) : sb) + "</div>";
+    var hint = o.hint ? '<div class="rec-explore-hint">' + esc(o.hint) + "</div>" : "";
     return { cls: "ig", scroll: true, html: head + (o.marked ? mark(hint + grid, true) : hint + grid) };
   };
 
@@ -351,7 +366,7 @@
     "T0-8": function () { // m8: Snapchat Stories, verfallende Inhalte
       return B.snap({ title: "Stories",
         stories: [{ user: "Mara" }, { user: "Ben" }, { user: "Elif" }, { user: "Noa" }],
-        expiry: "Maras Story läuft in 2 Std. ab", markStories: true,
+        markStories: true, // Ablauf-Zeile entfernt (Rework 07.10., 4.6)
         rows: [] });
     },
     "T0-9": function () { // m3: TikTok, Empfehlungen nach Schwäche
@@ -510,6 +525,32 @@
       return B.darkVideo({ picId: "rl-backen", user: "lea.backt", caption: "Der Teig ist IMMER zu klebrig??",
         likes: "12,9k", comments: "207", shares: "Teilen", bar: true, time: "0:02 · läuft",
         nextHint: "Nächstes Reel startet gleich …", markNext: true, nav: "ig" });
+    },
+
+    // ===== Ablenker im Folge-Fragebogen (Rework 07.10., Abschnitt 8) =====
+    "FD-ig-suche": function () { // Instagram-Suche, Suchleiste markiert
+      return B.explore({ search: "Suchen", markSearch: true, cells: ["a", "b", "c", "d", "e", "f", "g", "h", "i"] });
+    },
+    "FD-ig-plus": function () { // Instagram-Startseite, Plus (neuer Beitrag) markiert
+      return B.lightFeed({ title: "Instagram", markPlus: true,
+        posts: [{ user: "flo.fotografiert", picId: "ig-nebel", line: "Gefällt 320 Mal" },
+                { user: "cafe.eckhaus", picId: "ig-kaffee", line: "Gefällt 89 Mal" }] });
+    },
+    "FD-tt-folgeich": function () { // TikTok, Reiter „Folge ich" markiert
+      return B.darkVideo({ picId: "tt-koch", user: "kochtmit", caption: "5-Minuten-Nudeln, die wirklich halten",
+        likes: "9.812", comments: "233", shares: "Teilen", tabs: ["Folge ich", "Für dich"], activeTab: 1, markTab: 0 });
+    },
+    "FD-tt-posteingang": function () { // TikTok, Posteingang-Symbol in der unteren Leiste markiert
+      return B.darkVideo({ picId: "tt-hund2", user: "struppi.tv", caption: "Er wartet jeden Tag am Fenster 🐶",
+        likes: "48,1k", comments: "1.022", shares: "Teilen", tabs: ["Folge ich", "Für dich"], activeTab: 1, markNav: 3 });
+    },
+    "FD-sc-kamera": function () { // Snapchat-Chatliste, Kamera-Symbol markiert
+      return B.snap({ title: "Chats", nav: true, markNav: 2,
+        rows: [{ user: "Paula", status: "Hat deinen Chat geöffnet · 1 Std." }, { user: "Can", status: "Neuer Chat · 14 Min." }] });
+    },
+    "FD-sc-karte": function () { // Snapchat-Chatliste, Karte-Symbol markiert
+      return B.snap({ title: "Chats", nav: true, markNav: 0,
+        rows: [{ user: "Timo", status: "Neuer Snap · 5 Min." }, { user: "Alte WG", status: "Hat deinen Chat geöffnet · 2 Std." }] });
     }
   };
 
@@ -517,7 +558,7 @@
   B.snapGearOnTT = function () {
     var html = '<div class="rec-tt-profile"><div class="rec-tt-profilehead"><span class="rec-backwrap"><span class="rec-back light">' + ICON.back + "</span></span>" +
       '<span class="rec-tt-profilename">timo.rollt</span>' +
-      mark('<span class="rec-gearicon light">' + ICON.gear + "</span>") + "</div>" +
+      mark('<span class="rec-gearicon light big">' + ICON.gear + "</span>") + "</div>" +
       '<div class="rec-tt-profilestats"><span><b>102</b> Folge ich</span><span><b>4.218</b> Follower</span><span><b>58,1k</b> Likes</span></div>' +
       '<div class="rec-explore dark">' + ["a", "b", "c", "d", "e", "f"].map(function (c, i) { return pic("ttp" + i, "rec-explore-cell"); }).join("") + "</div></div>";
     return { cls: "tt", scroll: true, html: html };

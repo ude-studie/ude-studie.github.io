@@ -27,7 +27,7 @@
 <body>
   <header>
     <h1>Vorschau aller Zustände</h1>
-    <p>Jeder Rahmen zeigt eine Seite der Schulung in 390 × 780 px. Je Muster sind alle gebauten App-Varianten zu sehen, jeweils in vier Schritten: 1 Ansehen, 2 Frage (mit „Screen noch einmal ansehen"), 3 Reaktion mit Markierung, 4 Erklärung (Muster 6 beginnt bei Schritt 2). Unter jedem Muster steht, für welche Apps der Person welcher Screen als Fallback gezeigt wird. In Schritt 3 und 4 ist eine falsche Beispielantwort eingesetzt (bei Muster 6 die Auswahl 1, 2, 4; bei W1 die Stellen 1, 2, 4; bei W2 eine gemischte Beispiel-Einordnung). Nichts hier wird gespeichert.</p>
+    <p>Jeder Rahmen zeigt eine Seite der Schulung in 390 × 780 px. Je Muster sind alle gebauten App-Varianten zu sehen, jeweils in fünf Schritten: 1 Einschätzung (rot umrahmtes Element), 2 Bewertung, 3 Frage (mit „Screen noch einmal ansehen"), 4 Reaktion mit Markierung, 5 Erklärung. Darunter die drei Ablenker. Unter jedem Muster steht, für welche Apps der Person welcher Screen als Fallback gezeigt wird. In Schritt 3 und 4 ist eine falsche Beispielantwort eingesetzt (bei Muster 6 die Auswahl 1, 2, 4; bei W1 die Stellen 1, 2, 4; bei W2 eine gemischte Beispiel-Einordnung). Nichts hier wird gespeichert.</p>
     <p>„Exportansicht" blendet Buttons und alles Persönliche aus (Antwort-Zeile, eigene Auswahl, eigene Zahlen), damit sich die Zustände als Ersatzbilder für das Umfragetool abfotografieren lassen. „Einzeln öffnen" zeigt eine Seite allein.</p>
     <div class="controls">
       <label><input type="checkbox" id="export"> Exportansicht</label>
@@ -98,9 +98,10 @@
           "<figcaption><span>" + esc(caption) + '</span><a href="' + esc(src) + '" target="_blank" rel="noopener">einzeln öffnen</a></figcaption></figure>';
       }
 
-      var html = '<h2>Einleitung</h2><div class="grid">' + frame("intro", "Einleitung 1") + frame("apps", "Einleitung 2 · Deine Apps") + "</div>";
+      // Seit dem Rework 07.10. ohne Einleitung und App-Abfrage: die Schulung beginnt mit Screen 1
+      var html = "";
 
-      var steps = [["L", "1 Ansehen"], ["A", "2 Frage"], ["B", "3 Reaktion"], ["E", "4 Erklärung"]];
+      var steps = [["L", "1 Einschätzung"], ["K", "2 Bewertung"], ["A", "3 Frage"], ["B", "4 Reaktion"], ["E", "5 Erklärung"]];
       C.patterns.forEach(function (p) {
         html += "<h2>Muster " + p.id + " · " + esc(p.name) + "</h2>";
         var built = Object.keys(p.variants);
@@ -116,13 +117,14 @@
         built.forEach(function (v) {
           html += "<h3>" + esc(label(v)) + (p.always ? "" : '<span class="tag">gebaut</span>') + "</h3><div class=\"grid\">";
           steps.forEach(function (s) {
-            if (p.type === "multi" && s[0] === "L") return;
             html += frame("p" + p.id + s[0], "Muster " + p.id + " · " + label(v) + " · " + s[1], p.always ? "" : "&variant=" + v);
           });
           html += "</div>";
         });
       });
 
+      html += '<h2>Ablenker</h2><p class="meta">Drei Ablenker nach dem 2., 4. und 6. Screen, reihum aus den oben gewählten Apps. Einschätzung, danach die Auflösung „Hier steckt kein Muster.“</p><div class="grid">' +
+        [1, 2, 3].map(function (k) { return frame("d" + k + "L", "Ablenker " + k + " · Einschätzung") + frame("d" + k + "R", "Ablenker " + k + " · Auflösung"); }).join("") + "</div>";
       html += '<h2>Wiederfinden</h2><p class="meta">W1: Nummerierte Marker nur für Muster, die bei den oben gewählten Apps gezeigt werden; Elemente nicht gezeigter Muster sind aus dem Screen entfernt (z. B. verschwindet das Lade-Rad bei „nur Snapchat"). W2: drei Meldungen aus den genutzten Apps, je „Von einem Menschen" oder „Von der App"; die Streak-Meldung kommt nur mit Muster 7 vor.</p><div class="grid">' +
         frame("W1A", "W1 Nummern antippen") + frame("W1B", "W1 Rückmeldung") + frame("W2A", "W2 Meldungen einordnen") + frame("W2B", "W2 Rückmeldung") + "</div>";
       html += '<h2>Schluss</h2><div class="grid">' + frame("einordnung", "Einordnung") + frame("zusammenfassung", "Zusammenfassung") + "</div>";
