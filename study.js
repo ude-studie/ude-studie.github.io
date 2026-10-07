@@ -34,7 +34,8 @@
   // (keine festen Termine), [App] ersetzt pages/*.js selbst
   function tpl(s) {
     if (s == null) return s;
-    return String(s).replace(/\s*\(%woche%\)/g, "").replace(/%woche%/g, "letzte Woche");
+    return String(s).replace(/\s*\(%woche%\)/g, "").replace(/%woche%/g, "letzte Woche")
+      .replace(/%dauer_t0%/g, CFG.DAUER_T0_MIN || "30").replace(/%dauer_t1%/g, CFG.DAUER_T1_MIN || "10");
   }
 
   // ── Hilfen ─────────────────────────────────────────────
@@ -672,6 +673,16 @@
         if (answers[item.key]) inp.value = answers[item.key];
         var err4 = el("div", "error");
         box4.appendChild(inp); box4.appendChild(err4);
+        // item.sameAs: zweites Feld zur Kontrolle (EM02). Einfügen bleibt erlaubt.
+        var mismatch = function () {
+          var other = item.sameAs && fields[item.sameAs];
+          var v = inp.value.trim();
+          return other && v && other.get() && v.toLowerCase() !== other.get().toLowerCase();
+        };
+        inp.addEventListener("input", function () {
+          if (item.sameAs) err4.textContent = mismatch() ? item.mismatch : "";
+          fire(page);
+        });
         fields[item.key] = {
           errEl: err4,
           get: function () { return inp.value.trim(); },
@@ -679,10 +690,63 @@
             var v = inp.value.trim();
             if (item.required && !v) return item.error;
             if (v && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v)) return item.error;
+            if (mismatch()) return item.mismatch;
             return "";
           }
         };
         return box4;
+      }
+
+      case "select": {
+        // Auswahlmenü; Option mit text: true blendet ein Freitextfeld ein (key_text)
+        var boxS = el("div", "field");
+        var idS = "sel-" + item.key;
+        var lab = el("label", null, tpl(item.label)); lab.htmlFor = idS;
+        boxS.appendChild(lab);
+        var sel = el("select", "select-input"); sel.id = idS;
+        var ph = el("option", null, item.placeholder || "Bitte auswählen"); ph.value = ""; sel.appendChild(ph);
+        item.options.forEach(function (o) {
+          var op = el("option", null, o.label); op.value = o.v;
+          if (answers[item.key] === o.v) op.selected = true;
+          sel.appendChild(op);
+        });
+        boxS.appendChild(sel);
+        var textOptS = item.options.filter(function (o) { return o.text; })[0];
+        var otherS = null;
+        if (textOptS) {
+          otherS = el("input", "other-input"); otherS.type = "text";
+          otherS.placeholder = item.textLabel || "…";
+          otherS.setAttribute("aria-label", item.textLabel || textOptS.label);
+          if (answers[item.key + "_text"]) otherS.value = answers[item.key + "_text"];
+          otherS.hidden = sel.value !== textOptS.v;
+          boxS.appendChild(otherS);
+          fields[item.key + "_text"] = {
+            errEl: el("div"),
+            get: function () { return otherS.hidden ? undefined : (otherS.value.trim() || null); },
+            validate: function () { return ""; }
+          };
+        }
+        var errS = el("div", "error");
+        boxS.appendChild(errS);
+        sel.addEventListener("change", function () {
+          if (otherS) otherS.hidden = sel.value !== textOptS.v;
+          fire(page);
+        });
+        fields[item.key] = {
+          errEl: errS,
+          get: function () { return sel.value || null; },
+          validate: function () {
+            if (item.required && !sel.value) return "Bitte wähle eine Antwort aus.";
+            if (otherS && !otherS.hidden && item.textRequired && !otherS.value.trim()) return "Bitte gib an, welche.";
+            return "";
+          }
+        };
+        return boxS;
+      }
+
+      case "hint": {
+        // kleiner grauer Hinweis, z. B. zum Einsprechen langer Antworten
+        return el("p", "tp-hint", tpl(item.text));
       }
 
       case "screen": {
@@ -789,25 +853,14 @@
     return ids[i + 1] || last;
   }
 
+  // Übergabe an die Schulung: ohne Zwischenseite (Rework 07.10.). replace(),
+  // damit „Zurück" im Browser nicht auf eine leere Übergabe führt.
   function showBoostHandoff() {
-    var box = el("div", "nav-row");
-    // Noch vor der Schulung: zurück in den ersten Fragebogen (letzte Seite)
-    var back = el("button", "btn secondary", "Zurück");
-    back.addEventListener("click", function () {
-      var pages = window.PAGES_T0.pages;
-      runBlock(window.PAGES_T0, pages[pages.length - 1].id);
-    });
-    box.appendChild(back);
-    var b = el("button", "btn", "Schulung starten");
-    b.addEventListener("click", function () {
-      var ret = personalLink(ctx.code) + (ctx.pilot ? "&pilot=1" : "");
-      location.href = "boost/index.html?code=" + encodeURIComponent(ctx.code) +
-        "&apps=" + encodeURIComponent((ctx.apps || []).join(",")) +
-        (ctx.pilot ? "&pilot=1" : "") +
-        "&return=" + encodeURIComponent(ret);
-    });
-    box.appendChild(b);
-    simplePage("Die Schulung", "Jetzt kommt die Schulung, etwa 15 bis 20 Minuten. Bitte direkt weiter.", box);
+    var ret = personalLink(ctx.code) + (ctx.pilot ? "&pilot=1" : "");
+    location.replace("boost/index.html?code=" + encodeURIComponent(ctx.code) +
+      "&apps=" + encodeURIComponent((ctx.apps || []).join(",")) +
+      (ctx.pilot ? "&pilot=1" : "") +
+      "&return=" + encodeURIComponent(ret));
   }
 
   async function start(code) {

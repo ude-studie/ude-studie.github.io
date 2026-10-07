@@ -1,6 +1,8 @@
 /*
  * pages/r.js – Seitendefinitionen Block R (Registrierung) als Datenstruktur.
  * Texte kommen aus items.js, die Logik (Rendern, Speichern) aus study.js.
+ * Stand: Rework 07.10. (survey-v2) – Seitenfolge R-01 bis R-05, ohne
+ * Bildschirmzeit-Seite und ohne Link-Seite; nach R-05 folgt direkt T0.
  *
  * Seitenformat:
  *   id        Seitenkennung (wird als events.page gespeichert)
@@ -13,6 +15,7 @@
   "use strict";
   var T = window.ITEMS.R;
   var S = window.ITEMS.scales;
+  var STUDY_APPS = ["ig", "tt", "sc"];
 
   window.PAGES_R = {
     wave: "R",
@@ -34,22 +37,20 @@
         items: [
           { type: "title", text: T.r02.title },
           { type: "radio", key: "SC01", label: T.r02.SC01, options: S.janein, required: true },
-          { type: "radio", key: "SC02", label: T.r02.SC02, options: S.janein, required: true },
           { type: "multi", key: "SC03", label: T.r02.SC03, options: T.r02.SC03_options, required: true },
           { type: "radio", key: "SC04", label: T.r02.SC04, options: T.r02.SC04_options, required: true }
-          // SC05 (Teilnahme an allen drei Terminen) auf Daniels Wunsch am 06.10. entfernt
         ],
         after: function (answers, ctx) {
-          // Betriebssystem an der Person speichern (nur ios/android)
+          // Betriebssystem und Apps an der Person speichern (Apps nur Instagram/TikTok/Snapchat)
           var os = answers.SC04;
-          if (os === "ios" || os === "android") {
-            ctx.os = os;
-            window.DB.saveProfile(ctx.code, os, null);
-          }
+          var apps = STUDY_APPS.filter(function (k) { return (answers.SC03 || []).indexOf(k) >= 0; });
+          if (os === "ios" || os === "android") ctx.os = os;
+          ctx.apps = apps;
+          window.DB.saveProfile(ctx.code, (os === "ios" || os === "android") ? os : null, apps.length ? apps : null);
         },
         next: function (answers) {
           var apps = answers.SC03 || [];
-          var out = answers.SC01 === "nein" || answers.SC02 === "nein" ||
+          var out = answers.SC01 === "nein" ||
                     (apps.length === 1 && apps[0] === "keine") || apps.length === 0 ||
                     answers.SC04 === "anderes";
           return out ? "R-X" : "R-03";
@@ -70,38 +71,43 @@
         id: "R-03",
         items: [
           { type: "title", text: T.r03.title },
-          { type: "email", key: "EM01", label: T.r03.EM01, required: true, error: T.r03.error }
+          { type: "number", key: "DE01", label: T.r03.DE01, min: 18, max: 99, required: true },
+          { type: "radio", key: "DE02", label: T.r03.DE02, options: T.r03.DE02_options, required: true },
+          { type: "select", key: "DE06", label: T.r03.DE06, options: T.r03.DE06_options, required: true,
+            textLabel: T.r03.DE06_text, textRequired: true },
+          // nur bei „Studium"
+          { type: "textinput", key: "DE03", label: T.r03.DE03, required: true, visibleIf: { key: "DE06", equals: "studium" } },
+          { type: "number", key: "DE04", label: T.r03.DE04, min: 1, max: 40, required: true, visibleIf: { key: "DE06", equals: "studium" } },
+          { type: "radio", key: "DE05", label: T.r03.DE05, options: T.r03.DE05_options, required: true, visibleIf: { key: "DE06", equals: "studium" } }
         ],
-        after: function (answers, ctx) {
-          // E-Mail getrennt von den Antworten (contacts), in events nur ein Marker
-          window.DB.saveEmail(ctx.code, answers.EM01);
-        },
-        // EM01 selbst wird NICHT als Event gespeichert:
-        skipEventKeys: ["EM01"],
-        extraEvents: [{ key: "EM_SAVED", value: true }],
         next: function () { return "R-04"; }
       },
       {
         id: "R-04",
         items: [
           { type: "title", text: T.r04.title },
-          { type: "text", byOs: { ios: T.r04.intro_ios, android: T.r04.intro_android } },
-          { type: "radio", key: "BZ01", label: T.r04.BZ01, options: T.r04.BZ01_options, required: true },
-          { type: "notice", byOs: { ios: T.r04.findehilfe_ios, android: T.r04.findehilfe_android },
-            visibleIf: { key: "BZ01", equals: "finde_ich_nicht" } }
+          { type: "text", text: T.r04.text },
+          { type: "email", key: "EM01", label: T.r04.EM01, required: true, error: T.r04.error },
+          { type: "email", key: "EM02", label: T.r04.EM02, required: true, error: T.r04.error,
+            sameAs: "EM01", mismatch: T.r04.mismatch }
         ],
+        after: function (answers, ctx) {
+          // E-Mail getrennt von den Antworten (contacts), in events nur ein Marker
+          window.DB.saveEmail(ctx.code, answers.EM01);
+        },
+        // Die Adressen selbst werden NICHT als Event gespeichert:
+        skipEventKeys: ["EM01", "EM02"],
+        extraEvents: [{ key: "EM_SAVED", value: true }],
         next: function () { return "R-05"; }
       },
       {
         id: "R-05",
         items: [
           { type: "title", text: T.r05.title },
-          { type: "text", text: T.r05.text },
-          { type: "linkbox" },  // persönlicher Link + Kopieren/Startbildschirm/Mail (study.js)
-          { type: "text", text: T.r05.abschied }
+          { type: "text", text: T.r05.text }
         ],
         finishWave: true,  // markDone('R') beim Weiter; der Router startet dann direkt T0
-        nextLabel: "Weiter zum Fragebogen",
+        nextLabel: T.r05.button,
         next: function () { return "END"; }
       }
     ]

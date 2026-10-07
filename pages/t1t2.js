@@ -112,9 +112,9 @@
           if (entry.distraktor) return;
           out.push({ type: "screen", entry: entry, mini: true });
           out.push({ type: "radio", key: "AK01_" + entry.muster, label: T0.t17.AK01,
-                     options: scalePoints(5, T0.t17.AK01_anker[0], T0.t17.AK01_anker[1]), required: true });
+                     options: T0.t17.AK01_skala, required: true });
           out.push({ type: "radio", key: "AK02_" + entry.muster, label: T0.t17.AK02,
-                     options: scalePoints(5, T0.t17.AK02_anker[0], T0.t17.AK02_anker[1]), required: true });
+                     options: T0.t17.AK02_skala, required: true });
         });
         return out;
       }, next: null });
@@ -135,7 +135,7 @@
           out.push({ type: "subtitle", text: APP_LABEL[app] });
           out.push({ type: "radio", key: "KG01_" + app,
                      label: T0.kgre.KG01.replace(/\[App\]/g, APP_LABEL[app]),
-                     options: scalePoints(7, T0.kgre.KG01_anker[0], T0.kgre.KG01_anker[1]), required: true });
+                     options: T0.kgre.KG01_skala, required: true });
           out.push({ type: "radio", key: "RE01_" + app,
                      label: T0.kgre.RE01.replace(/\[App\]/g, APP_LABEL[app]),
                      options: T0.kgre.RE01_skala, required: true });
@@ -146,6 +146,7 @@
       // Zwei offene Fragen zum Schluss (seit 06.10. im einzigen Folge-Fragebogen)
       pages.push({ id: id(pageNo++), items: [
         { type: "title", text: "Zwei Fragen zum Schluss" },
+        { type: "hint", text: T0.offen.diktat },
         { type: "textarea", key: "QU03", label: T.QU03, rows: 5 },
         { type: "textarea", key: "QU04", label: T.QU04, rows: 5 }
       ], next: null });

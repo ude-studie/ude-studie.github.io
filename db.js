@@ -168,7 +168,8 @@
   }
 
   // Eine Antwort = eine Zeile in events.
-  function saveEvent(code, wave, page, key, value, pageSeconds, pilot) {
+  // version: Fassung (Fragebogen survey-v…, Schulung boost-v…); nur mit CFG.SEND_VERSION
+  function saveEvent(code, wave, page, key, value, pageSeconds, pilot, version) {
     if (!sb) {
       var d = dryState();
       d.last_pages = d.last_pages || {};
@@ -183,6 +184,7 @@
       client_ts: new Date().toISOString(),
       pilot: !!pilot
     };
+    if (CFG.SEND_VERSION) row.version = version || CFG.SURVEY_VERSION || null;
     return withRetry({ kind: "insert", table: "events", row: row }, true);
   }
 

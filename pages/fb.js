@@ -14,6 +14,7 @@
         id: "FB-01",
         items: [
           { type: "title", text: T.title },
+          { type: "hint", text: window.ITEMS.T0.offen.diktat },
           { type: "radio", key: "FB01", label: T.FB01, options: T.FB01_options, required: true },
           { type: "textarea", key: "FB02", label: T.FB02, rows: 3,
             visibleIf: { key: "FB01", equals: ["ja_deutlich", "ja_bisschen"] } },
@@ -27,8 +28,7 @@
         id: "FB-02",
         items: [
           { type: "title", text: T.endTitle },
-          { type: "text", text: T.endText },
-          { type: "linkbox" } // persönlichen Link noch einmal anzeigen (Auftrag)
+          { type: "text", text: T.endText }
         ],
         extraEvents: [{ key: "FB_DONE", value: true }],
         next: function () { return "END"; }

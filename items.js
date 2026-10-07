@@ -36,27 +36,25 @@ window.ITEMS = {
     registrationClosed: "Die Anmeldung zur Studie ist leider geschlossen."
   },
 
-  // ── Block R: Registrierung ─────────────────────────────
+  // ── Block R: Registrierung (Rework 07.10., survey-v2) ───
   R: {
     r01: {
       title: "Schön, dass du da bist",
-      text: "Danke, dass du dabei bist. Diese Studie untersucht eine kurze Online-Schulung darüber, wie Social-Media-Apps gebaut sind. Was auf dich zukommt: jetzt eine kurze Anmeldung, ein Fragebogen und die Schulung (zusammen etwa 40 Minuten, am besten am Stück). Etwa zwei Wochen später ein zweiter, kürzerer Fragebogen (10 bis 15 Minuten). Alles am Handy. Am Ende bekommst du deine eigene Bildschirmzeit als kleine Auswertung.",
+      // ENTWURF Zeitangabe: wird nach der Zeitmessung (Rework Abschnitt 10) gesetzt
+      text: "Diese Studie der Universität Duisburg-Essen (Wirtschaftsinformatik) untersucht, wie Social-Media-Apps gestaltet sind, damit man länger in ihnen bleibt und öfter zurückkommt. Was auf dich zukommt: Nach der Anmeldung beantwortest du einen Fragebogen und siehst eine Schulung mit nachgestellten Screens aus deinen Apps; zusammen dauert das etwa %dauer_t0% Minuten. Etwa zwei Wochen später folgt ein zweiter, kürzerer Fragebogen. Am Ende bekommst du deine eigene Bildschirmzeit als Auswertung per Mail.",
       infoLink: "Teilnahmeinformation und Datenschutz",
       infoHref: "teilnahme.html",
       EW01: "Ich habe die Teilnahmeinformation gelesen und willige ein, an der Studie teilzunehmen.",
       EW02: "Ich habe die Datenschutzinformation gelesen und willige in die beschriebene Verarbeitung meiner Daten ein. Ich kann das jederzeit widerrufen."
     },
     r02: {
-      title: "Kurz vier Fragen",
+      title: "Teilnahmevoraussetzungen",
       SC01: "Bist du 18 Jahre alt oder älter?",
-      SC02: "Studierst du zurzeit an einer Hochschule?",
       SC03: "Welche dieser Apps nutzt du an einem normalen Tag mindestens einmal?",
       SC03_options: [
         { v: "ig", label: "Instagram" },
         { v: "tt", label: "TikTok" },
         { v: "sc", label: "Snapchat" },
-        { v: "fb", label: "Facebook" },
-        { v: "x",  label: "X" },
         { v: "keine", label: "keine davon täglich", exclusive: true }
       ],
       SC04: "Welches Smartphone hast du?",
@@ -67,36 +65,48 @@ window.ITEMS = {
       ]
     },
     rx: {
-      title: "Danke für dein Interesse",
-      text: "Danke für dein Interesse. Für diese Studie suchen wir Studierende ab 18, die mindestens eine der genannten Apps täglich auf einem iPhone oder Android-Handy nutzen. Das trifft bei dir nicht zu, deshalb endet es hier."
+      title: "Vielen Dank für dein Interesse",
+      text: "Für diese Studie suchen wir Personen ab 18 Jahren, die Instagram, TikTok oder Snapchat täglich auf einem iPhone oder Android-Smartphone nutzen. Das trifft bei dir nicht zu, deshalb endet die Teilnahme an dieser Stelle. Vielen Dank für dein Interesse."
     },
     r03: {
-      title: "Deine E-Mail",
-      EM01: "Deine E-Mail-Adresse. Wir nutzen sie nur für die Erinnerung an den zweiten Fragebogen und die Auswertung am Ende, getrennt von deinen Antworten.",
-      error: "Das sieht nicht nach einer E-Mail-Adresse aus. Bitte prüfe die Eingabe."
+      title: "Angaben zu dir",
+      DE01: "Alter",
+      DE02: "Geschlecht",
+      DE02_options: [
+        { v: "weiblich", label: "weiblich" }, { v: "maennlich", label: "männlich" },
+        { v: "divers", label: "divers" }, { v: "keine_angabe", label: "keine Angabe" }
+      ],
+      DE06: "Was ist deine hauptsächliche Tätigkeit?",
+      DE06_options: [
+        { v: "studium", label: "Studium" },
+        { v: "ausbildung", label: "Ausbildung" },
+        { v: "vollzeit", label: "Angestellt in Vollzeit" },
+        { v: "teilzeit", label: "Angestellt in Teilzeit" },
+        { v: "selbststaendig", label: "Selbstständig" },
+        { v: "arbeitssuche", label: "Auf Arbeitssuche" },
+        { v: "sonstiges", label: "Sonstiges", text: true }
+      ],
+      DE06_text: "Welche?",
+      DE03: "Studiengang",
+      DE04: "Fachsemester",
+      DE05: "Hochschule",
+      DE05_options: [
+        { v: "ude", label: "Universität Duisburg-Essen" },
+        { v: "andere", label: "andere, nämlich", text: true }
+      ]
     },
     r04: {
-      title: "Bildschirmzeit prüfen",
-      intro_ios: "Einstellungen → Bildschirmzeit. Steht dort eine Übersicht mit Balken? Dann ist alles an.",
-      intro_android: "Einstellungen → Digitales Wohlbefinden (bei Samsung: Digitales Wohlbefinden und Kindersicherung). Siehst du einen Kreis mit deiner Nutzungszeit? Dann ist alles an.",
-      BZ01: "Ist die Bildschirmzeit bei dir an?",
-      BZ01_options: [
-        { v: "ja", label: "Ja" },
-        { v: "jetzt_eingeschaltet", label: "Jetzt eingeschaltet" },
-        { v: "finde_ich_nicht", label: "Finde ich nicht" }
-      ],
-      findehilfe_ios: "Kein Problem. Öffne die Einstellungen-App (graues Zahnrad) und tippe in der Liste auf „Bildschirmzeit“. Wenn dort „Bildschirmzeit aktivieren“ steht, tippe darauf und bestätige. Falls du es jetzt nicht findest, mach einfach weiter.",
-      findehilfe_android: "Kein Problem. Öffne die Einstellungen-App und tippe oben in die Suche. Such nach „Wohlbefinden“ (Samsung) oder „Digital Wellbeing“. Öffne den Eintrag einmal, dann beginnt dein Handy zu zählen. Falls du es jetzt nicht findest, mach einfach weiter."
+      title: "Deine E-Mail-Adresse",
+      text: "Deine E-Mail-Adresse brauchen wir, um dir den Link zum zweiten Fragebogen, eine Erinnerung und am Ende deine Auswertung zu schicken. Sie wird getrennt von deinen Antworten gespeichert, nur für die Kontaktaufnahme im Rahmen dieser Studie verwendet, nicht weitergegeben und nach Abschluss der Studie gelöscht.",
+      EM01: "E-Mail-Adresse",
+      EM02: "E-Mail-Adresse wiederholen",
+      error: "Das sieht nicht nach einer E-Mail-Adresse aus. Bitte prüfe die Eingabe.",
+      mismatch: "Die beiden Adressen stimmen nicht überein."
     },
     r05: {
-      title: "Dein Link",
-      text: "Das ist dein persönlicher Link mit deinem Code. In etwa zwei Wochen schicken wir ihn dir per Mail, dann öffnest du damit den zweiten Fragebogen. Du musst dir nichts merken.",
-      copy: "Link kopieren",
-      copied: "Kopiert!",
-      homescreen: "Zum Startbildschirm hinzufügen",
-      homescreen_ios: "Öffne diesen Link in Safari und tippe unten auf das Teilen-Symbol (Viereck mit Pfeil). Wähle „Zum Home-Bildschirm“, dann liegt die Studie wie eine App auf deinem Startbildschirm.",
-      homescreen_android: "Tippe in Chrome oben rechts auf die drei Punkte. Wähle „Zum Startbildschirm hinzufügen“, dann liegt die Studie wie eine App auf deinem Startbildschirm.",
-      abschied: "Jetzt geht es direkt weiter mit dem ersten Fragebogen."
+      title: "Anmeldung abgeschlossen",
+      text: "Du bist angemeldet. Es geht jetzt mit dem ersten Fragebogen weiter.",
+      button: "Zum Fragebogen"
     }
   }
 };
@@ -105,7 +115,8 @@ window.ITEMS = {
 window.ITEMS.T0 = {
   t01: {
     title: "Der erste Fragebogen",
-    text: "Jetzt kommt der erste Fragebogen (etwa 15 Minuten) und direkt danach die Schulung (15 bis 20 Minuten). Bitte am Stück."
+    // ENTWURF Zeitangabe (%dauer_t0%, config.js): Rework Abschnitt 10 misst sie
+    text: "Heute beantwortest du einige Fragen zu deiner Social-Media-Nutzung und siehst danach nachgestellte Screens aus deinen Apps. Bei jedem Screen schätzt du zuerst ein, ob ein markiertes Element dein Verhalten beeinflussen soll, danach erklären wir, was dahintersteckt. Das ist kein Test. Insgesamt dauert es etwa %dauer_t0% Minuten. Gespeichert werden nur deine Antworten, keine Nutzungs- oder Gerätedaten."
   },
   t02: {
     AP01: "Welche dieser Apps nutzt du? Wähl alle aus, die du mindestens ab und zu öffnest.",
@@ -142,7 +153,7 @@ window.ITEMS.T0 = {
     SU02_hinweis_leer: "Ohne Screenshot fehlt uns der wichtigste Wert. Wenn es gerade nicht klappt, kannst du trotzdem weitermachen.",
     SU03: "Warum nicht?",
     SU03_options: [
-      { v: "aus", label: "Bildschirmzeit ist aus" },
+      { v: "aus", label: "Die Bildschirmzeit war bei mir ausgeschaltet." },
       { v: "finde_nicht", label: "finde die Ansicht nicht" },
       { v: "upload", label: "Upload klappt nicht" },
       { v: "moechte_nicht", label: "möchte ich nicht" },
@@ -169,16 +180,21 @@ window.ITEMS.T0 = {
   t17: {
     intro: "Zum Abschluss dieses Teils: die Elemente noch einmal.",
     AK01: "Wie stark würde dich dieses Element beeinflussen, länger in der App zu bleiben oder öfter zurückzukommen?",
-    AK01_anker: ["gar nicht", "sehr stark"],
+    AK01_skala: [
+      { v: 1, label: "gar nicht" }, { v: 2, label: "kaum" }, { v: 3, label: "etwas" },
+      { v: 4, label: "stark" }, { v: 5, label: "sehr stark" }
+    ],
     AK02: "Findest du es in Ordnung, dass die App das so macht?",
-    AK02_anker: ["gar nicht in Ordnung", "völlig in Ordnung"]
+    AK02_skala: [
+      { v: 1, label: "gar nicht in Ordnung" }, { v: 2, label: "eher nicht in Ordnung" }, { v: 3, label: "teils, teils" },
+      { v: 4, label: "eher in Ordnung" }, { v: 5, label: "völlig in Ordnung" }
+    ]
   },
   smscf: {
     instruktion: "Mit Social Media meinen wir hier deine Apps aus der Liste. Wie oft gibst du dem Verlangen nach, sie zu nutzen, obwohl deine Nutzung in diesem Moment …",
     skala: [
-      { v: 1, label: "1 – fast nie" }, { v: 2, label: "2 – selten" },
-      { v: 3, label: "3 – manchmal" }, { v: 4, label: "4 – oft" },
-      { v: 5, label: "5 – sehr oft" }
+      { v: 1, label: "fast nie" }, { v: 2, label: "selten" }, { v: 3, label: "manchmal" },
+      { v: 4, label: "oft" }, { v: 5, label: "sehr oft" }
     ],
     SF01_01: "… mit anderen Zielen in Konflikt steht (zum Beispiel: etwas für Uni oder Arbeit erledigen)?",
     SF01_02: "… dazu führt, dass du deine Zeit weniger effizient nutzt?",
@@ -186,12 +202,14 @@ window.ITEMS.T0 = {
   },
   kgre: {
     KG01: "Wie sehr hattest du in der letzten Woche das Gefühl, selbst zu bestimmen, wie du deine Zeit in [App] verbringst?",
-    KG01_anker: ["überhaupt nicht", "völlig"],
+    KG01_skala: [
+      { v: 1, label: "überhaupt nicht" }, { v: 2, label: "wenig" }, { v: 3, label: "teilweise" },
+      { v: 4, label: "überwiegend" }, { v: 5, label: "völlig" }
+    ],
     RE01: "Wie oft hast du in der letzten Woche die Zeit bereut, die du in [App] verbracht hast?",
     RE01_skala: [
-      { v: 1, label: "1 – nie" }, { v: 2, label: "2 – selten" },
-      { v: 3, label: "3 – manchmal" }, { v: 4, label: "4 – oft" },
-      { v: 5, label: "5 – sehr oft" }
+      { v: 1, label: "nie" }, { v: 2, label: "selten" }, { v: 3, label: "manchmal" },
+      { v: 4, label: "oft" }, { v: 5, label: "sehr oft" }
     ]
   },
   bscs: {
@@ -199,10 +217,12 @@ window.ITEMS.T0 = {
     // eigene Übersetzung). Daniel ersetzt sie durch die SCS-K-D, sobald verfügbar.
     instruktion: "Wie sehr treffen die folgenden Aussagen auf dich zu?",
     skala: [
-      { v: 1, label: "1 – trifft überhaupt nicht auf mich zu" },
-      { v: 2, label: "2" }, { v: 3, label: "3" }, { v: 4, label: "4" },
-      { v: 5, label: "5 – trifft voll auf mich zu" }
+      { v: 1, label: "trifft überhaupt nicht zu" }, { v: 2, label: "trifft eher nicht zu" },
+      { v: 3, label: "teils, teils" }, { v: 4, label: "trifft eher zu" }, { v: 5, label: "trifft voll zu" }
     ],
+    // Kontrollfrage zwischen Item 7 und 8; richtig ist Stufe 2. Nur markieren, kein Ausschluss.
+    ATT01: "Dies ist eine Kontrollfrage. Bitte wähle hier „trifft eher nicht zu“.",
+    ATT01_richtig: 2,
     items: [
       "Ich kann Versuchungen gut widerstehen.",
       "Es fällt mir schwer, schlechte Gewohnheiten abzulegen.",
@@ -220,6 +240,8 @@ window.ITEMS.T0 = {
     ]
   },
   offen: {
+    title: "Zwei offene Fragen",
+    diktat: "Tipp: Du kannst deine Antworten auch einsprechen. Tippe dazu auf das Mikrofon-Symbol deiner Tastatur.",
     QU01: "Welche Funktionen in deinen Apps sind deiner Meinung nach so gebaut, dass du länger bleibst oder öfter zurückkommst? Nenne alles, was dir einfällt.",
     QU02: "Wie gehst du damit um? Und unterscheidet sich das davon, wie du gern damit umgehen würdest?"
   },

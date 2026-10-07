@@ -58,7 +58,7 @@
   // ohne db.js (eigenständiger Aufruf) passiert nichts.
   function dbSave(page, key, value, seconds) {
     if (previewKey || !window.DB || !state.code) return;
-    window.DB.saveEvent(state.code, "BOOST", page, key, value, seconds, pilotFlag);
+    window.DB.saveEvent(state.code, "BOOST", page, key, value, seconds, pilotFlag, C.version);
   }
 
   // ── Zuordnung Muster × App ─────────────────────────────

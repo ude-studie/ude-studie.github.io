@@ -614,8 +614,8 @@ window.CONTENT = {
           why: "Diese Meldung hat die App geschrieben; sie sagt nicht einmal, wer gepostet hat." },
         { app: "sc", human: false, pattern: 7, text: "🔥 Dein Streak mit anna.s läuft in 2 Stunden ab",
           why: "Die Frist stammt von der App; anna.s weiß nichts davon." },
-        { app: "ig", human: false, pattern: 6, text: "Angesagt bei dir: Beiträge, die dir gefallen könnten",
-          why: "Eine automatisch erzeugte Empfehlung der App; eine Person steckt nicht dahinter." },
+        { app: "ig", human: false, pattern: 6, text: "Du hast heute noch nicht in deinen Feed geschaut. Sieh nach, was neu ist.",
+          why: "Die App erinnert dich daran, sie zu öffnen; eine Person steckt nicht dahinter." },
         { app: "x", human: true, pattern: null, text: "ben_h hat auf deinen Post geantwortet",
           why: "Eine echte Person hat geantwortet; die Meldung nennt sie beim Namen." },
         { app: "fb", human: false, pattern: 6, text: "Du hast neue Benachrichtigungen verpasst",
@@ -624,8 +624,8 @@ window.CONTENT = {
           why: "Eine echte Person hat dir direkt etwas geschickt." },
         { app: "tt", human: true, pattern: null, text: "mara.w hat auf deinen Kommentar geantwortet",
           why: "Eine echte Person hat dir geantwortet; die Meldung nennt sie beim Namen." },
-        { app: "tt", human: false, pattern: 6, text: "Neue Videos für dich: Das könnte dir gefallen",
-          why: "Eine automatische Empfehlung der App; eine Person steckt nicht dahinter." }
+        { app: "tt", human: false, pattern: 6, text: "Dein Für-dich-Feed wurde aktualisiert. Schau dir die neuen Videos an.",
+          why: "Die App meldet sich von selbst, um dich zurückzuholen; eine Person steckt nicht dahinter." }
       ]
     }
   ],
