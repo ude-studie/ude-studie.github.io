@@ -44,7 +44,7 @@ window.CONTENT = {
   },
 
   ui: {
-    patternOf: "Muster {x} von {n}",
+    patternOf: "Screen {x} von {n}", // Rework 07.10.: Ablenker in der Reihe, daher nicht „Muster"
     recognitionOf: "Wiederfinden {x} von {n}",
     screenTag: "Screen",
     fallbackNote: "Bei {app} funktioniert das genauso.",
@@ -57,6 +57,21 @@ window.CONTENT = {
     labelZweck: "Zweck:",
     next: "Weiter",
     back: "Zurück",
+    // Einschätzung und Bewertung je Screen (Rework 07.10., Abschnitt 4.1; gespeichert mit wave T0)
+    estQ: "Versucht das rot umrahmte Element, dein Verhalten zu beeinflussen?",
+    estOptions: [{ v: "ja", label: "Ja" }, { v: "nein", label: "Nein" }, { v: "weiss_nicht", label: "Weiß nicht" }],
+    estB: "Wie? Beschreibe in einem Satz, was das Element macht und was die App damit erreichen will.",
+    estBShort: "Bitte beschreib kurz, was das Element macht.",
+    estC: "Was sind deine Gedanken dazu? (freiwillig)",
+    estLabels: { ja: "Ja, beeinflusst", nein: "Nein", weiss_nicht: "Weiß nicht" },
+    estSummary: "Deine Einschätzung: {x}",
+    ak1: "Wie stark würde dich dieses Element beeinflussen, länger in der App zu bleiben oder öfter zurückzukommen?",
+    ak1Options: [{ v: 1, label: "gar nicht" }, { v: 2, label: "kaum" }, { v: 3, label: "etwas" }, { v: 4, label: "stark" }, { v: 5, label: "sehr stark" }],
+    ak2: "Findest du es in Ordnung, dass die App das so macht?",
+    ak2Options: [{ v: 1, label: "gar nicht in Ordnung" }, { v: 2, label: "eher nicht in Ordnung" }, { v: 3, label: "teils, teils" }, { v: 4, label: "eher in Ordnung" }, { v: 5, label: "völlig in Ordnung" }],
+    missing: "Bitte beantworte diese Frage.",
+    missingN: "Es fehlen noch {n} Antworten.",
+    noPattern: "Hier steckt kein Muster.",
     reviewNote: "Du siehst einen Schritt, den du schon abgeschlossen hast. Deine Antwort bleibt, wie sie war.",
     copy: "Antworten kopieren",
     copied: "Kopiert.",
@@ -554,6 +569,63 @@ window.CONTENT = {
       }
     }
   ],
+
+  // Zielelement je Muster im Ausgangszustand (Einschätzung vor der Auflösung).
+  // Schlüssel „Muster-ID:Variante"; sel = CSS-Selektor im Screen, n = welcher Treffer,
+  // zone = eigene Zone (bottom = unterer Rand des Feeds), place wie markPlace.
+  markA: {
+    "1:tt": { zone: "bottom" },
+    "1:ig": { zone: "bottom" }, // unterer Rand: dort kommt der nächste Beitrag nach
+    "2:ig": { sel: ".ig-refresh" },
+    "3:ig": { sel: ".ig-post-head", n: 0 },
+    "3:tt": { sel: ".tt-tabs span", n: 1 },
+    "4:ig": { sel: ".feed", place: "inside" },
+    "4:tt": { sel: ".feed", place: "inside" },
+    "5:ig": { sel: ".igc-row.mine .igc-like" },
+    "5:tt": { sel: ".igc-row.mine .igc-like" },
+    "6:lock": { sel: ".lock-list" },
+    "7:sc": { sel: ".streak.is-target" },
+    "8:ig": { sel: ".story-head" }
+  },
+
+  // Ablenker (Rework 4.2): harmlose Elemente aus den Apps der Person, drei in der
+  // Reihe nach dem 2., 4. und 6. Muster. Andere Elemente als in den Sets T1/T2.
+  // base = Screen eines Musters, dessen Daten wiederverwendet werden (ohne Markierung).
+  distractors: {
+    ig: [
+      { id: "d-ig-merken", base: { pattern: 3, variant: "ig" }, markA: { sel: ".ig-save", n: 0 },
+        ctx: "Ein Beitrag in deinem Instagram-Feed.",
+        why: "Mit dem Merken-Symbol speicherst du einen Beitrag, um ihn später wiederzufinden; es hält dich nicht länger in der App." },
+      { id: "d-ig-menue", base: { pattern: 3, variant: "ig" }, markA: { sel: ".ig-dots", n: 1 },
+        ctx: "Ein Beitrag in deinem Instagram-Feed.",
+        why: "Über das Menü mit den drei Punkten kannst du einen Beitrag melden oder ausblenden; es hält dich nicht länger in der App." },
+      { id: "d-ig-profilbild", base: { pattern: 2, variant: "ig" }, markA: { sel: ".ig-post-head .avatar", n: 0 },
+        ctx: "Ein Beitrag in deinem Instagram-Feed.",
+        why: "Das Profilbild zeigt, wer den Beitrag geteilt hat; ein Tipp darauf öffnet das Profil. Es hält dich nicht länger in der App." }
+    ],
+    tt: [
+      { id: "d-tt-name", base: { pattern: 3, variant: "tt" }, markA: { sel: ".post .user", n: 0 },
+        ctx: "Ein Video in deinem TikTok-Feed.",
+        why: "Der Name zeigt, wer das Video veröffentlicht hat; ein Tipp darauf öffnet das Profil. Es hält dich nicht länger in der App." },
+      { id: "d-tt-suche", base: { pattern: 3, variant: "tt" }, markA: { sel: ".nav span", n: 1 },
+        ctx: "Ein Video in deinem TikTok-Feed.",
+        why: "Über die Suche findest du gezielt Videos und Profile; sie hält dich nicht länger in der App." },
+      { id: "d-tt-start", base: { pattern: 3, variant: "tt" }, markA: { sel: ".nav span", n: 0 },
+        ctx: "Ein Video in deinem TikTok-Feed.",
+        why: "Mit dem Haus-Symbol kehrst du zur Startseite zurück; es hält dich nicht länger in der App." }
+    ],
+    sc: [
+      { id: "d-sc-profilbild", base: { pattern: 7, variant: "sc" }, markA: { sel: ".snap-row .avatar", n: 0 },
+        ctx: "Deine Chatliste in Snapchat.",
+        why: "Das Profilbild zeigt, mit wem du schreibst; es hält dich nicht länger in der App." },
+      { id: "d-sc-titel", base: { pattern: 7, variant: "sc" }, markA: { sel: ".snap-head" },
+        ctx: "Deine Chatliste in Snapchat.",
+        why: "Die Überschrift zeigt nur, in welchem Bereich der App du gerade bist; sie hält dich nicht länger in der App." },
+      { id: "d-sc-name", base: { pattern: 7, variant: "sc" }, markA: { sel: ".snap-text .user", n: 1 },
+        ctx: "Deine Chatliste in Snapchat.",
+        why: "Der Name zeigt, mit wem du chattest; er hält dich nicht länger in der App." }
+    ]
+  },
 
   recognition: [
     // ───────────── Wiedererkennen 1: Instagram-Startseite ─────────────

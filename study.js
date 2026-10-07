@@ -29,6 +29,8 @@
   var LS_CODE = "study-code";
   var LS_ANSWERS = "study-answers-"; // + wave
   var currentWave = null;
+  var MISSING = "Bitte beantworte diese Frage."; // Rework 6.1
+  var backFromBoost = params.get("zurueck") === "1"; // Rückweg aus der Schulung
 
   // Platzhalter in Texten ersetzen; %woche% gibt es seit 06.10. nicht mehr
   // (keine festen Termine), [App] ersetzt pages/*.js selbst
@@ -241,6 +243,36 @@
       page.appendChild(node);
     });
 
+    // Prüft alle sichtbaren Felder. scroll=true beim Weiter: markieren und springen;
+    // sonst nur Markierungen entfernen, die inzwischen erledigt sind.
+    var missNote = null;
+    function checkPage(scroll) {
+      var bad = [];
+      Object.keys(fields).forEach(function (k) {
+        var f = fields[k];
+        var box = f.wrapper || (f.errEl && f.errEl.parentNode);
+        var isHidden = f.wrapper && f.wrapper.hidden;
+        var msg = isHidden ? "" : f.validate();
+        if (scroll) {
+          f.errEl.textContent = msg || "";
+          if (box && box.classList) box.classList.toggle("missing", !!msg);
+        } else if (box && box.classList && box.classList.contains("missing") && !msg) {
+          box.classList.remove("missing"); f.errEl.textContent = "";
+        }
+        if (msg && box) bad.push(box);
+      });
+      var shown = page.querySelectorAll(".field.missing").length;
+      if (scroll || missNote) {
+        if (!missNote) { missNote = el("div", "miss-note"); missNote.setAttribute("role", "alert"); page.insertBefore(missNote, page.firstChild.nextSibling); }
+        missNote.hidden = shown < 2;
+        missNote.textContent = "Es fehlen noch " + shown + " Antworten.";
+      }
+      if (scroll && bad.length) bad[0].scrollIntoView({ block: "center", behavior: "smooth" });
+      return bad.length === 0;
+    }
+    page.addEventListener("study:answer", function () { checkPage(false); });
+    page.addEventListener("input", function () { checkPage(false); });
+
     // Navigation
     var nav = el("div", "nav-row");
     // Auf der ersten Seite eines Blocks führt Zurück in den vorigen Block,
@@ -261,16 +293,9 @@
         // Versteckte Felder (visibleIf) zählen nicht
         function hidden(f) { return f.wrapper && f.wrapper.hidden; }
 
-        // Validierung: Meldung unterm Feld, Knopf bleibt aktiv
-        var ok = true;
-        Object.keys(fields).forEach(function (k) {
-          var f = fields[k];
-          if (hidden(f)) { f.errEl.textContent = ""; return; }
-          var msg = f.validate();
-          f.errEl.textContent = msg || "";
-          if (msg) ok = false;
-        });
-        if (!ok) return;
+        // Validierung (Rework 6.1): Frage rot umrahmen, Meldung darunter,
+        // oben die Zahl der fehlenden Antworten, zur ersten fehlenden springen
+        if (!checkPage(true)) return;
 
         // Upload-Felder: leerer Pflicht-nahe-Fall warnt einmal (SU02-Hinweis)
         var warned = false;
@@ -492,7 +517,7 @@
           errEl: err2,
           get: function () { return val.v; },
           validate: function () {
-            return item.required && val.v == null ? "Bitte wähle eine Antwort aus." : "";
+            return item.required && val.v == null ? MISSING : "";
           }
         };
         return box2;
@@ -555,7 +580,7 @@
           errEl: err3,
           get: function () { return sel.slice(); },
           validate: function () {
-            return item.required && sel.length === 0 ? "Bitte wähle mindestens eine Antwort aus." : "";
+            return item.required && sel.length === 0 ? MISSING : "";
           }
         };
         return box3;
@@ -580,7 +605,7 @@
           },
           validate: function () {
             var v = num.value.trim();
-            if (v === "") return item.required ? "Bitte gib eine Zahl ein." : "";
+            if (v === "") return item.required ? MISSING : "";
             var n = Number(v);
             if (!isFinite(n)) return "Bitte gib eine Zahl ein.";
             if (item.min != null && n < item.min) return "Bitte eine Zahl ab " + item.min + ".";
@@ -603,7 +628,7 @@
           errEl: errT,
           get: function () { return ti.value.trim(); },
           validate: function () {
-            return item.required && !ti.value.trim() ? "Bitte fülle dieses Feld aus." : "";
+            return item.required && !ti.value.trim() ? MISSING : "";
           }
         };
         return boxT;
@@ -621,7 +646,7 @@
           errEl: errA,
           get: function () { return ta.value.trim() || null; },
           validate: function () {
-            return item.required && !ta.value.trim() ? "Bitte fülle dieses Feld aus." : "";
+            return item.required && !ta.value.trim() ? MISSING : "";
           }
         };
         return boxA;
@@ -688,7 +713,7 @@
           get: function () { return inp.value.trim(); },
           validate: function () {
             var v = inp.value.trim();
-            if (item.required && !v) return item.error;
+            if (item.required && !v) return MISSING;
             if (v && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v)) return item.error;
             if (mismatch()) return item.mismatch;
             return "";
@@ -736,7 +761,7 @@
           errEl: errS,
           get: function () { return sel.value || null; },
           validate: function () {
-            if (item.required && !sel.value) return "Bitte wähle eine Antwort aus.";
+            if (item.required && !sel.value) return MISSING;
             if (otherS && !otherS.hidden && item.textRequired && !otherS.value.trim()) return "Bitte gib an, welche.";
             return "";
           }
@@ -883,6 +908,15 @@
       if (afterWindow("R")) { showRegistrationClosed(); return; }
       var resumeAt = last.R ? (RESUME_R[last.R] || window.PAGES_R.start) : window.PAGES_R.start;
       runBlock(window.PAGES_R, resumeAt);
+      return;
+    }
+
+    // Zurück vom ersten Schulungs-Screen: letzte Seite des Fragebogens (einmalig)
+    if (backFromBoost && p.t0_done && !p.boost_done) {
+      backFromBoost = false;
+      history.replaceState(null, "", personalLink(code) + (ctx.pilot ? "&pilot=1" : ""));
+      var t0p = window.PAGES_T0.pages;
+      runBlock(window.PAGES_T0, t0p[t0p.length - 1].id);
       return;
     }
 

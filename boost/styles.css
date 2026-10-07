@@ -1053,3 +1053,20 @@ div.card { cursor: default; }
 .fb-list li.wrong b { background: #9c2f2f; }
 .fb-list li.plain b, .fb-list li.open b { background: #6b7280; }
 .fb-score { margin: 10px 0 0; font-weight: 700; }
+
+/* Einschätzung und Bewertung je Screen (Rework 07.10., Abschnitt 4.1) */
+.q-card textarea { width: 100%; box-sizing: border-box; margin-top: 8px; padding: 10px 12px; font: inherit; font-size: 0.95rem;
+  border: 1px solid #c6cdd6; border-radius: 10px; background: #fff; resize: vertical; }
+.q-card label.q { display: block; font-weight: 600; line-height: 1.4; }
+.q-card + .q-card { margin-top: 12px; }
+.q-err { margin: 6px 0 0; color: #b02a1e; font-size: 0.875rem; font-weight: 600; min-height: 0; }
+.q-err:empty { display: none; }
+.q-card.missing { box-shadow: 0 0 0 2px #c0392b; }
+.miss-note { margin: 0 0 12px; padding: 10px 12px; border-radius: 10px; background: #fdeeee; color: #9c2f2f; font-weight: 600; }
+/* Muster 1 (TikTok): Zone am unteren Rand, die im Ausgangszustand markiert wird */
+.mark-zone-bottom { position: absolute; left: 8px; right: 8px; bottom: 14px; height: 84px; pointer-events: none; }
+/* Zusammenfassung: eigene Einschätzung je Muster */
+.est-list { list-style: none; margin: 0 0 16px; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.est-list li { display: flex; flex-direction: column; padding: 8px 12px; border-radius: 10px; background: var(--card, #fff); font-size: 0.9rem; }
+.est-list li b { font-weight: 600; }
+.est-list li span { color: #4b5563; }

@@ -24,7 +24,7 @@
 
   var C = window.CONTENT;
   var STUDY_APPS = C.appOrder; // Instagram, TikTok, Snapchat
-  var STORE_KEY = "boost-state-" + C.version;
+  var STORE_KEY = "boost-state-" + C.version + "-r4"; // r4: Einschätzung + Ablenker (Rework 07.10.)
   var app = document.getElementById("app");
 
   // ── Aufrufparameter ────────────────────────────────────
@@ -88,6 +88,54 @@
     return shown;
   }
 
+  // Ablenker für die Apps der Person: reihum über die Apps, je App bis zu drei Elemente
+  function distractorList(apps) {
+    var list = STUDY_APPS.filter(function (a) { return apps.indexOf(a) >= 0; });
+    if (!list.length) list = ["ig"];
+    var out = [];
+    for (var i = 0; i < 3; i++) {
+      var a = list[i % list.length], pool = C.distractors[a], j = Math.floor(i / list.length);
+      out.push({ k: i + 1, app: a, def: pool[j % pool.length] });
+    }
+    return out;
+  }
+  // Screen eines Ablenkers: Daten eines Muster-Screens, ohne dessen Markierung
+  function resolveDistractor(d) {
+    var base = resolvePattern({ id: d.def.base.pattern, app: d.app, screen: d.def.base.variant });
+    var p = Object.assign({}, base, {
+      isDistractor: true, ctxA: d.def.ctx, ctxB: d.def.ctx, markLabel: "Element", fallback: false,
+      data: JSON.parse(JSON.stringify(base.data))
+    });
+    p.data.mark = null;
+    (p.data.rows || []).forEach(function (r) { r.mark = false; });
+    return p;
+  }
+  // Zielelement im Ausgangszustand: aus C.markA (Muster) bzw. dem Ablenker
+  function markSpec(pg) {
+    if (pg.type === "distractor") return pg.dist.markA;
+    return C.markA[pg.pattern.id + ":" + pg.pattern.screenApp] || null;
+  }
+  function clearMarkA(body) {
+    body.querySelectorAll(".mark").forEach(function (el) { el.remove(); });
+    body.querySelectorAll(".mark-a-target").forEach(function (el) { el.removeAttribute("data-mark"); el.classList.remove("mark-a-target"); });
+    body.querySelectorAll(".mark-zone-bottom").forEach(function (el) { el.remove(); });
+  }
+  function applyMarkA(body, pg) {
+    clearMarkA(body);
+    var sp = markSpec(pg), t = null;
+    if (!sp) return;
+    if (sp.zone === "bottom") {
+      t = document.createElement("div");
+      t.className = "mark-zone-bottom";
+      (body.querySelector(".feed") || body).appendChild(t);
+    } else {
+      t = body.querySelectorAll(sp.sel)[sp.n || 0];
+    }
+    if (!t) return;
+    t.classList.add("mark-a-target");
+    t.setAttribute("data-mark", sp.place || "below");
+  }
+
   // Muster mit der gewählten Variante zusammensetzen
   function resolvePattern(s) {
     var def = patternDef(s.id);
@@ -148,11 +196,23 @@
   // ── Seitenfolge ────────────────────────────────────────
   var pages = [];
   function buildPages() {
-    pages = [{ type: "intro", key: "intro" }, { type: "apps", key: "apps" }];
+    // Einleitung und App-Abfrage nur noch, wenn die Schulung ohne Apps aufgerufen wird
+    pages = state.appsSource === "param" ? [] : [{ type: "intro", key: "intro" }, { type: "apps", key: "apps" }];
     var shown = state.shown || [];
+    // Drei Ablenker nach dem 2., 4. und 6. Muster; bei weniger Mustern gleichmäßig verteilt, nie an erster Stelle
+    var n = shown.length, dists = distractorList(state.apps || []);
+    var after = n >= 6 ? [2, 4, 6] : [1, 2, 3].map(function (k) { return Math.max(1, Math.round(k * n / 4)); });
+    var seq = [], di = 0;
     shown.forEach(function (s, i) {
-      pages.push({ type: "pattern", key: "p" + s.id, shown: s, index: i + 1, total: shown.length, pattern: resolvePattern(s) });
+      seq.push({ type: "pattern", key: "p" + s.id, shown: s, pattern: resolvePattern(s) });
+      while (di < dists.length && after[di] === i + 1) {
+        var d = dists[di];
+        seq.push({ type: "distractor", key: "d" + d.k, k: d.k, dist: d.def, distApp: d.app, pattern: resolveDistractor(d) });
+        di++;
+      }
     });
+    seq.forEach(function (pg, j) { pg.pos = j + 1; pg.index = j + 1; pg.total = seq.length; });
+    pages = pages.concat(seq);
     C.recognition.forEach(function (r, i) { pages.push({ type: "recognition", key: r.id, item: r, index: i + 1 }); });
     pages.push({ type: "einordnung", key: "einordnung" });
     pages.push({ type: "zusammenfassung", key: "zusammenfassung" });
@@ -170,6 +230,14 @@
     if (state.page > 1 && !state.shown) state = fresh();
     if (state.sub === "A") state.sub = "look";
     if (state.sub === "B") state.sub = "react";
+    if (!state.shown && urlApps.length) {
+      // Apps stehen seit der Anmeldung fest (Rework 07.10.): Schulung beginnt direkt mit dem ersten Screen
+      state.apps = urlApps.slice();
+      state.appsSource = "param";
+      state.shown = assignPatterns(state.apps);
+      state.startedAt = isoNow();
+      dbSave("start", "APPS", { apps: state.apps, source: state.appsSource, shown: state.shown }, null);
+    }
     buildPages();
   }
   var picks = [];   // laufende Mehrfachauswahl (Apps, Muster 6, W1) vor dem Tipp
@@ -190,6 +258,8 @@
       pageStart: Date.now(),
       bStart: null,
       patterns: {},      // id -> Ergebnis
+      est: {},           // Seiten-Key -> Einschätzung { a, b, c } (gespeichert mit wave T0)
+      ak: {},            // Seiten-Key -> { ak1, ak2 } (gespeichert mit wave T0)
       recognition: {},   // id -> Ergebnis
       pageSeconds: {}
     };
@@ -208,6 +278,7 @@
   // Abgeschlossene Seiten zeigen ihren aufgelösten Zustand
   function reviewSub(pg) {
     if (pg.type === "pattern") return "explain";
+    if (pg.type === "distractor") return "dres";
     if (pg.type === "recognition") return "react";
     return "look";
   }
@@ -278,7 +349,7 @@
     s.apps = urlApps.length ? urlApps : ["ig", "tt", "sc"];
     s.appsSource = "param";
     s.shown = assignPatterns(s.apps);
-    var m = /^(p(\d+)|W\d+)([LABE])$/.exec(key);
+    var m = /^(p(\d+)|W\d+|d\d)([LKABER])$/.exec(key);
     var pageKey = m ? m[1] : key;
     var variant = params.get("variant");
     if (m && m[2]) {
@@ -309,11 +380,11 @@
       if (it.type === "spots") s.recognition[it.id] = spotsResult(it, [1, 2, 4]);
       else s.recognition[it.id] = w2Result(it, w2Cards(it), ["human", "app", "human"]);
     });
-    var phaseOf = { L: "look", A: "ask", B: "react", E: "explain" };
+    var phaseOf = { L: "est", K: "ak", A: "ask", B: "react", E: "explain", R: "dres" };
     s.sub = m ? phaseOf[m[3]] : "look";
-    if (m && !m[2]) s.sub = m[3] === "B" ? "react" : "ask"; // Wiedererkennen: A Frage, B Rückmeldung
+    if (m && /^W/.test(m[1])) s.sub = m[3] === "B" ? "react" : "ask"; // Wiedererkennen: A Frage, B Rückmeldung
     s.page = Math.max(0, pages.findIndex(function (pg) { return pg.key === pageKey; }));
-    if (s.sub === "look" || s.sub === "ask") {
+    if (s.sub === "look" || s.sub === "ask" || s.sub === "est" || s.sub === "ak") {
       // Zustand A: noch keine Antwort auf dieser Seite
       var pg = pages[s.page];
       if (pg.pattern) delete s.patterns[pg.pattern.id];
@@ -734,7 +805,7 @@
         return '<div class="snap-head">' + esc(d.title) + "</div>" + d.rows.map(function (row) {
           return '<div class="snap-row">' + avatar(row.user, "bitmoji") + '<div class="snap-text"><div class="user">' + esc(row.user) +
             '</div><div class="status">' + esc(row.status) + "</div></div>" +
-            (row.streak ? '<span class="streak"' + (isB && row.mark ? ' data-mark="' + (d.markPlace || "below") + '"' : "") + ">" + esc(row.streak) + "</span>" : "") +
+            (row.streak ? '<span class="streak' + (row.mark ? " is-target" : "") + '"' + (isB && row.mark ? ' data-mark="' + (d.markPlace || "below") + '"' : "") + ">" + esc(row.streak) + "</span>" : "") +
             "</div>";
         }).join("");
       },
@@ -803,6 +874,9 @@
     var pad = inside ? -6 : 4, W = body.clientWidth, H = body.scrollHeight;
     var left = Math.max(3, (r.left - br.left) / k - pad), right = Math.min(W - 3, (r.right - br.left) / k + pad);
     var top = Math.max(3, (r.top - br.top) / k + body.scrollTop - pad), bottom = Math.min(H - 3, (r.bottom - br.top) / k + body.scrollTop + pad);
+    // Mindestgröße der Markierung 36 x 36 px (Rework 4.6: Ziel mindestens 32 x 32 px)
+    if (right - left < 36) { var cx = (left + right) / 2; left = Math.max(3, cx - 18); right = Math.min(W - 3, cx + 18); }
+    if (bottom - top < 36) { var cy = (top + bottom) / 2; top = Math.max(3, cy - 18); bottom = Math.min(H - 3, cy + 18); }
     var mark = document.createElement("div");
     mark.className = "mark fade-in";
     mark.setAttribute("role", "img");
@@ -827,12 +901,83 @@
     if (!previewKey) window.scrollTo(0, 0);
     if (pg.type === "intro") renderIntro();
     else if (pg.type === "apps") renderApps();
-    else if (pg.type === "pattern") renderPattern(pg);
+    else if (pg.type === "pattern" || pg.type === "distractor") renderPattern(pg);
     else if (pg.type === "recognition") renderRecognition(pg);
     else if (pg.type === "einordnung") renderEinordnung();
     else renderSummary();
     applyAssets(app);
     addBackButton();
+  }
+
+  // ── Einschätzung und Bewertung: Prüfen und Speichern (Rework 4.1, 4.3, 6.1) ──
+  function bindEst(panel) {
+    var b = panel.querySelector(".est-b"), c = panel.querySelector(".est-c");
+    panel.querySelectorAll('input[name="est"]').forEach(function (inp) {
+      inp.addEventListener("change", function () {
+        // Text im jeweils anderen Feld bleibt erhalten, das Feld wird nur ausgeblendet
+        b.hidden = inp.value !== "ja";
+        c.hidden = inp.value === "ja";
+      });
+    });
+    bindLiveCheck(panel);
+  }
+  function bindLiveCheck(panel) {
+    var recheck = function () { if (panel.querySelector(".q-card.missing")) checkPanel(panel, true); };
+    panel.addEventListener("change", recheck);
+    panel.addEventListener("input", recheck);
+  }
+  // Pflichtfragen prüfen: rot umrahmen, Meldung, oben die Zahl, zur ersten springen.
+  // quiet=true: nur erledigte Markierungen entfernen (beim Antworten).
+  function checkPanel(panel, quiet) {
+    var bad = [];
+    panel.querySelectorAll("[data-req]").forEach(function (q) {
+      if (q.hidden) { q.classList.remove("missing"); return; }
+      var msg = "";
+      if (q.getAttribute("data-req") === "radio") {
+        if (!q.querySelector("input:checked")) msg = C.ui.missing;
+      } else {
+        var t = q.querySelector("textarea").value.trim();
+        if (!t) msg = C.ui.missing;
+        else if (t.split(/\s+/).length < 3) msg = C.ui.estBShort;
+      }
+      if (quiet && !q.classList.contains("missing")) return;
+      q.classList.toggle("missing", !!msg);
+      q.querySelector(".q-err").textContent = msg;
+      if (msg) bad.push(q);
+    });
+    var note = panel.querySelector(".miss-note");
+    if (note) { note.hidden = bad.length < 2; note.textContent = fill(C.ui.missingN, { n: bad.length }); }
+    if (!quiet && bad.length) bad[0].scrollIntoView({ block: "center", behavior: "smooth" });
+    return bad.length === 0;
+  }
+  // Muster-/Ablenker-Angaben, die jede ER- und AK-Zeile mitbekommt
+  function estMeta(pg) {
+    var p = pg.pattern;
+    return pg.type === "distractor"
+      ? { muster: "d" + pg.k, ablenker: pg.dist.id, app: pg.distApp, variante: pg.dist.id, position: pg.pos }
+      : { muster: "m" + p.id, app: p.targetApp, variante: p.screen + ":" + p.screenApp, fallback: !!p.fallback, position: pg.pos };
+  }
+  function dbSaveWave(wave, page, key, value, seconds) {
+    if (previewKey || !window.DB || !state.code) return;
+    window.DB.saveEvent(state.code, wave, page, key, value, seconds, pilotFlag, wave === "BOOST" ? C.version : undefined);
+  }
+  function saveEst(pg, panel) {
+    var a = (panel.querySelector('input[name="est"]:checked') || {}).value;
+    var b = panel.querySelector("#estb").value.trim(), c = panel.querySelector("#estc").value.trim();
+    var key = pg.type === "distractor" ? "ER_d" + pg.k : "ER_m" + pg.pattern.id;
+    var meta = estMeta(pg), secs = secondsSince(state.pageStart), page = "s" + pg.pos;
+    dbSaveWave("T0", page, key + "a", Object.assign({ wert: a }, meta), secs);
+    if (b) dbSaveWave("T0", page, key + "b", Object.assign({ wert: b }, meta), secs);
+    if (c) dbSaveWave("T0", page, key + "c", Object.assign({ wert: c }, meta), secs);
+    state.est[pg.key] = { a: a, b: b, c: c };
+  }
+  function saveAk(pg, panel) {
+    var v1 = Number((panel.querySelector('input[name="ak1"]:checked') || {}).value);
+    var v2 = Number((panel.querySelector('input[name="ak2"]:checked') || {}).value);
+    var meta = estMeta(pg), secs = secondsSince(state.pageStart), page = "s" + pg.pos;
+    dbSaveWave("T0", page, "AK01_m" + pg.pattern.id, Object.assign({ wert: v1 }, meta), secs);
+    dbSaveWave("T0", page, "AK02_m" + pg.pattern.id, Object.assign({ wert: v2 }, meta), secs);
+    state.ak[pg.key] = { ak1: v1, ak2: v2 };
   }
 
   // Hinweis über dem Inhalt einer zurückgeblätterten Seite
@@ -848,14 +993,20 @@
   // „Zurück": blättert eine Seite zurück; dort ist alles nur noch Ansicht
   // (Antworten gesperrt). Weiter führt bis zur aktuellen Stelle zurück.
   function addBackButton() {
-    if (previewKey || state.page === 0) return;
+    if (previewKey) return;
+    // Erster Screen: zurück auf die letzte Seite des Fragebogens (noch vor der Schulung)
+    var toSurvey = state.page === 0 && returnUrl;
+    if (state.page === 0 && !toSurvey) return;
     var foot = app.querySelector(".lp-foot");
     if (!foot || foot.querySelector(".btn-back")) return;
     var b = document.createElement("button");
     b.type = "button";
     b.className = "btn secondary btn-back";
     b.textContent = C.ui.back;
-    b.addEventListener("click", function () { goto(state.page - 1); });
+    b.addEventListener("click", function () {
+      if (toSurvey) { location.href = returnUrl + (returnUrl.indexOf("?") >= 0 ? "&" : "?") + "zurueck=1"; return; }
+      goto(state.page - 1);
+    });
     foot.classList.add("with-back");
     foot.insertBefore(b, foot.firstChild);
   }
@@ -964,12 +1115,12 @@
   function renderPattern(pg) {
     var p = pg.pattern;
     var tpl = SCREENS[p.screen];
-    if (p.type === "multi" && state.sub === "look") state.sub = "ask";
+    if (state.sub === "look") state.sub = "est"; // jeder Screen beginnt mit der Einschätzung
     var isB = state.sub === "react" || state.sub === "explain";
     var right = p.screenApp === "lock" ? C.ui.lockLabel : appLabel(p.screenApp);
     app.innerHTML =
       '<div class="page lp">' + lpHead(fill(C.ui.patternOf, { x: pg.index, n: pg.total }), right) +
-      (p.fallback ? '<div class="fallback-note">' + esc(fill(C.ui.fallbackNote, { app: appLabel(p.targetApp) })) + "</div>" : "") +
+      (p.fallback && !p.isDistractor ? '<div class="fallback-note">' + esc(fill(C.ui.fallbackNote, { app: appLabel(p.targetApp) })) + "</div>" : "") +
       '<main class="lp-stage"><p class="lp-ctx" id="ctx"></p>' +
       deviceHtml(tpl.cls, tpl.render(p, isB, {}), tpl.scroll && tpl.scroll(), isB && p.statusTimeB) +
       '<div class="lp-panel"></div></main>' +
@@ -978,13 +1129,40 @@
   }
 
   function sizeFor(p, phase) {
-    if (phase === "explain") return "small";
+    if (phase === "explain" || phase === "ak") return "small";
+    if (phase === "est" || phase === "dres") return "full";
     if (phase === "ask" && p.type !== "multi") return "small";
     return "full";
   }
 
+  function radioGroup(name, options) {
+    return options.map(function (o) {
+      return '<label class="opt"><input type="radio" name="' + name + '" value="' + esc(o.v) + '"><span>' + esc(o.label) + "</span></label>";
+    }).join("");
+  }
   function panelHtml(p, phase) {
     var r = state.patterns[p.id] || {};
+    var U = C.ui;
+    if (phase === "est") {
+      return '<p class="miss-note" hidden role="alert"></p>' +
+        '<fieldset class="q-card" data-req="radio"><legend class="q" id="q">' + esc(U.estQ) + "</legend>" +
+        radioGroup("est", U.estOptions) + '<p class="q-err"></p></fieldset>' +
+        '<div class="q-card est-b" data-req="words" hidden><label class="q" for="estb">' + esc(U.estB) + "</label>" +
+        '<textarea id="estb" rows="3"></textarea><p class="q-err"></p></div>' +
+        '<div class="q-card est-c" hidden><label class="q" for="estc">' + esc(U.estC) + "</label>" +
+        '<textarea id="estc" rows="3"></textarea></div>';
+    }
+    if (phase === "ak") {
+      return '<p class="miss-note" hidden role="alert"></p>' +
+        '<fieldset class="q-card" data-req="radio"><legend class="q" id="q">' + esc(U.ak1) + "</legend>" +
+        radioGroup("ak1", U.ak1Options) + '<p class="q-err"></p></fieldset>' +
+        '<fieldset class="q-card" data-req="radio"><legend class="q">' + esc(U.ak2) + "</legend>" +
+        radioGroup("ak2", U.ak2Options) + '<p class="q-err"></p></fieldset>';
+    }
+    if (phase === "dres") {
+      var pg0 = pages[state.page];
+      return '<section class="ex-card"><h2 id="ex-title">' + esc(U.noPattern) + "</h2><p>" + esc(pg0.dist.why) + "</p></section>";
+    }
     if (phase === "ask" && p.type !== "multi") {
       return '<fieldset class="q-card"><legend class="q" id="q">' + esc(p.question) + "</legend>" +
         p.options.map(function (o, i) {
@@ -1025,13 +1203,45 @@
     stage.setAttribute("data-phase", phase);
     app.querySelector(".device-wrap").setAttribute("data-size", sizeFor(p, phase));
     fitDevice(animate);
+    if (phase === "est" || phase === "ak" || phase === "dres") { applyMarkA(body, pg); placeMark(body); }
+    else if (!isB) clearMarkA(body);
     if (isB) placeMark(body);
     btn.disabled = false;
     btn.onclick = null;
     var backBtn = app.querySelector(".btn-back");
     if (backBtn) backBtn.disabled = false;
 
-    if (phase === "look") {
+    if (phase === "est") {
+      btn.textContent = C.ui.next;
+      bindEst(panel);
+      btn.onclick = function () {
+        if (isReview()) { goto(state.page + 1); return; }
+        if (!checkPanel(panel)) return;
+        saveEst(pg, panel);
+        state.sub = pg.type === "distractor" ? "dres" : "ak";
+        state.pageStart = Date.now();
+        save(); showPhase(pg, state.sub, true);
+      };
+      addRelookButton(pg, phase);
+      focusFirst("#ctx");
+    } else if (phase === "ak") {
+      btn.textContent = C.ui.next;
+      bindLiveCheck(panel);
+      btn.onclick = function () {
+        if (!checkPanel(panel)) return;
+        saveAk(pg, panel);
+        state.sub = "ask";
+        state.pageStart = Date.now();
+        save(); showPhase(pg, "ask", true);
+      };
+      addRelookButton(pg, phase);
+      focusFirst("#q");
+    } else if (phase === "dres") {
+      btn.textContent = C.ui.next;
+      btn.onclick = function () { goto(state.page + 1); };
+      if (isReview()) addReviewNote();
+      focusFirst("#ex-title");
+    } else if (phase === "look") {
       btn.textContent = C.ui.next;
       btn.onclick = function () { state.sub = "ask"; save(); showPhase(pg, "ask", true); };
       focusFirst("#ctx");
@@ -1043,7 +1253,7 @@
         inp.addEventListener("change", function () { btn.disabled = false; });
       });
       btn.onclick = function () { tapToReact(pg); };
-      addRelookButton(pg);
+      addRelookButton(pg, phase);
       focusFirst(p.type === "multi" ? "#ctx" : "#q");
     } else if (phase === "react") {
       btn.textContent = C.ui.next;
@@ -1071,9 +1281,10 @@
 
   // „Screen noch einmal ansehen": zeigt den Screen (Zustand A) in voller Größe
   // über der Frage; ein Tipp führt zurück. Die Antwort bleibt unverändert.
-  function addRelookButton(pg) {
+  function addRelookButton(pg, phase) {
     var p = pg.pattern;
-    if (p.type === "multi") return; // Muster 6: der Screen ist ohnehin groß zu sehen
+    if (p.type === "multi" && phase === "ask") return; // Muster 6: der Screen ist ohnehin groß zu sehen
+    var withMark = phase === "est" || phase === "ak";
     var panel = app.querySelector(".lp-panel");
     if (!panel || panel.querySelector(".relook")) return;
     var tpl = SCREENS[p.screen];
@@ -1091,6 +1302,7 @@
         '</div><p class="relook-hint">Tippen, um zur Frage zurückzukehren</p>';
       document.body.appendChild(ov);
       applyAssets(ov);
+      if (withMark) { var ovBody = ov.querySelector(".screen-body"); applyMarkA(ovBody, pg); setTimeout(function () { placeMark(ovBody); }, 0); }
       // Gerät in den verfügbaren Platz einpassen
       var wrap = ov.querySelector(".device-wrap"), dev = wrap.firstChild;
       var s = Math.min(1, (window.innerWidth - 32) / DEVICE_W, (window.innerHeight - 90) / DEVICE_H);
@@ -1391,7 +1603,11 @@
     var Z = C.zusammenfassung;
     var count = shownIds().length;
     var title = fill(Z.title, { count: Z.numberWords[count] || count });
-    app.innerHTML = '<div class="page tp"><div class="tp-body"><h1>' + esc(title) + "</h1>" + paras([groupText()]) +
+    var estList = '<ul class="est-list">' + shownIds().map(function (id) {
+      var e = state.est["p" + id] || {};
+      return "<li><b>" + esc(patternDef(id).short) + "</b><span>" + esc(fill(C.ui.estSummary, { x: C.ui.estLabels[e.a] || "–" })) + "</span></li>";
+    }).join("") + "</ul>";
+    app.innerHTML = '<div class="page tp"><div class="tp-body"><h1>' + esc(title) + "</h1>" + paras([groupText()]) + (exportMode ? "" : estList) +
       (exportMode ? "" : '<p class="tp-score">' + esc(fill(Z.scores, scores())) + "</p>") +
       "<p>" + esc(Z.outro) + "</p></div>" +
       '<div class="lp-foot"><button class="btn" id="finish" type="button">' + esc(Z.button) + "</button>" +

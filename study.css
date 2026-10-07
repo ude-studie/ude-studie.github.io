@@ -112,3 +112,8 @@
 .select-input { width: 100%; box-sizing: border-box; min-height: 48px; padding: 10px 12px; font-size: 1rem;
   border: 1px solid #c6cdd6; border-radius: 10px; background: #fff; color: inherit; }
 .tp-hint { margin: 0 0 10px; font-size: 0.85rem; line-height: 1.45; color: #5f6b7a; }
+
+/* Fehlende Pflichtantworten (Rework 6.1) */
+.field.missing { outline: 2px solid #c0392b; outline-offset: 6px; border-radius: 10px; }
+.field.missing .error { color: #b02a1e; font-weight: 600; }
+.miss-note { margin: 0 0 14px; padding: 10px 12px; border-radius: 10px; background: #fdeeee; color: #9c2f2f; font-weight: 600; }
