@@ -159,8 +159,25 @@
         err.textContent = F.unknownCodeText;
       }
     });
-    box.appendChild(label); box.appendChild(input); box.appendChild(err); box.appendChild(btn);
-    simplePage(introTitle, introText, box);
+    box.appendChild(label); box.appendChild(input); box.appendChild(err);
+    // Zurück zur Anmeldung, z. B. wenn „Ich habe schon einen Code" versehentlich angetippt wurde
+    var wrapC = el("div");
+    wrapC.appendChild(box);
+    var navC = el("div", "nav-row");
+    var back = el("button", "btn secondary", "Zurück");
+    back.type = "button";
+    back.addEventListener("click", backToRegistration);
+    navC.appendChild(back); navC.appendChild(btn);
+    wrapC.appendChild(navC);
+    simplePage(introTitle, introText, wrapC);
+  }
+  // Ohne gültigen Code von vorn mit der Anmeldung beginnen
+  function backToRegistration() {
+    ctx.code = null;
+    try { localStorage.removeItem(LS_CODE); } catch (e) {}
+    history.replaceState(null, "", location.pathname + (ctx.pilot ? "?pilot=1" : ""));
+    if (afterWindow("R")) { showRegistrationClosed(); return; }
+    runBlock(window.PAGES_R, window.PAGES_R.start);
   }
 
   // Erster Aufruf ohne Code: Person landet direkt auf R-01 (Abschnitt 3,
