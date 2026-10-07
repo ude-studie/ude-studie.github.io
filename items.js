@@ -17,9 +17,8 @@ window.ITEMS = {
 
   // ── Rahmentexte (Router, Wartesite, Code-Seiten) ───────
   frame: {
-    waitTitle: "Danke!",
-    // %datum% wird je Person ersetzt (T0-Abschluss + 14 Tage), z. B. "Dienstag, 20.10."
-    waitText: "Danke! Dein zweiter Fragebogen ist ab %datum% für dich freigeschaltet, etwa zwei Wochen nach deinem ersten. Du bekommst dann eine Erinnerung per Mail.",
+    waitTitle: "Vielen Dank",
+    waitText: "Dein zweiter Fragebogen wird in etwa zwei Wochen für dich freigeschaltet. Du bekommst dann eine Erinnerung per Mail.",
     doneTitle: "Das war's.",
     doneText: "Du hast alles geschafft. Deine persönliche Auswertung kommt nach dem Ende der Studie per Mail.",
     unknownCodeTitle: "Code unbekannt",

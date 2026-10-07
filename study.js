@@ -110,8 +110,8 @@
   }
 
   // ── Statische Ansichten ────────────────────────────────
-  function showWait(dateText) {
-    simplePage(F.waitTitle, F.waitText.replace("%datum%", dateText));
+  function showWait() {
+    simplePage(F.waitTitle, F.waitText);
   }
   function showDone() { simplePage(F.doneTitle, F.doneText); }
   function showRegistrationClosed() { simplePage(F.waitTitle, F.registrationClosed); }
@@ -907,7 +907,7 @@
     // eigenen T0. T2 gibt es nicht mehr; die Spalte t2_done bleibt leer.
     if (p.t1_done) { showDone(); return; }
     var opens = followupOpensAt(p.t0_done);
-    if (!ctx.pilot && nowBerlin() < opens) { showWait(dateDe(opens)); return; }
+    if (!ctx.pilot && nowBerlin() < opens) { showWait(); return; }
     var def = window.PAGES_T1.build(ctx);
     runBlock(def, resumeNext(def, last.T1));
   }
@@ -919,12 +919,6 @@
       .format(new Date(t0done)).split("-").map(Number);
     var d = new Date(Date.UTC(day[0], day[1] - 1, day[2] + (CFG.FOLLOWUP_AFTER_DAYS || 14)));
     return d.toISOString().slice(0, 10) + "T00:00:00";
-  }
-  // "2026-10-20T00:00:00" → "Dienstag, 20.10."
-  function dateDe(berlinStr) {
-    var p = berlinStr.slice(0, 10).split("-").map(Number);
-    return new Intl.DateTimeFormat("de-DE", { timeZone: "UTC", weekday: "long", day: "2-digit", month: "2-digit" })
-      .format(new Date(Date.UTC(p[0], p[1] - 1, p[2])));
   }
 
   // ── Einstieg (Abschnitt 3 des Auftrags) ────────────────
