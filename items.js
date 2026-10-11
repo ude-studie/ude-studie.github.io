@@ -227,7 +227,7 @@ window.ITEMS.T0 = {
   },
   vorSchulung: {
     title: "Gleich beginnt die Schulung",
-    text: "Du siehst nachgestellte Screens aus deinen Apps. Bei den meisten gehst du vier kurze Schritte:\n• **Einschätzen:** Ein Element ist rot umrahmt. Versucht es, dein Verhalten zu beeinflussen?\n• **Vorhersagen:** Was passiert als Nächstes? Wähl eine Antwort.\n• **Auflösen:** Die App reagiert, und du siehst, was passiert.\n• **Erklärung:** wie das Element funktioniert, warum es wirkt und was die App davon hat\n\nEinige Screens enthalten kein bekanntes Muster. Zum Schluss suchst du die Muster in zwei kurzen Aufgaben selbst.\n\nDie Screens sind nachgestellt. Du bist nicht in der echten App."
+    text: "Du siehst nachgestellte Screens aus deinen Apps. Bei den meisten gehst du vier kurze Schritte:\n• **Einschätzen:** Ein Element ist rot umrahmt. Versucht es, dein Verhalten zu beeinflussen?\n• **Vorhersagen:** Was passiert als Nächstes? Wähl eine Antwort.\n• **Auflösen:** Die App reagiert, und du siehst, was passiert.\n• **Erklärung:** wie das Element funktioniert, warum es wirkt und wozu es dient\n\nEinige Screens enthalten kein bekanntes Muster. Zum Schluss suchst du die Muster in zwei kurzen Aufgaben selbst.\n\nDie Screens sind nachgestellt. Du bist nicht in der echten App."
   },
   offen: {
     title: "Zwei offene Fragen",
@@ -263,7 +263,7 @@ window.ITEMS.FB = {
     { v: "aufloesung", label: "als die App reagiert hat und meine Vorhersage aufgelöst wurde" },
     { v: "funktion", label: "bei „So funktioniert es“" },
     { v: "wirkung", label: "bei „Warum es wirkt“" },
-    { v: "nutzen", label: "bei „Was die App davon hat“" },
+    { v: "nutzen", label: "bei „Wozu es dient“" },
     { v: "einordnung", label: "bei der Einordnung am Ende" }
   ],
   FB03: "Was davon war neu für dich?",

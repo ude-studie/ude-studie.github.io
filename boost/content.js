@@ -54,7 +54,7 @@ window.CONTENT = {
     statusTime: "21:42", // Uhrzeit in der Statusleiste der nachgestellten Screens
     labelWas: "So funktioniert es",
     labelWirkung: "Warum es wirkt",
-    labelZweck: "Was die App davon hat",
+    labelZweck: "Wozu es dient",
     next: "Weiter",
     back: "Zurück",
     // Einschätzung und Bewertung je Screen (Rework 07.10., Abschnitt 4.1; gespeichert mit wave T0)
