@@ -220,6 +220,19 @@
     return def.pages.filter(function (p) { return p.id === id; })[0];
   }
 
+  // Einfache Auszeichnung in Texten: **fett**, Leerzeile = neuer Absatz,
+  // Zeilen mit „• “ = Aufzählung. Alles andere wird als Text maskiert.
+  function richHtml(s) {
+    var esc = function (t) { return String(t).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); };
+    var inline = function (t) { return esc(t).replace(/\*\*(.+?)\*\*/g, "<b>$1</b>"); };
+    return String(s).split(/\n\s*\n/).map(function (block) {
+      var lines = block.split("\n");
+      var head = [], items = [];
+      lines.forEach(function (l) { (/^•\s/.test(l.trim()) ? items : head).push(l); });
+      return (head.length ? '<p class="tp-p">' + head.map(inline).join("<br>") + "</p>" : "") +
+        (items.length ? '<ul class="tp-list">' + items.map(function (l) { return "<li>" + inline(l.trim().replace(/^•\s*/, "")) + "</li>"; }).join("") + "</ul>" : "");
+    }).join("");
+  }
   function byOsText(item) {
     if (item.text != null) return item.text;
     if (item.byOs) return item.byOs[ctx.os || "ios"] || item.byOs.ios;
@@ -250,7 +263,9 @@
             var want = item.visibleIf.equals;
             show = Array.isArray(want) ? want.indexOf(v) >= 0 : v === want;
           }
+          var appeared = node.hidden && show;
           node.hidden = !show;
+          if (appeared && page.__ready) setTimeout(function () { node.scrollIntoView({ block: "nearest", behavior: "smooth" }); }, 30);
         };
         page.addEventListener("study:answer", upd);
       }
@@ -407,6 +422,7 @@
     }
 
     fire(page); // Notices mit gespeicherten Antworten sofort richtig anzeigen
+    page.__ready = true; // ab jetzt: neu eingeblendete Felder ins Bild scrollen
   }
 
   // ── Element-Renderer ───────────────────────────────────
@@ -414,13 +430,13 @@
     switch (item.type) {
 
       case "title": return el("h1", "tp-h1", tpl(byOsText(item)));
-      case "text": { var t = el("p", "tp-p"); t.textContent = tpl(byOsText(item)); return t; }
+      case "text": { var t = el("div", "tp-rich"); t.innerHTML = richHtml(tpl(byOsText(item))); return t; }
       case "subtitle": return el("h2", "tp-h2", tpl(byOsText(item)));
 
       case "steps": {
         var list = item.byOs ? (item.byOs[ctx.os || "ios"] || item.byOs.ios) : item.steps;
         var ol = el("ol", "steps");
-        (list || []).forEach(function (s) { ol.appendChild(el("li", null, tpl(s))); });
+        (list || []).forEach(function (s) { var li = el("li"); li.innerHTML = richHtml(tpl(s)).replace(/^<p class="tp-p">|<\/p>$/g, ""); ol.appendChild(li); });
         return ol;
       }
 

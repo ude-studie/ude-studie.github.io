@@ -20,7 +20,7 @@ window.STUDY_CONFIG = {
     R:  { from: "2026-10-01T00:00:00", to: "2026-12-31T23:59:59" },
     T0: { from: "2026-10-01T00:00:00", to: "2026-12-31T23:59:59" }
   },
-  FOLLOWUP_AFTER_DAYS: 14,
+  FOLLOWUP_AFTER_DAYS: 10, // seit 11.10.: Folge-Fragebogen nach etwa zehn Tagen
 
   // Zeitangaben in den Texten (%dauer_t0%, %dauer_t1%). T0 = 20 Minuten (Entscheidung Daniel 07.10.)
   DAUER_T0_MIN: "20",
@@ -29,7 +29,7 @@ window.STUDY_CONFIG = {
   // Fassung des Fragebogens; wird mit jedem Event gespeichert (Spalte events.version).
   // SEND_VERSION erst auf true setzen, wenn ADD-VERSION-SPALTE.sql in Supabase gelaufen ist –
   // sonst lehnt die Datenbank jede Zeile mit unbekannter Spalte ab.
-  SURVEY_VERSION: "survey-v2",
+  SURVEY_VERSION: "survey-v3", // v3 (11.10.): FB02 Auswahl, FB02b/FB06 neu, T0-07, Screenshot-Anleitung neu
   SEND_VERSION: true, // Spalte events.version existiert seit 07.10.
 
   // Kontaktzeile unter jeder Seite (Rework 6.3)

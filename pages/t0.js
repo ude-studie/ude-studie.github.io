@@ -37,7 +37,6 @@
     items: [
       { type: "title", text: "Screenshot deiner Bildschirmzeit" },
       { type: "steps", byOs: { ios: T.t04.schritte_ios, android: T.t04.schritte_android } },
-      { type: "sketch", byOs: { ios: "ios", android: "android" } },
       { type: "text", byOs: { ios: T.t04.zusatz_ios, android: T.t04.zusatz_android } },
       { type: "radio", key: "SU01", label: T.t04.SU01, required: true, options: [
         { v: "ja", label: "Ja" }, { v: "nein", label: "Nein" }
@@ -115,8 +114,17 @@
       { type: "textarea", key: "QU01", label: T.offen.QU01, rows: 5 },
       { type: "textarea", key: "QU02", label: T.offen.QU02, rows: 5 }
     ],
+    next: function () { return "T0-07"; }
+  });
+
+  // ── T0-07 Was in der Schulung passiert (11.10.) → danach die Schulung ─────
+  pages.push({
+    id: "T0-07",
+    items: [
+      { type: "title", text: T.vorSchulung.title },
+      { type: "text", text: T.vorSchulung.text }
+    ],
     finishWave: true,
-    nextLabel: "Weiter zur Schulung",
     next: function () { return "END"; }
   });
 

@@ -30,7 +30,7 @@
  * assets/<kennung>.jpg oder .png vor, wird sie statt des Farbverlaufs gezeigt.
  */
 window.CONTENT = {
-  version: "boost-v4", // v4 (08.10.): Zurück Schritt für Schritt, Fortschrittsbalken, ohne Bewertungsfragen, Freitext freiwillig
+  version: "boost-v5", // v5 (11.10.): Texte gestrafft, Erklärung neu gegliedert, Muster 1/4/6 überarbeitet, überall „Weiter“
 
   // Apps, die beim Aufruf übergeben (apps=ig,tt,…) oder auf dem zweiten Einleitungsbildschirm gewählt werden.
   // Reihenfolge = Reihenfolge der Kacheln.
@@ -52,23 +52,23 @@ window.CONTENT = {
     predictionRight: "Deine Antwort: richtig.",
     predictionWrong: "Deine Antwort: {a}. Richtig wäre: {c}.",
     statusTime: "21:42", // Uhrzeit in der Statusleiste der nachgestellten Screens
-    labelWas: "Was:",
-    labelWirkung: "Wirkung:",
-    labelZweck: "Zweck:",
+    labelWas: "So funktioniert es",
+    labelWirkung: "Warum es wirkt",
+    labelZweck: "Was die App davon hat",
     next: "Weiter",
     back: "Zurück",
     // Einschätzung und Bewertung je Screen (Rework 07.10., Abschnitt 4.1; gespeichert mit wave T0)
     estQ: "Versucht das rot umrahmte Element, dein Verhalten zu beeinflussen?",
     estOptions: [{ v: "ja", label: "Ja" }, { v: "nein", label: "Nein" }, { v: "weiss_nicht", label: "Weiß nicht" }],
-    estB: "Wie? Beschreibe in einem Satz, was das Element macht und was die App damit erreichen will. (freiwillig)",
-    estC: "Was sind deine Gedanken dazu? (freiwillig)",
+    estB: "Wie? Beschreibe in einem Satz, was das Element macht und was die App damit erreichen will.",
+    estC: "Was sind deine Gedanken dazu?",
     estLabels: { ja: "Ja, beeinflusst", nein: "Nein", weiss_nicht: "Weiß nicht" },
     estSummary: "Deine Einschätzung: {x}",
     relook: "Bild vergrößern",
     missing: "Bitte beantworte diese Frage.",
     missingN: "Es fehlen noch {n} Antworten.",
-    noPattern: "Hier steckt kein Muster.",
-    reviewNote: "Du siehst einen Schritt, den du schon abgeschlossen hast. Deine Antwort bleibt, wie sie war.",
+    noPattern: "Hier steckt kein bekanntes Muster.",
+    reviewNote: "Diesen Schritt hast du schon abgeschlossen. Deine Antwort bleibt gespeichert.",
     copy: "Antworten kopieren",
     copied: "Kopiert.",
     copyFailed: "Kopieren ging nicht. Nutze den Download-Link.",
@@ -118,16 +118,15 @@ window.CONTENT = {
       correct: 3,
       name: "Endloses Scrollen (Infinite Scroll)",
       short: "Endloses Scrollen (Infinite Scroll)",
-      was: "Der Feed hat keine letzte Seite und keinen Weiter-Knopf. Sobald du dich beim Scrollen dem unteren Rand näherst, lädt die App im Hintergrund bereits die nächsten Beiträge und hängt sie nahtlos an. Technisch ist der Feed eine Liste ohne festgelegtes Ende.",
-      wirkung: "Normalerweise beendet ein natürlicher Endpunkt eine Tätigkeit: Die Seite ist zu Ende, die Sendung vorbei. Ohne Endpunkt muss die Entscheidung aufzuhören aktiv gegen den nächsten Beitrag getroffen werden, der schon geladen ist. Diese Entscheidung wird verschoben, oft viele Male hintereinander, weil der nächste Beitrag immer etwas Neues verspricht.",
-      zweck: "Je länger du scrollst, desto mehr Werbeanzeigen kann die App zwischen die Beiträge setzen. Die Verweildauer gehört zu den wichtigsten Größen, an denen der Erfolg eines Feeds gemessen wird.",
+      was: "Der Feed hat kein Ende und keine Seitenzahlen. Während du scrollst, lädt die App im Hintergrund schon die nächsten Beiträge nach.",
+      wirkung: "Ohne Ende fehlt ein Signal zum Aufhören (Stopping Cue), wie das Ende eines Kapitels oder einer Folge. Aufhören wird so zu einer aktiven Entscheidung, und die schiebt man leicht immer weiter auf.",
+      zweck: "Mehr Zeit im Feed heißt mehr Platz für Werbung zwischen den Beiträgen.",
       variants: {
         tt: {
           screen: "tiktok-feed",
-          ctxA: "Ein Video-Feed wie bei TikTok. Du bist bei Beitrag 40.",
-          ctxB: "Beitrag 41 wurde gerade nachgeladen. Solange du weiter scrollst, lädt die App weitere Beiträge nach. Ein Ende ist nicht vorgesehen.",
-          action: "Weiter scrollen ▼",
-          hint: "An dieser Stelle könnte der Feed zu Ende sein. Stattdessen hat die App schon während des Scrollens die nächsten Beiträge geladen. Ein Ende ist technisch nicht vorgesehen.",
+          ctxA: "TikTok, Für-dich-Feed. Du bist bei Video 40.",
+          ctxB: "Du hast weitergescrollt. Der nächste Beitrag war schon geladen.",
+          hint: "Hier könnte der Feed enden. Stattdessen lädt die App beim Scrollen immer neue Beiträge nach.",
           markLabel: "Unterkante des Beitrags, der Übergang zum nächsten Beitrag",
           data: {
             posts: [
@@ -143,10 +142,9 @@ window.CONTENT = {
         ig: {
           screen: "ig-feed",
           ctxA: "Dein Instagram-Feed. Du bist bei Beitrag 40.",
-          ctxB: "Beitrag 41 wurde gerade nachgeladen. Solange du weiter scrollst, lädt die App weitere Beiträge nach. Ein Ende ist nicht vorgesehen.",
-          action: "Weiter scrollen ▼",
-          hint: "An dieser Stelle könnte der Feed zu Ende sein. Stattdessen hat die App schon während des Scrollens die nächsten Beiträge geladen. Ein Ende ist technisch nicht vorgesehen.",
-          markLabel: "Übergang vom Beitrag zum nächsten Beitrag",
+          ctxB: "Du hast weitergescrollt. Der nächste Beitrag war schon geladen.",
+          hint: "Hier könnte der Feed enden. Stattdessen lädt die App beim Scrollen immer neue Beiträge nach.",
+          markLabel: "Übergang zum nachgeladenen Beitrag",
           data: {
             title: "",
             scrollFeed: true, // Tipp scrollt um einen Beitrag weiter; Markierung am Übergang zum übernächsten
@@ -172,16 +170,15 @@ window.CONTENT = {
       correct: 2,
       name: "Ziehen zum Aktualisieren (Pull-to-Refresh)",
       short: "Ziehen zum Aktualisieren (Pull-to-Refresh)",
-      was: "Am oberen Rand des Feeds kannst du die Seite mit dem Finger nach unten ziehen. Ein Ladesymbol dreht sich, danach zeigt die App entweder neue Beiträge oder die Meldung, dass es nichts Neues gibt. Was von beidem eintritt, ist vorher nicht erkennbar.",
-      wirkung: "Belohnungen, die unvorhersehbar eintreten, verstärken ein Verhalten stärker als vorhersehbare. Dieses Prinzip ist aus der Lernpsychologie bekannt; Spielautomaten sind nach demselben Prinzip gebaut. Weil mal etwas kommt und mal nicht, bleibt das Ziehen reizvoll, auch wenn beim letzten Mal nichts Neues da war.",
-      zweck: "Jedes Ziehen ist ein weiterer Abruf und häufig der Beginn einer neuen Sitzung. Für die App ist jeder dieser Besuche eine Gelegenheit, Inhalte und Werbung zu zeigen.",
+      was: "Du ziehst den Feed nach unten, ein Ladesymbol dreht sich. Danach kommen neue Beiträge oder nichts. Was passiert, weißt du vorher nicht.",
+      wirkung: "Unvorhersehbare Belohnungen festigen ein Verhalten stärker als verlässliche (variable Belohnung). Spielautomaten funktionieren genauso: Weil manchmal etwas kommt, zieht man immer wieder.",
+      zweck: "Jedes Ziehen startet oft eine neue Runde im Feed, mit neuen Inhalten und neuer Werbung.",
       variants: {
         ig: {
           screen: "ig-feed",
-          ctxA: "Du siehst den Anfang deines Instagram-Feeds.",
-          ctxB: "Du hast gezogen. Diesmal gab es keine neuen Beiträge.",
-          action: "Ziehen ↓",
-          hint: "Die Meldung „Keine neuen Beiträge“ zeigt: Das Ergebnis des Ziehens ist nicht vorhersehbar. Mal erscheinen neue Beiträge, mal nicht. Diese Ungewissheit macht die Geste anziehend.",
+          ctxA: "Der Anfang deines Instagram-Feeds.",
+          ctxB: "Du hast gezogen. Diesmal kam nichts Neues.",
+          hint: "Ob beim Ziehen etwas Neues kommt, weißt du vorher nie. Genau diese Ungewissheit macht die Geste reizvoll.",
           markLabel: "Lade-Rad und die Meldung „Keine neuen Beiträge“",
           data: {
             title: "", // kein App-Name im Screen
@@ -210,16 +207,15 @@ window.CONTENT = {
       correct: 2,
       name: "Empfehlungen nach Schwäche (Guilty-Pleasure Recommendations)",
       short: "Empfehlungen nach Schwäche (Guilty-Pleasure Recommendations)",
-      was: "Zwischen den Beiträgen von Konten, denen du folgst, platziert die App Inhalte fremder Konten, gekennzeichnet nur durch einen kleinen Hinweis wie „Vorgeschlagen“. Ausgewählt werden sie nach deinem gemessenen Verhalten: Die App registriert bei jedem Beitrag, wie lange du bleibst und wo du hängen bleibst.",
-      wirkung: "Die Auswahl richtet sich nicht danach, was du sehen möchtest, sondern danach, was dich nachweislich am längsten hält. Weil die Empfehlungen zum eigenen Verhalten passen, fühlen sie sich wie der eigene Geschmack an. Dass eine Messung dahintersteht, ist im Screen kaum zu erkennen.",
-      zweck: "Passgenaue Empfehlungen verlängern die Sitzung. Bei TikTok besteht der gesamte Für-dich-Feed aus solchen Empfehlungen.",
+      was: "Zwischen Beiträgen von Konten, denen du folgst, zeigt die App Inhalte fremder Konten, nur mit „Vorgeschlagen“ markiert. Ausgewählt werden sie danach, wie lange du bei ähnlichen Inhalten hängen bleibst.",
+      wirkung: "Die Auswahl folgt deinem Verhalten, nicht deinen Absichten: Was dich kurz fesselt, bekommst du öfter, auch wenn du es eigentlich nicht sehen willst. Weil die Vorschläge so gut passen, halten wir sie für unseren eigenen Geschmack.",
+      zweck: "Passende Vorschläge halten dich länger im Feed. Der Für-dich-Feed bei TikTok besteht nur daraus.",
       variants: {
         ig: {
           screen: "ig-feed",
           ctxA: "Dein Instagram-Feed. Du folgst tom.reist.",
-          ctxB: "Der Beitrag von mia.kocht steht ganz oben, obwohl du ihr nicht folgst.",
-          action: "Auflösen",
-          hint: "Dieser Beitrag ist nicht abonniert, sondern ausgewählt: Die App hat gemessen, dass du bei Kochvideos am längsten bleibst, und zeigt dir deshalb mehr davon. Der kleine Hinweis „Vorgeschlagen“ ist die einzige Kennzeichnung.",
+          ctxB: "mia.kocht steht ganz oben, obwohl du ihr nicht folgst.",
+          hint: "Du folgst mia.kocht nicht. Die App zeigt dir den Beitrag, weil du bei Kochvideos lange hängen bleibst. Einziger Hinweis: das kleine „Vorgeschlagen“.",
           markLabel: "Kopfzeile des Beitrags von mia.kocht mit dem Hinweis „Vorgeschlagen“",
           data: {
             title: "", // kein App-Name im Screen
@@ -236,10 +232,9 @@ window.CONTENT = {
         tt: {
           screen: "tiktok-feed",
           question: "Warum zeigt dir die App gerade dieses Video, obwohl du ihr nicht folgst?",
-          ctxA: "TikTok, der Für-dich-Feed. Du folgst @mia.kocht nicht.",
-          ctxB: "Das nächste Video stammt von einem Konto, dem du nicht folgst.",
-          action: "Auflösen",
-          hint: "Dieses Video ist ausgewählt, weil du bei ähnlichen Videos am längsten geblieben bist. Die App misst das bei jedem Video. Im Für-dich-Feed ist jedes Video auf diese Weise ausgewählt.",
+          ctxA: "TikTok, Für-dich-Feed. Du folgst @mia.kocht nicht.",
+          ctxB: "Das Video stammt von einem Konto, dem du nicht folgst.",
+          hint: "Im Für-dich-Feed wählt die App jedes Video danach aus, wie lange du bei ähnlichen Videos geblieben bist.",
           markLabel: "Reiter „Für dich“ oben im Screen",
           data: {
             static: true,
@@ -263,22 +258,21 @@ window.CONTENT = {
       id: 4,
       key: "autoplay",
       order: ["ig", "tt", "fb", "x", "sc"],
-      question: "Was passiert, wenn das nächste Video oben ankommt?",
-      options: ["Ein Standbild, bis du auf Play tippst", "Es läuft sofort los, mit Ton", "Die App fragt, ob du es sehen willst"],
+      question: "Was passiert mit dem nächsten Video, wenn du weiterscrollst?",
+      options: ["Es bleibt stehen, bis du auf Play tippst", "Es läuft sofort los, mit Ton", "Die App fragt, ob du es sehen willst"],
       correct: 2,
       name: "Automatischer Start (Autoplay)",
       short: "Automatischer Start (Autoplay)",
-      was: "Videos starten von selbst, sobald sie auf dem Bildschirm erscheinen, mit Ton und ohne Play-Knopf. Am Ende beginnt das Video von vorn und läuft in einer Schleife weiter.",
-      wirkung: "Das Ansehen verlangt keine Entscheidung mehr, weil es ohne dein Zutun beginnt. Nur das Aufhören erfordert noch einen aktiven Schritt. Damit ist die bequemste Reaktion in jedem Moment, einfach weiterzusehen.",
-      zweck: "Ein Video, das ohne deinen Startbefehl läuft, ist ein Video, das du nicht überspringst. Das erhöht die gesehene Zeit und damit die Fläche für Werbung.",
+      was: "Videos starten von selbst, sobald sie im Bild sind, und laufen in Schleife. Einen Play-Knopf gibt es nicht.",
+      wirkung: "Die App macht Weiterschauen zur Voreinstellung. Menschen bleiben meist bei der Voreinstellung (Default-Effekt): Anfangen kostet nichts, nur Aufhören braucht eine Entscheidung.",
+      zweck: "Videos, die von selbst starten, werden seltener übersprungen. Das bringt mehr Sehzeit und mehr Werbung.",
       variants: {
         ig: {
           screen: "reels",
-          ctxA: "Instagram Reels. Du wischst gleich zum nächsten Video.",
-          ctxB: "Das nächste Video ist angekommen und läuft bereits.",
-          action: "Weiter wischen ▲",
-          hint: "Das Video läuft, ohne dass du Play gedrückt hast, und beginnt am Ende von vorn. Einen vorgesehenen Schlusspunkt gibt es nicht.",
-          markLabel: "Die Videofläche, das Video läuft bereits",
+          ctxA: "Instagram Reels. Ein Video läuft gerade.",
+          ctxB: "Du hast weitergescrollt. Das nächste Video läuft schon.",
+          hint: "Das Video ist von selbst gestartet und beginnt am Ende von vorn. Du musst nichts tun, damit es weiterläuft.",
+          markLabel: "Fortschrittsbalken des Videos, es läuft bereits",
           data: {
             videos: [
               { user: "@tom.reist", caption: "Lissabon im Oktober, 24 Grad. #reisen", asset: "video-tom-lissabon", progress: 60 },
@@ -286,17 +280,15 @@ window.CONTENT = {
             ],
             time: "0:02 · läuft",
             loopSeconds: 4, // Länge des Videos: Balken läuft durch und springt auf den Anfang (Schleife sichtbar)
-            markPlace: "inside"
           }
         },
         // TikTok, abgenommen 03.10.2026. Andere Videos als Muster 1; Schleife im Balken sichtbar.
         tt: {
           screen: "reels",
-          ctxA: "TikTok, der Für-dich-Feed. Du wischst gleich zum nächsten Video.",
-          ctxB: "Das nächste Video ist angekommen und läuft bereits.",
-          action: "Weiter wischen ▲",
-          hint: "Das Video läuft, ohne dass du Play gedrückt hast, und beginnt am Ende von vorn. Einen vorgesehenen Schlusspunkt gibt es nicht.",
-          markLabel: "Die Videofläche, das Video läuft bereits",
+          ctxA: "TikTok, Für-dich-Feed. Ein Video läuft gerade.",
+          ctxB: "Du hast weitergescrollt. Das nächste Video läuft schon.",
+          hint: "Das Video ist von selbst gestartet und beginnt am Ende von vorn. Du musst nichts tun, damit es weiterläuft.",
+          markLabel: "Fortschrittsbalken des Videos, es läuft bereits",
           data: {
             videos: [
               { user: "@tom.reist", caption: "Lissabon im Oktober, 24 Grad. #reisen", asset: "video-tom-lissabon", progress: 60, likes: "8.911", comments: "204" },
@@ -306,7 +298,6 @@ window.CONTENT = {
             loopSeconds: 4,
             share: "Teilen",
             nav: ["Start", "Suche", "Plus", "Inbox", "Profil"],
-            markPlace: "inside"
           }
         }
       }
@@ -320,20 +311,19 @@ window.CONTENT = {
       key: "herzen-und-zaehler",
       order: ["ig", "tt", "fb", "x", "sc"],
       question: "Wann zeigt dir die App neue Herzen auf deinen Kommentar?",
-      options: ["Sofort, wenn jemand tippt", "Wann die App will, in Schüben", "Nur wenn du nachsiehst"],
+      options: ["Sofort, wenn jemand tippt", "Gebündelt, zu einem Zeitpunkt, den die App bestimmt", "Nur wenn du nachsiehst"],
       correct: 2,
       name: "Herzen und Zähler (Social Investment)",
       short: "Herzen und Zähler (Social Investment)",
-      was: "Die App zählt sichtbar mit: Likes, Herzen, Follower, Aufrufe. Auch dein eigener Kommentar bekommt einen Zähler. Neue Reaktionen zeigt die App nicht sofort an, sondern gesammelt in Schüben.",
-      wirkung: "Mit einem Kommentar hast du etwas von dir investiert, und es ist naheliegend, wissen zu wollen, wie er ankommt. Weil die Reaktionen in Schüben und zu unvorhersehbaren Zeitpunkten erscheinen, gibt es immer wieder einen neuen Anlass nachzusehen. Den Zeitpunkt bestimmen nicht die anderen Nutzer, sondern die App.",
-      zweck: "Jedes Nachsehen ist eine Rückkehr in die App. Die Zähler machen aus einer einzelnen Handlung viele Besuche.",
+      was: "Likes, Herzen und Aufrufe werden sichtbar gezählt, auch bei deinen eigenen Kommentaren. Neue Reaktionen zeigt die App oft nicht sofort, sondern gebündelt.",
+      wirkung: "Likes sind soziale Bestätigung. Wer etwas gepostet hat, will wissen, wie es ankommt. Kommen die Reaktionen unregelmäßig, gibt es immer wieder einen Grund nachzusehen (variable Belohnung).",
+      zweck: "Aus einem Kommentar werden viele Besuche: Jedes Nachsehen holt dich zurück in die App.",
       variants: {
         ig: {
           screen: "ig-comments",
-          ctxA: "Instagram, die Kommentare unter einem Reel. Darunter ein Beispielkommentar von dir.",
+          ctxA: "Instagram, Kommentare unter einem Reel. Einer davon ist von dir.",
           ctxB: "Eine Stunde später.",
-          action: "Auflösen",
-          hint: "Die Herzen auf deinen Kommentar kamen in Schüben: erst 1, dann 4, dann 9, mit Pausen dazwischen. Wann du sie zu sehen bekommst, entscheiden nicht die Leute, die getippt haben, sondern die App.",
+          hint: "Die Herzen kamen gebündelt: erst 1, dann 4, dann 9. Wann du sie siehst, bestimmt die App, nicht die Leute, die getippt haben.",
           markLabel: "Herz-Zähler an deinem Kommentar, jetzt 9",
           data: {
             title: "Kommentare · 1.207",
@@ -349,10 +339,9 @@ window.CONTENT = {
         // TikTok, abgenommen 03.10.2026
         tt: {
           screen: "ig-comments",
-          ctxA: "TikTok, die Kommentare unter einem Video. Darunter ein Beispielkommentar von dir.",
+          ctxA: "TikTok, Kommentare unter einem Video. Einer davon ist von dir.",
           ctxB: "Eine Stunde später.",
-          action: "Auflösen",
-          hint: "Die Herzen auf deinen Kommentar kamen in Schüben: erst 1, dann 4, dann 9, mit Pausen dazwischen. Wann du sie zu sehen bekommst, entscheiden nicht die Leute, die getippt haben, sondern die App.",
+          hint: "Die Herzen kamen gebündelt: erst 1, dann 4, dann 9. Wann du sie siehst, bestimmt die App, nicht die Leute, die getippt haben.",
           markLabel: "Herz-Zähler an deinem Kommentar, jetzt 9",
           data: {
             title: "1.207 Kommentare",
@@ -380,21 +369,21 @@ window.CONTENT = {
       type: "multi",
       name: "Rückhol-Benachrichtigungen (Recapture Notifications)",
       short: "Rückhol-Benachrichtigungen (Recapture Notifications)",
-      was: "Auf dem Sperrbildschirm sehen alle Meldungen gleich aus: gleiches Format, gleicher Ton, gleiches App-Symbol. Tatsächlich stammen nur wenige davon von Menschen, die sich an dich wenden. Die übrigen erzeugt die App selbst, und diese Meldungen sind ab Werk eingeschaltet.",
-      wirkung: "Eine Meldung, die wie eine persönliche Nachricht aussieht, ist schwer zu ignorieren, weil sie die Erwartung weckt, dass jemand etwas von dir will. Ob das stimmt, zeigt sich erst nach dem Entsperren. Zu diesem Zeitpunkt ist die App bereits geöffnet.",
-      zweck: "Jede Benachrichtigung ist eine Einladung, eine neue Sitzung zu beginnen. Je mehr Meldungen die App erzeugt, desto öfter holt sie dich zurück.",
+      was: "Auf dem Sperrbildschirm sehen alle Meldungen gleich aus. Nur wenige kommen von Menschen. Die meisten verschickt die App von sich aus, und das ist ab Werk eingeschaltet.",
+      wirkung: "Eine Meldung, die nach einer persönlichen Nachricht aussieht, weckt Neugier und die Sorge, etwas zu verpassen (Fear of Missing Out). Ob wirklich jemand etwas von dir will, siehst du erst, wenn die App schon offen ist.",
+      zweck: "Jede Meldung ist ein Anlass, die App wieder zu öffnen. Mehr Meldungen, mehr Besuche.",
       variants: {
         lock: {
           screen: "lockscreen",
-          ctxA: "Ein Sperrbildschirm am Abend. Tipp die Meldungen an, hinter denen ein Mensch steckt.",
-          ctxB: "2 von 7 Meldungen kamen von einem Menschen.",
-          ctxBYou: "Du hattest {n} getippt.",
-          action: "Fertig",
-          resultLine: "Richtig getippt: {x} von 2. Fälschlich getippt: {y}.",
+          ctxA: "Dein Sperrbildschirm am Abend mit sieben Meldungen.",
+          ctxAsk: "Tipp die Meldungen an, die von einer Person kommen.", // erst im Schritt „Vorhersagen“ antippbar
+          ctxB: "2 von 7 Meldungen kamen von einer Person.",
+          ctxBYou: "Du hast {n} angetippt.",
+          resultLine: "Richtig angetippt: {x} von 2. Falsch angetippt: {y}.",
           data: {
             time: "21:42",
             date: null, // null = heutiges Datum (app.js, todayDe)
-            labelHuman: "von einem Menschen",
+            labelHuman: "von einer Person",
             labelApp: "von der App",
             times: ["21:40", "21:36", "21:31", "21:12", "20:55", "20:20", "19:48"],
             humanPositions: [1, 4]
@@ -486,21 +475,20 @@ window.CONTENT = {
       id: 7,
       key: "streaks",
       order: ["sc"], // nur Snapchat, kein Fallback (Research Design, Tabelle 3)
-      question: "Neben jonas.r: 12 Tage in Folge und eine Sanduhr. Wer hat diese Frist gesetzt?",
+      question: "Neben jonas.r stehen 12 Tage in Folge und eine Sanduhr. Wer hat diese Frist gesetzt?",
       options: ["jonas.r", "Die App", "Niemand, das ist nur ein Zähler"],
       correct: 2,
       name: "Streaks",
       short: "Streaks",
-      was: "Neben einem Chat zählt eine Flamme, an wie vielen Tagen in Folge ihr euch Snaps geschickt habt. Lässt einer von euch einen Tag aus, setzt die App den Zähler auf null. Kurz vor Ablauf der Frist erscheint eine Sanduhr als Warnung.",
-      wirkung: "Aus einem freiwilligen Austausch wird eine tägliche Verpflichtung, weil der aufgebaute Zähler nicht verloren gehen soll. Drohende Verluste wiegen psychologisch schwerer als gleich große Gewinne. Dazu kommt die Rücksicht auf die andere Person, die den Streak sonst mit verliert.",
-      zweck: "Die App setzt damit pro Kontakt einen festen Termin am Tag, an dem sie geöffnet wird.",
+      was: "Eine Flamme zählt, an wie vielen Tagen in Folge ihr euch Snaps geschickt habt. Fällt ein Tag aus, setzt die App den Zähler auf null. Kurz vorher erscheint eine Sanduhr.",
+      wirkung: "Verluste wiegen schwerer als gleich große Gewinne (Verlustaversion). Je länger der Streak, desto mehr steht auf dem Spiel. Dazu kommt sozialer Druck: Reißt der Streak, verliert ihn die andere Person auch.",
+      zweck: "Für jeden Kontakt gibt es einen festen Grund, die App jeden Tag zu öffnen.",
       variants: {
         sc: {
           screen: "snap-chats",
           ctxA: "Die Chatliste in Snapchat.",
-          ctxB: "Die Frist hat die App gesetzt, nicht jonas.r.",
-          action: "Auflösen",
-          hint: "Die Regel und die Frist stammen von der App; jonas.r hat daran nichts eingestellt. Lasst ihr einen Tag aus, setzt die App den Zähler auf null. Die Sanduhr erinnert vorher daran.",
+          ctxB: "Die Frist hat Snapchat gesetzt, nicht jonas.r.",
+          hint: "Regel und Frist kommen von der App, nicht von jonas.r. Fällt ein Tag aus, ist der Zähler weg.",
           markLabel: "Flamme mit 12 und Sanduhr neben jonas.r",
           data: {
             title: "Chats",
@@ -525,23 +513,22 @@ window.CONTENT = {
       id: 8,
       key: "verfallende-inhalte",
       order: ["ig", "sc", "fb", "tt"],
-      question: "Du hast jetzt keine Zeit, sie zu Ende zu sehen. Was ist mit dieser Story in zwei Stunden?",
-      options: ["Noch da, ich schaue sie dann", "Weg, für immer", "Im Archiv, wenn ich suche"],
+      question: "Du hast gerade keine Zeit, die Story anzusehen. Ist sie in zwei Stunden noch da?",
+      options: ["Ja, ich kann sie dann ansehen", "Nein, sie ist weg", "Nur noch im Archiv"],
       correct: 2,
       name: "Verfallende Inhalte (Ephemeral Content)",
       short: "Verfallende Inhalte (Ephemeral Content)",
-      was: "Stories sind 24 Stunden lang sichtbar, danach löscht die App sie. Beim Ansehen zeigt Instagram oben neben dem Namen das Alter der Story an, zum Beispiel „23 Std.“. Ein Archiv gibt es nur für die eigene Story, nicht für die Stories anderer.",
-      wirkung: "Was eine Frist hat, kann man verpassen. Aus dem Gedanken, sich etwas irgendwann anzusehen, wird die Entscheidung, es heute zu tun, und zwar jeden Tag neu, weil täglich neue Stories ablaufen. Das Bedürfnis, nichts zu verpassen, ist gut untersucht und wird hier gezielt angesprochen.",
-      zweck: "Die Frist liefert jeden Tag aufs Neue einen Grund, die App zu öffnen.",
+      was: "Stories verschwinden nach 24 Stunden. Die Stories anderer kannst du danach nicht mehr ansehen. Oben steht nur, wie alt die Story ist, zum Beispiel „23 Std.“.",
+      wirkung: "Was knapp ist, wirkt wertvoller (Knappheitseffekt). Die Frist macht aus „irgendwann ansehen“ ein „jetzt oder nie“. Weil jeden Tag neue Stories ablaufen, wiederholt sich das täglich.",
+      zweck: "Die Frist gibt dir jeden Tag einen Grund, die App zu öffnen.",
       variants: {
         ig: {
           screen: "story-view",
-          question: "Du hast jetzt keine Zeit, sie zu Ende zu sehen. Was ist mit dieser Story in zwei Stunden?",
-          ctxA: "Instagram, du hast die Story von lena_k geöffnet. Oben steht: 23 Stunden.",
-          ctxB: "Zurück in der Story-Leiste. Der Ring von lena_k ist weg.",
-          action: "Zwei Stunden später öffnen",
+          question: "Du hast gerade keine Zeit, die Story anzusehen. Ist sie in zwei Stunden noch da?",
+          ctxA: "Instagram, die Story von lena_k. Oben steht: 23 Std.",
+          ctxB: "Zwei Stunden später: Die Story von lena_k ist weg.",
           statusTimeB: "23:45", // Uhrzeit in der Statusleiste nach dem Tipp
-          hint: "Nach 24 Stunden löscht Instagram die Story. Wer sie bis dahin nicht gesehen hat, sieht sie nicht mehr. Die Anzeige „23 Std.“ ist die einzige Warnung.",
+          hint: "Nach 24 Stunden löscht Instagram die Story. Die Angabe „23 Std.“ war der einzige Hinweis darauf.",
           markLabel: "Der Platz von lena_ks Story in der Leiste, der farbige Ring ist weg",
           data: {
             title: "", // kein App-Name im Screen
@@ -575,8 +562,8 @@ window.CONTENT = {
     "2:ig": { sel: ".ig-refresh" },
     "3:ig": { sel: ".ig-post-head", n: 0 },
     "3:tt": { sel: ".tt-tabs span", n: 1 },
-    "4:ig": { sel: ".feed", place: "inside" },
-    "4:tt": { sel: ".feed", place: "inside" },
+    "4:ig": { sel: ".post:not([aria-hidden]) .bar" }, // Fortschrittsbalken des laufenden Videos (11.10.)
+    "4:tt": { sel: ".post:not([aria-hidden]) .bar" },
     "5:ig": { sel: ".igc-row.mine .igc-like" },
     "5:tt": { sel: ".igc-row.mine .igc-like" },
     "6:lock": { sel: ".lock-list" },
@@ -591,35 +578,35 @@ window.CONTENT = {
     ig: [
       { id: "d-ig-merken", base: { pattern: 3, variant: "ig" }, markA: { sel: ".ig-save", n: 0 },
         ctx: "Ein Beitrag in deinem Instagram-Feed.",
-        why: "Mit dem Merken-Symbol speicherst du einen Beitrag, um ihn später wiederzufinden; es hält dich nicht länger in der App." },
-      { id: "d-ig-menue", base: { pattern: 3, variant: "ig" }, markA: { sel: ".ig-dots", n: 1 },
+        why: "Mit dem Merken-Symbol speicherst du einen Beitrag, um ihn später wiederzufinden. Es soll dich nicht länger in der App halten." },
+      { id: "d-ig-menue", base: { pattern: 3, variant: "ig" }, markA: { sel: ".ig-dots", n: 0 } /* erster, sichtbarer Beitrag (11.10.: vorher außerhalb des Bildes) */,
         ctx: "Ein Beitrag in deinem Instagram-Feed.",
-        why: "Über das Menü mit den drei Punkten kannst du einen Beitrag melden oder ausblenden; es hält dich nicht länger in der App." },
+        why: "Über das Menü mit den drei Punkten kannst du einen Beitrag melden oder ausblenden. Es soll dich nicht länger in der App halten." },
       { id: "d-ig-profilbild", base: { pattern: 2, variant: "ig" }, markA: { sel: ".ig-post-head .avatar", n: 0 },
         ctx: "Ein Beitrag in deinem Instagram-Feed.",
-        why: "Das Profilbild zeigt, wer den Beitrag geteilt hat; ein Tipp darauf öffnet das Profil. Es hält dich nicht länger in der App." }
+        why: "Das Profilbild zeigt, wer den Beitrag geteilt hat; ein Tipp darauf öffnet das Profil. Es soll dich nicht länger in der App halten." }
     ],
     tt: [
       { id: "d-tt-name", base: { pattern: 3, variant: "tt" }, markA: { sel: ".post .user", n: 0 },
         ctx: "Ein Video in deinem TikTok-Feed.",
-        why: "Der Name zeigt, wer das Video veröffentlicht hat; ein Tipp darauf öffnet das Profil. Es hält dich nicht länger in der App." },
+        why: "Der Name zeigt, wer das Video veröffentlicht hat; ein Tipp darauf öffnet das Profil. Es soll dich nicht länger in der App halten." },
       { id: "d-tt-suche", base: { pattern: 3, variant: "tt" }, markA: { sel: ".nav span", n: 1 },
         ctx: "Ein Video in deinem TikTok-Feed.",
-        why: "Über die Suche findest du gezielt Videos und Profile; sie hält dich nicht länger in der App." },
+        why: "Über die Suche findest du gezielt Videos und Profile. Sie soll dich nicht länger in der App halten." },
       { id: "d-tt-start", base: { pattern: 3, variant: "tt" }, markA: { sel: ".nav span", n: 0 },
         ctx: "Ein Video in deinem TikTok-Feed.",
-        why: "Mit dem Haus-Symbol kehrst du zur Startseite zurück; es hält dich nicht länger in der App." }
+        why: "Mit dem Haus-Symbol kehrst du zur Startseite zurück. Es soll dich nicht länger in der App halten." }
     ],
     sc: [
       { id: "d-sc-profilbild", base: { pattern: 7, variant: "sc" }, markA: { sel: ".snap-row .avatar", n: 0 },
         ctx: "Deine Chatliste in Snapchat.",
-        why: "Das Profilbild zeigt, mit wem du schreibst; es hält dich nicht länger in der App." },
+        why: "Das Profilbild zeigt, mit wem du schreibst. Es soll dich nicht länger in der App halten." },
       { id: "d-sc-titel", base: { pattern: 7, variant: "sc" }, markA: { sel: ".snap-head" },
         ctx: "Deine Chatliste in Snapchat.",
-        why: "Die Überschrift zeigt nur, in welchem Bereich der App du gerade bist; sie hält dich nicht länger in der App." },
+        why: "Die Überschrift zeigt nur, in welchem Bereich der App du gerade bist. Sie soll dich nicht länger in der App halten." },
       { id: "d-sc-name", base: { pattern: 7, variant: "sc" }, markA: { sel: ".snap-text .user", n: 1 },
         ctx: "Deine Chatliste in Snapchat.",
-        why: "Der Name zeigt, mit wem du chattest; er hält dich nicht länger in der App." }
+        why: "Der Name zeigt, mit wem du chattest. Er soll dich nicht länger in der App halten." }
     ]
   },
 
@@ -632,8 +619,7 @@ window.CONTENT = {
       type: "spots",
       app: "Instagram",
       screen: "ig-feed",
-      ctx: "Ein Screen, den du in der Schulung nicht gesehen hast. Tipp die Nummern an, hinter denen ein Muster aus der Schulung steckt.",
-      action: "Fertig",
+      ctx: "Ein neuer Screen. Tipp die Nummern an, hinter denen ein Muster aus der Schulung steckt.",
       // Stellen in visueller Reihenfolge. pattern = Muster-ID, null = Ablenker.
       // Die Nummern vergibt die App zur Laufzeit: nur Stellen zu GEZEIGTEN
       // Mustern (plus Ablenker) erscheinen; Elemente nicht gezeigter Muster
@@ -642,10 +628,9 @@ window.CONTENT = {
         { key: "refresh", pattern: 2, label: "Lade-Rad oben" },
         { key: "sugg-0", pattern: 3, label: "„Vorgeschlagen“ neben mia.kocht" },
         { key: "user-1", pattern: null, label: "Nutzername tom.reist" },
-        { key: "likes-1", pattern: 5, label: "Gefällt-Zähler unter dem zweiten Beitrag" },
-        { key: "edge", pattern: 1, label: "Unterer Rand des Feeds, der Feed geht ohne Ende weiter" }
+        { key: "likes-1", pattern: 5, label: "Gefällt-Zähler unter dem zweiten Beitrag" }
       ],
-      noPatternLabel: "kein Muster",
+      noPatternLabel: "kein bekanntes Muster",
       feedbackScore: "{k} von {n} gefunden.",
       data: {
         title: "", // kein App-Name im Screen
@@ -668,32 +653,31 @@ window.CONTENT = {
       id: "W2",
       type: "cards",
       app: "",
-      ctx: "{count} Meldungen, wie sie auf deinem Sperrbildschirm stehen könnten. Entscheide bei jeder, ob sie von einem Menschen kommt oder von der App.",
-      action: "Auflösen",
-      labelHuman: "Von einem Menschen",
+      ctx: "{count} Meldungen von deinem Sperrbildschirm. Von wem kommt jede: von einer Person oder von der App?",
+      labelHuman: "Von einer Person",
       labelApp: "Von der App",
       feedbackScore: "{k} von {n} richtig eingeordnet.",
       verdictRight: "Richtig",
-      verdictWrong: "Nicht ganz",
+      verdictWrong: "Falsch",
       cardPool: [
         { app: "ig", human: true, pattern: null, text: "anna.s hat auf deine Story reagiert",
-          why: "Eine echte Person hat reagiert; die Meldung nennt sie beim Namen." },
+          why: "anna.s hat selbst reagiert." },
         { app: "tt", human: false, pattern: 6, text: "Jemand, dem du folgst, hat etwas Neues gepostet. Sieh es dir an.",
-          why: "Diese Meldung hat die App geschrieben; sie sagt nicht einmal, wer gepostet hat." },
+          why: "Die App schreibt sie selbst. Sie sagt nicht einmal, wer gepostet hat." },
         { app: "sc", human: false, pattern: 7, text: "🔥 Dein Streak mit anna.s läuft in 2 Stunden ab",
-          why: "Die Frist stammt von der App; anna.s weiß nichts davon." },
+          why: "Die Frist setzt Snapchat, nicht anna.s." },
         { app: "ig", human: false, pattern: 6, text: "Du hast heute noch nicht in deinen Feed geschaut. Sieh nach, was neu ist.",
-          why: "Die App erinnert dich daran, sie zu öffnen; eine Person steckt nicht dahinter." },
+          why: "Die App erinnert dich daran, sie zu öffnen." },
         { app: "x", human: true, pattern: null, text: "ben_h hat auf deinen Post geantwortet",
-          why: "Eine echte Person hat geantwortet; die Meldung nennt sie beim Namen." },
+          why: "ben_h hat selbst geantwortet." },
         { app: "fb", human: false, pattern: 6, text: "Du hast neue Benachrichtigungen verpasst",
-          why: "Die App erinnert an sich selbst; einen Absender gibt es nicht." },
+          why: "Die App erinnert an sich selbst. Einen Absender gibt es nicht." },
         { app: "sc", human: true, pattern: null, text: "mara.w hat dir einen Snap gesendet",
-          why: "Eine echte Person hat dir etwas geschickt." },
+          why: "mara.w hat dir selbst einen Snap geschickt." },
         { app: "tt", human: true, pattern: null, text: "mara.w hat auf deinen Kommentar geantwortet",
-          why: "Eine echte Person hat dir geantwortet; die Meldung nennt sie beim Namen." },
+          why: "mara.w hat dir selbst geantwortet." },
         { app: "tt", human: false, pattern: 6, text: "Dein Für-dich-Feed wurde aktualisiert. Schau dir die neuen Videos an.",
-          why: "Die App meldet sich von selbst, um dich zurückzuholen; eine Person steckt nicht dahinter." }
+          why: "Die App meldet sich von selbst, um dich zurückzuholen." }
       ]
     }
   ],
@@ -703,10 +687,10 @@ window.CONTENT = {
     // Überarbeitet nach Feedback-Call 05.10.: sachlich, keine Slogans; letzter
     // Absatz bewusst ohne Empfehlung (Grenze aus Research Design, Abschnitt 4.5)
     text: [
-      "Die Apps kosten kein Geld. Ihr Geschäftsmodell ist Aufmerksamkeit: Je länger du in der App bist, desto mehr Werbung kannst du sehen, und desto mehr verdient der Anbieter. Die Funktionen aus dieser Schulung sind deshalb kein Zufall und keine Nebenwirkung, sondern Absicht, und sie stecken in dieser oder ähnlicher Form in allen großen Social-Media-Apps.",
-      "Auch die EU-Kommission beschäftigt sich damit. In vorläufigen Feststellungen gegen TikTok (Februar 2026) sowie gegen Instagram und Facebook (Juli 2026) nennt sie unter anderem endloses Scrollen, Autoplay, Push-Benachrichtigungen und personalisierte Empfehlungen als Gestaltung, die abhängig machen kann.",
-      "Diese Funktionen setzen an bekannten Mechanismen der menschlichen Psychologie an, zum Beispiel an der Reaktion auf unvorhersehbare Belohnungen und am Bedürfnis, nichts zu verpassen. Dass sie wirken, liegt nicht an mangelnder Selbstdisziplin, sondern daran, dass sie genau dafür gebaut sind.",
-      "Wer diese Mechanismen kennt, kann sie im Alltag erkennen und bewusst entscheiden, wie er damit umgehen will. Diese Entscheidung liegt bei dir; die Schulung gibt dazu bewusst keine Empfehlung."
+      "**Das Geschäftsmodell:** Die Apps sind kostenlos und verdienen an Werbung. Je mehr Zeit du dort verbringst, desto mehr Werbung siehst du. Die Funktionen aus der Schulung sind deshalb Absicht und stecken in ähnlicher Form in allen großen Social-Media-Apps.",
+      "**Auch die EU sieht das kritisch:** In vorläufigen Feststellungen gegen TikTok (Februar 2026) sowie Instagram und Facebook (Juli 2026) nennt die EU-Kommission unter anderem endloses Scrollen, Autoplay, Push-Benachrichtigungen und personalisierte Empfehlungen als Gestaltung, die abhängig machen kann.",
+      "**Es liegt nicht an dir:** Die Funktionen nutzen bekannte psychologische Mechanismen, etwa unvorhersehbare Belohnungen oder die Sorge, etwas zu verpassen. Dass sie wirken, hat nichts mit fehlender Selbstdisziplin zu tun.",
+      "Wer die Mechanismen kennt, erkennt sie leichter im Alltag."
     ],
     button: "Weiter"
   },
@@ -722,8 +706,8 @@ window.CONTENT = {
       { label: "Zurückholen", ids: [5, 6, 7, 8] }
     ],
     scores: "Deine Antworten: {x} von {n} richtig. Beim Wiederfinden: {y} von {max} Stellen.",
-    outro: "Was du damit machst, entscheidest du selbst. In etwa zwei Wochen folgt ein zweiter, kürzerer Fragebogen.",
-    button: "Weiter zum Fragebogen"
+    outro: "Was du daraus machst, entscheidest du selbst. Zum Schluss noch ein paar kurze Fragen zur Schulung.",
+    button: "Weiter"
   },
 
   // Farbverläufe als Platzhalter, je Bild-Kennung (Liste auch in assets/README.md).

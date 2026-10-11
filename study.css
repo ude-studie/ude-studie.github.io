@@ -124,3 +124,10 @@
 
 /* Textfelder in der Schrift der Seite (sonst Browser-Standard Monospace) */
 textarea, select { font: inherit; }
+
+/* Strukturierte Texte (11.10.): Absätze, Fettdruck, Aufzählungen */
+.tp-rich { margin: 0 0 14px; }
+.tp-rich .tp-p { margin: 0 0 10px; }
+.tp-rich b, .steps b { font-weight: 700; }
+.tp-list { margin: 0 0 10px; padding-left: 1.2em; }
+.tp-list li { margin: 0 0 6px; }

@@ -1,5 +1,5 @@
 /*
- * pages/t1t2.js – Folge-Fragebogen (Welle T1, etwa zwei Wochen nach T0).
+ * pages/t1t2.js – Folge-Fragebogen (Welle T1, etwa zehn Tage nach T0).
  * Rework 07.10., Abschnitt 8: kein „Werte abtippen“ mehr, Erkennen im Format
  * der Schulung (Ja → „Wie?“, Nein/Weiß nicht → „Gedanken“), danach Einfluss
  * und Akzeptanz je gezeigtem Muster. Welche Screens eine Person sieht,
@@ -40,7 +40,6 @@
       pages.push({ id: id(pageNo++), items: [
         { type: "title", text: "Screenshot deiner Bildschirmzeit" },
         { type: "steps", byOs: { ios: T0.t04.schritte_ios, android: T0.t04.schritte_android } },
-        { type: "sketch", byOs: { ios: "ios", android: "android" } },
         { type: "text", byOs: { ios: T0.t04.zusatz_ios, android: T0.t04.zusatz_android } },
         { type: "radio", key: "SU01", label: T0.t04.SU01, required: true, options: [
           { v: "ja", label: "Ja" }, { v: "nein", label: "Nein" }

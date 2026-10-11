@@ -435,7 +435,7 @@
     return String(tpl).replace(/\{(\w+)\}/g, function (_, k) { return vals[k] != null ? vals[k] : ""; });
   }
   function paras(list) {
-    return list.map(function (t) { return "<p>" + esc(t) + "</p>"; }).join("");
+    return list.map(function (t) { return "<p>" + esc(t).replace(/\*\*(.+?)\*\*/g, "<b>$1</b>") + "</p>"; }).join("");
   }
   function joinList(nums) {
     if (nums.length <= 1) return nums.join("");
@@ -659,11 +659,9 @@
             "</div>";
         }
         // Story-Leiste oben im Feed (nicht mehr sichtbar, sobald weitergescrollt ist)
-        if (d.stories !== false && !(d.scrollFeed && isB)) html += igStoryBar(d.stories);
-        var posts = d.scrollFeed && isB ? d.posts.slice(1) : d.posts;
-        posts.forEach(function (post, j) {
-          var i = d.scrollFeed && isB ? j + 1 : j;
-          if (d.scrollFeed && isB && i === 2) html += '<div class="ig-seam"' + markAttr("seam-1") + "></div>";
+        if (d.stories !== false) html += igStoryBar(d.stories);
+        d.posts.forEach(function (post, i) {
+          if (d.scrollFeed && isB && i === 1) html += '<div class="ig-seam"' + markAttr("seam-1") + "></div>";
           html += igPostHtml(post, i, tgt, markAttr("head-" + i));
         });
         if (d.more) {
@@ -676,10 +674,9 @@
       },
       toB: function (body, p) {
         if (p.data.scrollFeed) {
-          // Weiter scrollen: der Feed rückt um Story-Leiste + ersten Beitrag nach oben
-          var content = body.querySelector(".ig-content"), first = body.querySelector(".ig-post");
-          var k = body.getBoundingClientRect().width / body.offsetWidth || 1; // aktuelle Skalierung
-          var dy = (first.getBoundingClientRect().bottom - content.getBoundingClientRect().top) / k;
+          // Weiter scrollen: der Feed rückt nach oben, vom ersten Beitrag bleibt das Bildende sichtbar
+          var content = body.querySelector(".ig-content");
+          var dy = feedScrollDy(body);
           content.style.transition = "transform " + ms(350) + "ms cubic-bezier(.2,.7,.2,1)";
           content.style.transform = "translateY(-" + Math.round(dy) + "px)";
           return wait(ms(360));
@@ -689,6 +686,13 @@
         body.querySelector(".ig-content").classList.add("pulled");
         body.querySelector(".spinner").classList.add("spin");
         return wait(ms(1000));
+      },
+      // Endzustand nach dem Scrollen (Muster 1): gleiche Verschiebung wie in der Animation
+      afterB: function (body, p) {
+        if (!p.data.scrollFeed) return;
+        var content = body.querySelector(".ig-content");
+        content.style.transition = "none";
+        content.style.marginTop = -feedScrollDy(body) + "px";
       }
     },
 
@@ -703,15 +707,14 @@
           var live = isB && i === 1;
           var hidden = (!isB && i > 0) || (isB && i === 0);
           return '<div class="post"' + (hidden ? ' aria-hidden="true"' : "") + "><div class=\"post-bg\"" + assetAttr(v.asset) + "></div>" +
-            '<div class="meta"><div class="user">' + esc(v.user) + '</div><div class="cap">' + esc(v.caption) + "</div>" +
-            (live ? '<div class="time" data-loop="' + loop + '" data-start="' + start + '" data-tpl="' + esc(d.time) + '">' + esc(d.time) + "</div>" : "") + "</div>" +
+            '<div class="meta"><div class="user">' + esc(v.user) + '</div><div class="cap">' + esc(v.caption) + "</div></div>" +
             '<div class="side"><span>' + ICON.heart + esc(v.likes || "") + "</span><span>" + ICON.comment + esc(v.comments || "") + "</span><span>" +
             (d.nav ? ICON.share + esc(d.share || "") : ICON.send) + "</span></div>" +
-            '<div class="bar"><span class="' + (live ? "run" : "") + '" style="' +
+            '<div class="bar"' + (live ? ' data-mark="below"' : "") + '><span class="' + (live ? "run" : "") + '" style="' +
             (live ? "animation-duration:" + loop + "s;animation-delay:-" + start + "s" : "width:" + Number(v.progress || 0) + "%") + '"></span></div>' +
             "</div>";
         }).join("");
-        return '<div class="feed"' + (isB ? ' data-mark="' + (d.markPlace || "inside") + '"' : "") + '><div class="track' +
+        return '<div class="feed"><div class="track' +
           (isB ? " to-b still" : "") + '">' + videos + "</div></div>" +
           (d.nav ? ttNav(d) : '<div class="nav" aria-hidden="true"><span>' + ICON.home + "</span><span>" + ICON.search + "</span><span>" +
             ICON.play + "</span><span>" + ICON.send + "</span><span>" + ICON.profile + "</span></div>");
@@ -893,6 +896,15 @@
     wrap.setAttribute("data-scale", s.toFixed(4));
   }
 
+  // Muster 1 (Instagram): so weit scrollen, dass vom ersten Beitrag das untere Bildende
+  // (150 px) stehen bleibt; Werte im unskalierten Screen
+  function feedScrollDy(body) {
+    var content = body.querySelector(".ig-content"), img = body.querySelector(".ig-post .ig-img");
+    if (!content || !img) return 0;
+    var k = body.getBoundingClientRect().width / body.offsetWidth || 1;
+    return Math.max(0, Math.round((img.getBoundingClientRect().bottom - content.getBoundingClientRect().top) / k - 150));
+  }
+
   // Rote Umrandung um das Element mit data-mark (Koordinaten im unskalierten Screen)
   function placeMark(body) {
     body.querySelectorAll(".mark").forEach(function (el) { el.remove(); });
@@ -961,6 +973,8 @@
         // Text im jeweils anderen Feld bleibt erhalten, das Feld wird nur ausgeblendet
         b.hidden = inp.value !== "ja";
         c.hidden = inp.value === "ja";
+        var shownCard = inp.value === "ja" ? b : c;
+        setTimeout(function () { shownCard.scrollIntoView({ block: "nearest", behavior: "smooth" }); }, 30);
       });
     });
     bindLiveCheck(panel);
@@ -1138,8 +1152,8 @@
     });
   }
 
-  function ctxFor(p, isB) {
-    if (!isB) return p.ctxA;
+  function ctxFor(p, isB, phase) {
+    if (!isB) return phase === "ask" && p.ctxAsk ? p.ctxAsk : p.ctxA;
     var t = p.ctxB || p.ctxA;
     var r = state.patterns[p.id];
     if (p.ctxBYou && r && !exportMode) t += " " + fill(p.ctxBYou, { n: r.selected.length });
@@ -1224,7 +1238,7 @@
     var stage = app.querySelector(".lp-stage");
     var ctx = app.querySelector("#ctx"), panel = app.querySelector(".lp-panel"), btn = app.querySelector("#main");
     var body = app.querySelector(".screen-body");
-    ctx.textContent = ctxFor(p, isB);
+    ctx.textContent = ctxFor(p, isB, phase);
     ctx.hidden = phase === "explain";
     panel.innerHTML = panelHtml(p, phase);
     if (animate) panel.classList.add("fade-in");
@@ -1233,6 +1247,7 @@
     fitDevice(animate);
     if (phase === "est" || phase === "ak" || phase === "dres") { applyMarkA(body, pg); placeMark(body); }
     else if (!isB) clearMarkA(body);
+    if (isB && tpl.afterB) tpl.afterB(body, p);
     if (isB) placeMark(body);
     btn.disabled = false;
     btn.onclick = null;
@@ -1261,7 +1276,7 @@
       btn.onclick = function () { state.sub = "ask"; save(); showPhase(pg, "ask", true); };
       focusFirst("#ctx");
     } else if (phase === "ask") {
-      btn.textContent = p.action;
+      btn.textContent = C.ui.next; // überall „Weiter“ (11.10.)
       btn.disabled = true;
       if (p.type === "multi") bindToggles(".note", function () { btn.disabled = picks.length === 0; });
       else app.querySelectorAll('input[name="ans"]').forEach(function (inp) {
@@ -1422,6 +1437,7 @@
       // Endzustand zeichnen, dann Markierung und Hinweis zusammen einblenden (< 400 ms)
       body.innerHTML = bodyOnly(tpl.render(p, true, { animate: true }));
       applyAssets(body);
+      if (tpl.afterB) tpl.afterB(body, p);
       placeMark(body);
       panel.classList.remove("reserved");
       panel.classList.add("fade-in");
@@ -1487,7 +1503,7 @@
     app.innerHTML = '<div class="page lp">' + head +
       '<main class="lp-stage" data-phase="' + (isB ? "react" : "ask") + '"><p class="lp-ctx" id="ctx">' + esc(recCtx(it)) + "</p>" +
       middle + '<div class="lp-panel">' + panel + "</div></main>" +
-      '<div class="lp-foot"><button class="btn" id="main" type="button">' + esc(isB ? C.ui.next : it.action) + "</button></div></div>";
+      '<div class="lp-foot"><button class="btn" id="main" type="button">' + esc(C.ui.next) + "</button></div></div>";
     var wrap = app.querySelector(".device-wrap");
     if (wrap) wrap.setAttribute("data-size", "full");
     fitDevice(false);

@@ -1,7 +1,8 @@
 /*
  * items.js – alle Fragetexte, Skalen und Anker der Studie.
  * Nichts davon steht hartcodiert in der Logik. Wortlaute aus Auftrag v3.
- * Keine festen Termine (seit 06.10.): Folge-Fragebogen etwa zwei Wochen nach T0.
+ * Keine festen Termine (seit 06.10.): Folge-Fragebogen etwa zehn Tage nach T0 (seit 11.10.).
+ * Texte mit Struktur: **fett**, Leerzeile = Absatz, Zeilen mit „• “ = Aufzählung (study.js, richHtml).
  *
  * Stand: survey-v2 (Rework 07.10.): Blöcke R, T0, FB und ein Folge-Fragebogen T1.
  */
@@ -17,10 +18,10 @@ window.ITEMS = {
 
   // ── Rahmentexte (Router, Wartesite, Code-Seiten) ───────
   frame: {
-    waitTitle: "Vielen Dank",
-    waitText: "In etwa zwei Wochen folgt der zweite und letzte Fragebogen (etwa %dauer_t1% Minuten). Du bekommst dann eine Erinnerung per Mail. Mach dafür bitte wieder einen Screenshot deiner Bildschirmzeit für die letzte Woche.",
+    waitTitle: "Vielen Dank!",
+    waitText: "Danke, dass du dir die Zeit genommen hast. Deine Antworten helfen uns sehr.\n\n**Wie es weitergeht:** In etwa zehn Tagen schicken wir dir per Mail den Link zu einem kurzen Folgefragebogen (etwa %dauer_t1% Minuten).\n\n**Warum er wichtig ist:** Erst mit deinen Antworten im Folgefragebogen können wir sehen, ob die Schulung etwas bewirkt. Wir freuen uns sehr, wenn du wieder dabei bist.",
     doneTitle: "Vielen Dank für deine Teilnahme",
-    doneText: "Du hast alles geschafft. Deine persönliche Auswertung bekommst du nach dem Ende der Studie per Mail.",
+    doneText: "Du hast alles geschafft. Danke für deine Zeit und deine Unterstützung!\n\nNach Studienende schicken wir dir deine persönliche Auswertung per Mail.",
     unknownCodeTitle: "Code unbekannt",
     unknownCodeText: "Diesen Code kennen wir nicht. Prüfe den Link aus deiner Mail oder gib deinen Code ein.",
     codeInputLabel: "Dein Code (6 Zeichen)",
@@ -39,8 +40,7 @@ window.ITEMS = {
   R: {
     r01: {
       title: "Willkommen zur Studie",
-      // ENTWURF Zeitangabe: wird nach der Zeitmessung (Rework Abschnitt 10) gesetzt
-      text: "Diese Studie der Universität Duisburg-Essen (Wirtschaftsinformatik) untersucht, wie Social-Media-Apps gestaltet sind, damit man länger in ihnen bleibt und öfter zurückkommt. Was auf dich zukommt: Nach der Anmeldung beantwortest du einen Fragebogen und siehst eine Schulung mit nachgestellten Screens aus deinen Apps; zusammen dauert das etwa %dauer_t0% Minuten. Etwa zwei Wochen später folgt ein zweiter, kürzerer Fragebogen. Am Ende bekommst du deine eigene Bildschirmzeit als Auswertung per Mail.",
+      text: "**Worum es geht:** Wir untersuchen, wie Social-Media-Apps gestaltet sind, damit man sie länger und öfter nutzt. Die Studie läuft an der Universität Duisburg-Essen (Wirtschaftsinformatik).\n\n**Ablauf:**\n• Heute: Anmeldung, Fragebogen und eine Schulung mit nachgestellten Screens aus deinen Apps (zusammen etwa %dauer_t0% Minuten)\n• In etwa zehn Tagen: ein kurzer Folgefragebogen (etwa %dauer_t1% Minuten)\n\n**Was du bekommst:** Nach Studienende schicken wir dir per Mail eine persönliche Auswertung: deine Social-Media-Bildschirmzeit vor und nach der Schulung im Vergleich.\n\nDanke, dass du dir die Zeit nimmst und uns unterstützt!",
       infoLink: "Teilnahmeinformation und Datenschutz",
       infoHref: "teilnahme.html",
       EW01: "Ich habe die Teilnahmeinformation gelesen und willige ein, an der Studie teilzunehmen.",
@@ -96,7 +96,7 @@ window.ITEMS = {
     },
     r04: {
       title: "Deine E-Mail-Adresse",
-      text: "Deine E-Mail-Adresse brauchen wir, um dir den Link zum zweiten Fragebogen, eine Erinnerung und am Ende deine Auswertung zu schicken. Sie wird getrennt von deinen Antworten gespeichert, nur für die Kontaktaufnahme im Rahmen dieser Studie verwendet, nicht weitergegeben und nach Abschluss der Studie gelöscht.",
+      text: "**Wofür:** Wir schicken dir den Link zum Folgefragebogen und am Ende deine Auswertung.\n\n**Datenschutz:** Deine Adresse wird getrennt von deinen Antworten gespeichert, nur für diese Studie genutzt, nicht weitergegeben und nach Studienende gelöscht.",
       EM01: "E-Mail-Adresse",
       EM02: "E-Mail-Adresse wiederholen",
       error: "Das sieht nicht nach einer E-Mail-Adresse aus. Bitte prüfe die Eingabe.",
@@ -105,7 +105,7 @@ window.ITEMS = {
     r05: {
       title: "Anmeldung abgeschlossen",
       text: "Du bist angemeldet. Es geht jetzt mit dem ersten Fragebogen weiter.",
-      button: "Zum Fragebogen"
+      button: "Weiter"
     }
   }
 };
@@ -114,25 +114,27 @@ window.ITEMS = {
 window.ITEMS.T0 = {
   t01: {
     title: "Der erste Fragebogen",
-    // ENTWURF Zeitangabe (%dauer_t0%, config.js): Rework Abschnitt 10 misst sie
-    text: "Heute beantwortest du einige Fragen zu deiner Social-Media-Nutzung und siehst danach nachgestellte Screens aus deinen Apps. Bei jedem Screen schätzt du zuerst ein, ob ein markiertes Element dein Verhalten beeinflussen soll, danach erklären wir, was dahintersteckt. Das ist kein Test. Insgesamt dauert es etwa %dauer_t0% Minuten. Gespeichert werden nur deine Antworten, keine Nutzungs- oder Gerätedaten."
+    text: "**Was dich erwartet:**\n• Fragen zu deiner Social-Media-Nutzung und ein Screenshot deiner Bildschirmzeit\n• danach die Schulung mit nachgestellten Screens aus deinen Apps\n\n**Dauer:** zusammen etwa %dauer_t0% Minuten.\n\nEs gibt keine richtigen oder falschen Antworten. Antworte so, wie es für dich stimmt."
   },
   t04: {
+    // Recherchiert 11.10. (Apple Support, Apple Community, deutsche Anleitungen). iOS: Wochenansicht,
+    // nach rechts wischen = frühere Woche; Kategorien statt einzelner Apps. Android hat keine
+    // Kategorie „Soziale Netzwerke“ und unterscheidet sich je Hersteller → allgemein formuliert.
     schritte_ios: [
-      "Einstellungen → Bildschirmzeit",
-      "Alle Aktivitäten anzeigen",
-      "Oben „Woche“ wählen und mit dem Pfeil zur letzten Woche zurückblättern",
-      "Screenshot, auf dem die App-Liste mit Minuten zu sehen ist"
+      "Öffne **Einstellungen** → **Bildschirmzeit**.",
+      "Tippe auf **Alle App- & Websiteaktivitäten anzeigen**.",
+      "Wähle oben **Woche**. Wische über das Diagramm nach rechts, bis die **letzte Woche** angezeigt wird.",
+      "Tippe unter „Meistgenutzt“ auf **Kategorien anzeigen** und dann auf **Soziale Netzwerke**.",
+      "Mach einen **Screenshot**. Passt nicht alles auf einen, scroll weiter und mach einen zweiten."
     ],
-    zusatz_ios: "Wenn nicht alle deine Apps sichtbar sind, scrolle und mache einen zweiten Screenshot.",
+    zusatz_ios: "Je nach iOS-Version heißt die Kategorie auch „Soziale Netze“.",
     schritte_android: [
-      "Einstellungen → Digitales Wohlbefinden",
-      "Auf den Kreis tippen",
-      "Oben Tag auf Woche umstellen (falls vorhanden)",
-      "Screenshot der App-Liste"
+      "Öffne **Einstellungen** → **Digital Wellbeing** (je nach Hersteller auch „Digitales Wohlbefinden“).",
+      "Tippe auf das **Diagramm** mit deiner Bildschirmzeit.",
+      "Stell auf die **Wochenansicht** um, falls es sie gibt, und wähle die **letzte Woche**.",
+      "Mach einen **Screenshot** der App-Liste, auf dem deine Social-Media-Apps (**Instagram, TikTok, Snapchat**) mit ihren Zeiten zu sehen sind. Passt nicht alles auf einen, scroll weiter und mach einen zweiten."
     ],
-    // ENTWURF: nach dem Pilot an die Geräte der Pilotpersonen anpassen
-    zusatz_android: "Wenn dein Handy nur Tageswerte zeigt: je ein Screenshot pro Tag ist zu viel, mach nur den der Wochenansicht, falls es sie gibt, sonst den der letzten 7 Tage im Akku- oder Nutzungsmenü.",
+    zusatz_android: "Android sortiert nicht nach Kategorien. Uns reichen die Zeiten dieser Apps.",
     SU01: "Konntest du den Screenshot machen?",
     SU02_label: "Screenshot hochladen (bis 3 Dateien, je 10 MB)",
     SU02_hinweis_leer: "Ohne Screenshot fehlt uns der wichtigste Wert. Falls das Hochladen gerade nicht möglich ist, kannst du trotzdem weitermachen.",
@@ -154,8 +156,8 @@ window.ITEMS.T0 = {
       { v: "nein", label: "Nein" },
       { v: "weiss_nicht", label: "Weiß nicht" }
     ],
-    ERb: "Wie? Beschreibe in einem Satz, was das Element macht und was die App damit erreichen will. (freiwillig)",
-    ERc: "Was sind deine Gedanken dazu? (freiwillig)",
+    ERb: "Wie? Beschreibe in einem Satz, was das Element macht und was die App damit erreichen will.",
+    ERc: "Was sind deine Gedanken dazu?",
     screenOf: "Screen {x} von {n}"
   },
   t17: {
@@ -223,11 +225,15 @@ window.ITEMS.T0 = {
       "Andere würden sagen, ich habe eine eiserne Selbstdisziplin."
     ]
   },
+  vorSchulung: {
+    title: "Gleich beginnt die Schulung",
+    text: "Du siehst nachgestellte Screens aus deinen Apps. Bei jedem Screen gehst du vier kurze Schritte:\n• **Einschätzen:** Ein Element ist rot umrahmt. Versucht es, dein Verhalten zu beeinflussen?\n• **Vorhersagen:** Was passiert als Nächstes? Wähl eine Antwort.\n• **Auflösen:** Die App reagiert, und du siehst, was passiert.\n• **Erklärung:** wie das Element funktioniert, warum es wirkt und was die App davon hat\n\nEinige Screens enthalten kein bekanntes Muster. Zum Schluss suchst du die Muster auf zwei neuen Screens selbst.\n\nDie Screens sind nachgestellt. Du bist nicht in der echten App."
+  },
   offen: {
     title: "Zwei offene Fragen",
     diktat: "Tipp: Du kannst deine Antworten auch einsprechen. Tippe dazu auf das Mikrofon-Symbol deiner Tastatur.",
-    QU01: "Welche Funktionen in deinen Apps sind deiner Meinung nach so gebaut, dass du länger bleibst oder öfter zurückkommst? Nenne alles, was dir einfällt.",
-    QU02: "Wie gehst du damit um? Und unterscheidet sich das davon, wie du gern damit umgehen würdest?"
+    QU01: "Welche Funktionen in deinen Apps sorgen deiner Meinung nach dafür, dass du sie länger oder öfter nutzt? Nenne alles, was dir einfällt.",
+    QU02: "Wie gehst du mit diesen Funktionen um? Und würdest du gern anders damit umgehen?"
   }
 };
 
@@ -240,15 +246,35 @@ window.ITEMS.FB = {
     { v: "ja_ansatzweise", label: "Ja, ansatzweise" },
     { v: "nein", label: "Nein" }
   ],
-  FB02: "Bei welchem Muster oder an welcher Stelle?",
+  // Nur die Muster, die die Person gesehen hat (pages/fb.js filtert)
+  FB02: "Bei welchen Mustern? (mehrere möglich)",
+  FB02_options: [
+    { v: "m1", label: "Endloses Scrollen: Der Feed hört nie auf." },
+    { v: "m2", label: "Ziehen zum Aktualisieren: Mal kommt etwas Neues, mal nicht." },
+    { v: "m3", label: "Empfehlungen: Die App zeigt dir, wobei du hängen bleibst." },
+    { v: "m4", label: "Autoplay: Videos starten von selbst." },
+    { v: "m5", label: "Herzen und Zähler: Reaktionen kommen gebündelt." },
+    { v: "m6", label: "Benachrichtigungen: Die meisten schickt die App selbst." },
+    { v: "m7", label: "Streaks: Die App setzt eine tägliche Frist." },
+    { v: "m8", label: "Verfallende Stories: Nach 24 Stunden sind sie weg." }
+  ],
+  FB02b: "An welcher Stelle? (mehrere möglich)",
+  FB02b_options: [
+    { v: "aufloesung", label: "als die App reagiert hat und meine Vorhersage aufgelöst wurde" },
+    { v: "funktion", label: "bei „So funktioniert es“" },
+    { v: "wirkung", label: "bei „Warum es wirkt“" },
+    { v: "nutzen", label: "bei „Was die App davon hat“" },
+    { v: "einordnung", label: "bei der Einordnung am Ende" }
+  ],
   FB03: "Was davon war neu für dich?",
-  FB04: "Was war unklar oder überflüssig?",
-  FB05: "Wie willst du jetzt damit umgehen?"
+  FB04: "Was war unklar?",
+  FB06: "Was war überflüssig?",
+  FB05: "Willst du nach der Schulung etwas an deiner Nutzung dieser Apps ändern? Wenn ja, was?"
 };
 
 // ── Folge-Fragebogen T1 (Rework 07.10., Abschnitt 8) ────────────────────────────────
 window.ITEMS.T12 = {
-  start: "Willkommen zurück. Das ist der zweite und letzte Fragebogen; er dauert etwa %dauer_t1% Minuten.",
+  start: "Schön, dass du wieder dabei bist! Das ist der Folgefragebogen und der letzte Teil der Studie. Er dauert etwa %dauer_t1% Minuten.",
   startTitle: "Willkommen zurück",
   SH01: "Hast du seit der Schulung etwas an deinem Handy oder in deinen Apps geändert?",
   SH01_options: [
@@ -261,6 +287,6 @@ window.ITEMS.T12 = {
     { v: "anderes", label: "anderes", text: true }
   ],
   SH02: "Magst du einen Screenshot davon hochladen?",
-  QU03: "Hat sich in den letzten zwei Wochen etwas daran verändert, wie du deine Apps nutzt oder wie du sie wahrnimmst? Was, und woran lag es?",
+  QU03: "Hat sich seit der Schulung etwas daran verändert, wie du deine Apps nutzt oder wie du sie wahrnimmst? Wenn ja, was und warum?",
   QU04: "Was glaubst du, wollte diese Studie herausfinden?"
 };
