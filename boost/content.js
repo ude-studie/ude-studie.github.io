@@ -60,7 +60,7 @@ window.CONTENT = {
     // Einschätzung und Bewertung je Screen (Rework 07.10., Abschnitt 4.1; gespeichert mit wave T0)
     estQ: "Versucht das rot umrahmte Element, dein Verhalten zu beeinflussen?",
     estOptions: [{ v: "ja", label: "Ja" }, { v: "nein", label: "Nein" }, { v: "weiss_nicht", label: "Weiß nicht" }],
-    estB: "Wie? Beschreibe in einem Satz, was das Element macht und was die App damit erreichen will.",
+    estB: "Wie? Beschreibe in einem Satz, was das Element macht und wozu es dient.",
     estC: "Was sind deine Gedanken dazu?",
     estLabels: { ja: "Ja, beeinflusst", nein: "Nein", weiss_nicht: "Weiß nicht" },
     estSummary: "Deine Einschätzung: {x}",
@@ -306,7 +306,7 @@ window.CONTENT = {
     },
 
     // ───────────── Muster 5: Herzen und Zähler ─────────────
-    // Richtige Antwort: 2 „Wann die App will, in Schüben"
+    // Richtige Antwort: 2 „Gebündelt, zu einem Zeitpunkt, den die App bestimmt"
     // Der Kommentar ist vorgegeben; niemand tippt etwas Eigenes ein.
     {
       id: 5,

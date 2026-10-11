@@ -156,7 +156,7 @@ window.ITEMS.T0 = {
       { v: "nein", label: "Nein" },
       { v: "weiss_nicht", label: "Weiß nicht" }
     ],
-    ERb: "Wie? Beschreibe in einem Satz, was das Element macht und was die App damit erreichen will.",
+    ERb: "Wie? Beschreibe in einem Satz, was das Element macht und wozu es dient.",
     ERc: "Was sind deine Gedanken dazu?",
     screenOf: "Screen {x} von {n}"
   },
