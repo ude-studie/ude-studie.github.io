@@ -30,7 +30,7 @@
  * assets/<kennung>.jpg oder .png vor, wird sie statt des Farbverlaufs gezeigt.
  */
 window.CONTENT = {
-  version: "boost-v5", // v5 (11.10.): Texte gestrafft, Erklärung neu gegliedert, Muster 1/4/6 überarbeitet, überall „Weiter“
+  version: "boost-v6", // v5 (11.10.): Texte gestrafft, Erklärung neu gegliedert, Muster 1/4/6 überarbeitet, überall „Weiter“
 
   // Apps, die beim Aufruf übergeben (apps=ig,tt,…) oder auf dem zweiten Einleitungsbildschirm gewählt werden.
   // Reihenfolge = Reihenfolge der Kacheln.
@@ -125,7 +125,7 @@ window.CONTENT = {
         tt: {
           screen: "tiktok-feed",
           ctxA: "TikTok, Für-dich-Feed. Du bist bei Video 40.",
-          ctxB: "Du hast weitergescrollt. Der nächste Beitrag war schon geladen.",
+          ctxB: "Du hast weitergewischt. Das nächste Video war schon geladen.",
           hint: "Hier könnte der Feed enden. Stattdessen lädt die App beim Scrollen immer neue Beiträge nach.",
           markLabel: "Unterkante des Beitrags, der Übergang zum nächsten Beitrag",
           data: {
@@ -144,10 +144,11 @@ window.CONTENT = {
           ctxA: "Dein Instagram-Feed. Du bist bei Beitrag 40.",
           ctxB: "Du hast weitergescrollt. Der nächste Beitrag war schon geladen.",
           hint: "Hier könnte der Feed enden. Stattdessen lädt die App beim Scrollen immer neue Beiträge nach.",
-          markLabel: "Übergang zum nachgeladenen Beitrag",
+          markLabel: "Der nächste Beitrag, den die App schon nachgeladen hat",
           data: {
             title: "",
-            scrollFeed: true, // Tipp scrollt um einen Beitrag weiter; Markierung am Übergang zum übernächsten
+            stories: false, // bei Beitrag 40 ist die Story-Leiste längst weggescrollt
+            scrollFeed: true, // Weiter scrollt; der unten hereinragende Beitrag ist vor und nach dem Scrollen umrahmt
             posts: [
               { user: "lena_k", line: "♡ 92 · Sonntag am Meer", asset: "foto-hund" },
               { user: "mia.kocht", line: "♡ 1.204 · Pasta in 10 Minuten", asset: "foto-mia-pasta" },
@@ -165,7 +166,7 @@ window.CONTENT = {
       id: 2,
       key: "ziehen-zum-aktualisieren",
       order: ["ig", "fb", "x", "tt"],
-      question: "Was kommt, wenn du jetzt nach unten ziehst?",
+      question: "Was kommt gleich?",
       options: ["Immer neue Beiträge", "Mal etwas, mal nichts", "Nie etwas, der Feed ist voll"],
       correct: 2,
       name: "Ziehen zum Aktualisieren (Pull-to-Refresh)",
@@ -176,13 +177,13 @@ window.CONTENT = {
       variants: {
         ig: {
           screen: "ig-feed",
-          ctxA: "Der Anfang deines Instagram-Feeds.",
+          ctxA: "Du ziehst deinen Instagram-Feed gerade nach unten.",
           ctxB: "Du hast gezogen. Diesmal kam nichts Neues.",
           hint: "Ob beim Ziehen etwas Neues kommt, weißt du vorher nie. Genau diese Ungewissheit macht die Geste reizvoll.",
-          markLabel: "Lade-Rad und die Meldung „Keine neuen Beiträge“",
+          markLabel: "Lade-Rad oben im Feed",
           data: {
             title: "", // kein App-Name im Screen
-            refresh: "Nach unten ziehen zum Aktualisieren",
+            refresh: " ", // nur das Lade-Rad; die Beschriftung gab es in der echten App nicht
             toast: "Keine neuen Beiträge",
             posts: [
               { user: "tom.reist", line: "♡ 856 · Lissabon im Oktober", asset: "foto-tom-lissabon" },
@@ -257,6 +258,7 @@ window.CONTENT = {
     {
       id: 4,
       key: "autoplay",
+      noEst: true, // Autoplay hat kein Element, das man sinnvoll umrahmen kann: direkt die Frage (Daniel 11.10.)
       order: ["ig", "tt", "fb", "x", "sc"],
       question: "Was passiert mit dem nächsten Video, wenn du weiterscrollst?",
       options: ["Es bleibt stehen, bis du auf Play tippst", "Es läuft sofort los, mit Ton", "Die App fragt, ob du es sehen willst"],
@@ -558,12 +560,10 @@ window.CONTENT = {
   // zone = eigene Zone (bottom = unterer Rand des Feeds), place wie markPlace.
   markA: {
     "1:tt": { zone: "bottom" },
-    "1:ig": { zone: "bottom" }, // unterer Rand: dort kommt der nächste Beitrag nach
+    "1:ig": { sel: ".ig-post-head", n: 1 }, // der nächste Beitrag ragt unten herein (11.10.)
     "2:ig": { sel: ".ig-refresh" },
     "3:ig": { sel: ".ig-post-head", n: 0 },
     "3:tt": { sel: ".tt-tabs span", n: 1 },
-    "4:ig": { sel: ".post:not([aria-hidden]) .bar" }, // Fortschrittsbalken des laufenden Videos (11.10.)
-    "4:tt": { sel: ".post:not([aria-hidden]) .bar" },
     "5:ig": { sel: ".igc-row.mine .igc-like" },
     "5:tt": { sel: ".igc-row.mine .igc-like" },
     "6:lock": { sel: ".lock-list" },
@@ -578,42 +578,41 @@ window.CONTENT = {
     ig: [
       { id: "d-ig-merken", base: { pattern: 3, variant: "ig" }, markA: { sel: ".ig-save", n: 0 },
         ctx: "Ein Beitrag in deinem Instagram-Feed.",
-        why: "Mit dem Merken-Symbol speicherst du einen Beitrag, um ihn später wiederzufinden. Es soll dich nicht länger in der App halten." },
+        why: "Mit dem Merken-Symbol speicherst du einen Beitrag, um ihn später wiederzufinden." },
       { id: "d-ig-menue", base: { pattern: 3, variant: "ig" }, markA: { sel: ".ig-dots", n: 0 } /* erster, sichtbarer Beitrag (11.10.: vorher außerhalb des Bildes) */,
         ctx: "Ein Beitrag in deinem Instagram-Feed.",
-        why: "Über das Menü mit den drei Punkten kannst du einen Beitrag melden oder ausblenden. Es soll dich nicht länger in der App halten." },
+        why: "Über die drei Punkte kannst du einen Beitrag melden oder ausblenden." },
       { id: "d-ig-profilbild", base: { pattern: 2, variant: "ig" }, markA: { sel: ".ig-post-head .avatar", n: 0 },
         ctx: "Ein Beitrag in deinem Instagram-Feed.",
-        why: "Das Profilbild zeigt, wer den Beitrag geteilt hat; ein Tipp darauf öffnet das Profil. Es soll dich nicht länger in der App halten." }
+        why: "Das Profilbild zeigt, wer den Beitrag geteilt hat. Ein Tipp darauf öffnet das Profil." }
     ],
     tt: [
       { id: "d-tt-name", base: { pattern: 3, variant: "tt" }, markA: { sel: ".post .user", n: 0 },
         ctx: "Ein Video in deinem TikTok-Feed.",
-        why: "Der Name zeigt, wer das Video veröffentlicht hat; ein Tipp darauf öffnet das Profil. Es soll dich nicht länger in der App halten." },
+        why: "Der Name zeigt, wer das Video veröffentlicht hat. Ein Tipp darauf öffnet das Profil." },
       { id: "d-tt-suche", base: { pattern: 3, variant: "tt" }, markA: { sel: ".nav span", n: 1 },
         ctx: "Ein Video in deinem TikTok-Feed.",
-        why: "Über die Suche findest du gezielt Videos und Profile. Sie soll dich nicht länger in der App halten." },
+        why: "Über die Suche findest du gezielt Videos und Profile." },
       { id: "d-tt-start", base: { pattern: 3, variant: "tt" }, markA: { sel: ".nav span", n: 0 },
         ctx: "Ein Video in deinem TikTok-Feed.",
-        why: "Mit dem Haus-Symbol kehrst du zur Startseite zurück. Es soll dich nicht länger in der App halten." }
+        why: "Mit dem Haus-Symbol kommst du zurück zur Startseite." }
     ],
     sc: [
       { id: "d-sc-profilbild", base: { pattern: 7, variant: "sc" }, markA: { sel: ".snap-row .avatar", n: 0 },
         ctx: "Deine Chatliste in Snapchat.",
-        why: "Das Profilbild zeigt, mit wem du schreibst. Es soll dich nicht länger in der App halten." },
+        why: "Das Profilbild zeigt, mit wem du schreibst." },
       { id: "d-sc-titel", base: { pattern: 7, variant: "sc" }, markA: { sel: ".snap-head" },
         ctx: "Deine Chatliste in Snapchat.",
-        why: "Die Überschrift zeigt nur, in welchem Bereich der App du gerade bist. Sie soll dich nicht länger in der App halten." },
+        why: "Die Überschrift zeigt nur, in welchem Bereich der App du gerade bist." },
       { id: "d-sc-name", base: { pattern: 7, variant: "sc" }, markA: { sel: ".snap-text .user", n: 1 },
         ctx: "Deine Chatliste in Snapchat.",
-        why: "Der Name zeigt, mit wem du chattest. Er soll dich nicht länger in der App halten." }
+        why: "Der Name zeigt, mit wem du chattest." }
     ]
   },
 
   recognition: [
     // ───────────── Wiedererkennen 1: Instagram-Startseite ─────────────
-    // Ziele (bei allen Mustern gezeigt): 1 Lade-Rad, 2 „Vorgeschlagen", 4 Gefällt-Zähler,
-    // 5 Kante (offenes Ende). 3 (Nutzername tom.reist) ist ein Ablenker.
+    // Ziele: „Vorgeschlagen" (Muster 3), Gefällt-Zähler (Muster 5); Nutzername als Ablenker (Stand 11.10.)
     {
       id: "W1",
       type: "spots",
@@ -625,7 +624,7 @@ window.CONTENT = {
       // Mustern (plus Ablenker) erscheinen; Elemente nicht gezeigter Muster
       // werden aus dem Screen entfernt (Feedback-Call 05.10.).
       spotDefs: [
-        { key: "refresh", pattern: 2, label: "Lade-Rad oben" },
+        // Lade-Rad entfernt (11.10.): im stehenden Feed nicht als Muster erkennbar
         { key: "sugg-0", pattern: 3, label: "„Vorgeschlagen“ neben mia.kocht" },
         { key: "user-1", pattern: null, label: "Nutzername tom.reist" },
         { key: "likes-1", pattern: 5, label: "Gefällt-Zähler unter dem zweiten Beitrag" }
@@ -634,7 +633,7 @@ window.CONTENT = {
       feedbackScore: "{k} von {n} gefunden.",
       data: {
         title: "", // kein App-Name im Screen
-        refresh: "Aktualisieren",
+        refresh: null,
         posts: [
           { user: "mia.kocht", suggested: "Vorgeschlagen", line: "♡ 1.204 · Pasta in 10 Minuten", asset: "foto-mia-pasta" },
           { user: "tom.reist", line: "♡ 856 · Lissabon im Oktober", asset: "foto-tom-lissabon" }

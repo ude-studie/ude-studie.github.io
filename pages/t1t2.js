@@ -81,7 +81,7 @@
       // Einfluss und Akzeptanz je gezeigtem Muster (kleine Bilder mit „Bild vergrößern“)
       pages.push({ id: id(pageNo++), items: function () {
         var out = [
-          { type: "title", text: "Einfluss und Akzeptanz" },
+          { type: "title", text: "Die Elemente noch einmal" },
           { type: "text", text: T0.t17.intro }
         ];
         set.forEach(function (entry) {

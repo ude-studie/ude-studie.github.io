@@ -370,9 +370,9 @@
         rows: [] });
     },
     "T0-9": function () { // m3: TikTok, Empfehlungen nach Schwäche
-      return B.darkVideo({ picId: "tt-sale", user: "deals.daily", caption: "Vorgeschlagen, weil du ähnliche Videos bis zum Ende gesehen hast",
-        markCaption: true, likes: "5.604", comments: "120", shares: "Teilen",
-        tabs: ["Folge ich", "Für dich"], activeTab: 1 });
+      return B.darkVideo({ picId: "tt-sale", user: "deals.daily", caption: "Nur heute: 3 für 2 🛒 #deals",
+        likes: "5.604", comments: "120", shares: "Teilen",
+        tabs: ["Folge ich", "Für dich"], activeTab: 1, markTab: 1 }); // Ziel: Reiter „Für dich“ (11.10.)
     },
     "T0-10": function () { // Distraktor: Snapchat-Zahnrad
       return B.snap({ title: "Chats", gear: true, markGear: true,
@@ -419,7 +419,7 @@
         ] });
     },
     "T1-5": function () { // m2: TikTok-Posteingang, Ziehen zum Aktualisieren
-      return B.darkInbox({ title: "Posteingang", refresh: "Suche nach neuen Aktivitäten …", markRefresh: true,
+      return B.darkInbox({ title: "Posteingang", refresh: " ", markRefresh: true, // nur das Lade-Rad (11.10.)
         rows: [
           { user: "miri.zeichnet", text: "hat deinen Kommentar geliked", time: "2 Min." },
           { user: "tonio_fit", text: "hat dir gefolgt", time: "1 Std." },
@@ -466,8 +466,7 @@
 
     // ===== Set T2 =====
     "T2-1": function () { // m3: Instagram Explore
-      return B.explore({ search: "Suchen", hint: "Für dich zusammengestellt – aus dem, was du zuletzt angesehen hast",
-        cells: ["a", "b", "c", "d", "e", "f", "g", "h", "i"], marked: true });
+      return B.explore({ search: "Suchen", cells: ["a", "b", "c", "d", "e", "f", "g", "h", "i"], marked: true }); // Ziel: Vorschlags-Raster
     },
     "T2-2": function () { // Distraktor: TikTok-Zahnrad
       return B.snapGearOnTT();
@@ -488,7 +487,7 @@
     "T2-5": function () { // m8: Instagram Story-Ring
       return B.lightFeed({ title: null,
         stories: [{ user: "Deine Story", own: true }, { user: "mara.b" }, { user: "chris_89" }, { user: "noa.zeigt" }],
-        expiry: "mara.bs Story läuft in 45 Min. ab", markStories: true,
+        markStories: true, // erfundene Ablauf-Zeile entfernt (11.10.)
         posts: [{ user: "unikino.essen", picId: "ig-kino", line: "Gefällt 173 Mal" }] });
     },
     "T2-6": function () { // Distraktor: Snapchat-Suchleiste
@@ -506,7 +505,7 @@
         ] });
     },
     "T2-8": function () { // m2: Instagram, Ziehen zum Aktualisieren
-      return B.lightFeed({ title: null, refresh: "Neue Beiträge werden geladen …", markRefresh: true,
+      return B.lightFeed({ title: null, refresh: " ", markRefresh: true, // nur das Lade-Rad (11.10.)
         posts: [{ user: "flo.fotografiert", picId: "ig-nebel", line: "Gefällt 320 Mal" }] });
     },
     "T2-9": function () { // m7: Snapchat Streaks

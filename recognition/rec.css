@@ -138,3 +138,8 @@
 .snap-nav span.cam svg { width: 28px; height: 28px; }
 .snap-nav .rec-mark, .tt .nav .rec-mark { display: inline-flex; }
 .snap-head .rec-search.dark { background: rgba(0,0,0,0.08); color: #333; }
+
+/* Rahmen um das ganze Suchfeld, nicht nur die Lupe (11.10.) */
+.ig-head > .rec-mark { flex: 1 1 auto; }
+.rec-mark > .rec-search { flex: 1 1 auto; }
+.ig-head > .rec-search, .ig-head > .rec-mark:has(> .rec-search) { grid-column: 1 / -1; display: flex; }

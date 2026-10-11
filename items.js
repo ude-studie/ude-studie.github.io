@@ -4,7 +4,7 @@
  * Keine festen Termine (seit 06.10.): Folge-Fragebogen etwa zehn Tage nach T0 (seit 11.10.).
  * Texte mit Struktur: **fett**, Leerzeile = Absatz, Zeilen mit „• “ = Aufzählung (study.js, richHtml).
  *
- * Stand: survey-v2 (Rework 07.10.): Blöcke R, T0, FB und ein Folge-Fragebogen T1.
+ * Stand: survey-v3 (11.10.): Blöcke R, T0, FB und ein Folge-Fragebogen T1.
  */
 window.ITEMS = {
 
@@ -21,7 +21,7 @@ window.ITEMS = {
     waitTitle: "Vielen Dank!",
     waitText: "Danke, dass du dir die Zeit genommen hast. Deine Antworten helfen uns sehr.\n\n**Wie es weitergeht:** In etwa zehn Tagen schicken wir dir per Mail den Link zu einem kurzen Folgefragebogen (etwa %dauer_t1% Minuten).\n\n**Warum er wichtig ist:** Erst mit deinen Antworten im Folgefragebogen können wir sehen, ob die Schulung etwas bewirkt. Wir freuen uns sehr, wenn du wieder dabei bist.",
     doneTitle: "Vielen Dank für deine Teilnahme",
-    doneText: "Du hast alles geschafft. Danke für deine Zeit und deine Unterstützung!\n\nNach Studienende schicken wir dir deine persönliche Auswertung per Mail.",
+    doneText: "Du hast alles geschafft. Danke für deine Zeit und deine Unterstützung!\n\nNach Studienende schicken wir dir eine kurze Zusammenfassung der Ergebnisse per Mail.",
     unknownCodeTitle: "Code unbekannt",
     unknownCodeText: "Diesen Code kennen wir nicht. Prüfe den Link aus deiner Mail oder gib deinen Code ein.",
     codeInputLabel: "Dein Code (6 Zeichen)",
@@ -40,7 +40,7 @@ window.ITEMS = {
   R: {
     r01: {
       title: "Willkommen zur Studie",
-      text: "**Worum es geht:** Wir untersuchen, wie Social-Media-Apps gestaltet sind, damit man sie länger und öfter nutzt. Die Studie läuft an der Universität Duisburg-Essen (Wirtschaftsinformatik).\n\n**Ablauf:**\n• Heute: Anmeldung, Fragebogen und eine Schulung mit nachgestellten Screens aus deinen Apps (zusammen etwa %dauer_t0% Minuten)\n• In etwa zehn Tagen: ein kurzer Folgefragebogen (etwa %dauer_t1% Minuten)\n\n**Was du bekommst:** Nach Studienende schicken wir dir per Mail eine persönliche Auswertung: deine Social-Media-Bildschirmzeit vor und nach der Schulung im Vergleich.\n\nDanke, dass du dir die Zeit nimmst und uns unterstützt!",
+      text: "**Worum es geht:** Wir untersuchen, wie Social-Media-Apps gestaltet sind, damit man sie länger und öfter nutzt. Die Studie läuft an der Universität Duisburg-Essen (Wirtschaftsinformatik).\n\n**Ablauf:**\n• Heute: Anmeldung, Fragebogen und eine Schulung mit nachgestellten Screens aus deinen Apps (zusammen etwa %dauer_t0% Minuten)\n• In etwa zehn Tagen: ein kurzer Folgefragebogen (etwa %dauer_t1% Minuten)\n\n**Was du bekommst:** Nach Studienende schicken wir dir per Mail eine kurze Zusammenfassung der Ergebnisse.\n\nDanke, dass du dir die Zeit nimmst und uns unterstützt!",
       infoLink: "Teilnahmeinformation und Datenschutz",
       infoHref: "teilnahme.html",
       EW01: "Ich habe die Teilnahmeinformation gelesen und willige ein, an der Studie teilzunehmen.",
@@ -96,7 +96,7 @@ window.ITEMS = {
     },
     r04: {
       title: "Deine E-Mail-Adresse",
-      text: "**Wofür:** Wir schicken dir den Link zum Folgefragebogen und am Ende deine Auswertung.\n\n**Datenschutz:** Deine Adresse wird getrennt von deinen Antworten gespeichert, nur für diese Studie genutzt, nicht weitergegeben und nach Studienende gelöscht.",
+      text: "**Wofür:** Wir schicken dir den Link zum Folgefragebogen und nach Studienende die Ergebnisse.\n\n**Datenschutz:** Deine Adresse wird getrennt von deinen Antworten gespeichert, nur für diese Studie genutzt, nicht weitergegeben und nach Studienende gelöscht.",
       EM01: "E-Mail-Adresse",
       EM02: "E-Mail-Adresse wiederholen",
       error: "Das sieht nicht nach einer E-Mail-Adresse aus. Bitte prüfe die Eingabe.",
@@ -149,7 +149,7 @@ window.ITEMS.T0 = {
   },
   // Erkennen im Folge-Fragebogen: gleiches Format wie in der Schulung (Rework 07.10., 4.1 und 8)
   erkennen: {
-    instruktion: "Du siehst jetzt {n} nachgestellte Screens aus Social-Media-Apps. In jedem ist ein Element rot umrahmt. Sag uns, ob dieses Element aus deiner Sicht versucht, dein Verhalten zu beeinflussen. Nicht jeder Screen enthält so ein Element.",
+    instruktion: "Du siehst jetzt {n} nachgestellte Screens aus Social-Media-Apps. In jedem ist ein Element rot umrahmt. Sag uns, ob es aus deiner Sicht versucht, dein Verhalten zu beeinflussen. Nicht jedes umrahmte Element tut das.",
     ERa: "Versucht das rot umrahmte Element, dein Verhalten zu beeinflussen?",
     ERa_options: [
       { v: "ja", label: "Ja" },
@@ -161,8 +161,8 @@ window.ITEMS.T0 = {
     screenOf: "Screen {x} von {n}"
   },
   t17: {
-    intro: "Die Elemente mit Muster noch einmal. Unter jedem Bild kannst du es vergrößern.",
-    AK01: "Wie stark würde dich dieses Element beeinflussen, länger in der App zu bleiben oder öfter zurückzukommen?",
+    intro: "Zu jedem Element zwei kurze Fragen. Unter jedem Bild kannst du es vergrößern.",
+    AK01: "Wie stark würde dich dieses Element dazu bringen, die App länger oder öfter zu nutzen?",
     AK01_skala: [
       { v: 1, label: "gar nicht" }, { v: 2, label: "kaum" }, { v: 3, label: "etwas" },
       { v: 4, label: "stark" }, { v: 5, label: "sehr stark" }
@@ -174,7 +174,7 @@ window.ITEMS.T0 = {
     ]
   },
   smscf: {
-    instruktion: "Mit Social Media meinen wir hier deine Apps aus der Liste. Wie oft gibst du dem Verlangen nach, sie zu nutzen, obwohl deine Nutzung in diesem Moment …",
+    instruktion: "Mit Social Media meinen wir hier Instagram, TikTok und Snapchat. Wie oft gibst du dem Verlangen nach, sie zu nutzen, obwohl deine Nutzung in diesem Moment …",
     skala: [
       { v: 1, label: "fast nie" }, { v: 2, label: "selten" }, { v: 3, label: "manchmal" },
       { v: 4, label: "oft" }, { v: 5, label: "sehr oft" }
@@ -227,7 +227,7 @@ window.ITEMS.T0 = {
   },
   vorSchulung: {
     title: "Gleich beginnt die Schulung",
-    text: "Du siehst nachgestellte Screens aus deinen Apps. Bei jedem Screen gehst du vier kurze Schritte:\n• **Einschätzen:** Ein Element ist rot umrahmt. Versucht es, dein Verhalten zu beeinflussen?\n• **Vorhersagen:** Was passiert als Nächstes? Wähl eine Antwort.\n• **Auflösen:** Die App reagiert, und du siehst, was passiert.\n• **Erklärung:** wie das Element funktioniert, warum es wirkt und was die App davon hat\n\nEinige Screens enthalten kein bekanntes Muster. Zum Schluss suchst du die Muster auf zwei neuen Screens selbst.\n\nDie Screens sind nachgestellt. Du bist nicht in der echten App."
+    text: "Du siehst nachgestellte Screens aus deinen Apps. Bei den meisten gehst du vier kurze Schritte:\n• **Einschätzen:** Ein Element ist rot umrahmt. Versucht es, dein Verhalten zu beeinflussen?\n• **Vorhersagen:** Was passiert als Nächstes? Wähl eine Antwort.\n• **Auflösen:** Die App reagiert, und du siehst, was passiert.\n• **Erklärung:** wie das Element funktioniert, warum es wirkt und was die App davon hat\n\nEinige Screens enthalten kein bekanntes Muster. Zum Schluss suchst du die Muster in zwei kurzen Aufgaben selbst.\n\nDie Screens sind nachgestellt. Du bist nicht in der echten App."
   },
   offen: {
     title: "Zwei offene Fragen",

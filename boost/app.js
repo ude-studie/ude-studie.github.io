@@ -107,6 +107,8 @@
       data: JSON.parse(JSON.stringify(base.data))
     });
     p.data.mark = null;
+    p.data.refresh = null; p.data.toast = null; // keine Bestandteile eines Musters im Ablenker
+    (p.data.posts || []).forEach(function (q) { delete q.suggested; }); // kein „Vorgeschlagen“ (Muster 3)
     (p.data.rows || []).forEach(function (r) { r.mark = false; });
     return p;
   }
@@ -276,7 +278,7 @@
   // auch innerhalb eines Screens; Weiter führt Schritt für Schritt bis zur aktuellen Stelle
   function stepsOf(pg) {
     if (!pg) return ["look"];
-    if (pg.type === "pattern") return ["est", "ask", "react", "explain"];
+    if (pg.type === "pattern") return pg.pattern.noEst ? ["ask", "react", "explain"] : ["est", "ask", "react", "explain"];
     if (pg.type === "distractor") return ["est", "dres"];
     if (pg.type === "recognition") return ["look", "react"];
     return ["look"];
@@ -627,7 +629,8 @@
           var on = i === d.activeTab;
           return '<span class="' + (on ? "on" : "") + '"' + (isB && d.mark === "tab-" + i ? ' data-mark="below"' : "") + ">" + esc(t) + "</span>";
         }).join("") + "</div>" : "";
-        return '<div class="feed">' + tabs + '<div class="track' + (isB && !d.static ? " to-b still" : "") + '">' + posts + "</div>" +
+        // Muster 1: Auch vor dem Wischen ragt das nächste Video unten herein (wie nach dem Wischen, 11.10.)
+        return '<div class="feed">' + tabs + '<div class="track' + (isB && !d.static ? " to-b still" : (!d.static ? " peek" : "")) + '">' + posts + "</div>" +
           (isB && !d.static ? '<div class="seam-zone" data-mark="above"></div>' : "") + "</div>" + ttNav(d);
       },
       toB: function (body, p) {
@@ -710,7 +713,7 @@
             '<div class="meta"><div class="user">' + esc(v.user) + '</div><div class="cap">' + esc(v.caption) + "</div></div>" +
             '<div class="side"><span>' + ICON.heart + esc(v.likes || "") + "</span><span>" + ICON.comment + esc(v.comments || "") + "</span><span>" +
             (d.nav ? ICON.share + esc(d.share || "") : ICON.send) + "</span></div>" +
-            '<div class="bar"' + (live ? ' data-mark="below"' : "") + '><span class="' + (live ? "run" : "") + '" style="' +
+            '<div class="bar"><span class="' + (live ? "run" : "") + '" style="' + // Autoplay: kein Rahmen (Daniel 11.10.)
             (live ? "animation-duration:" + loop + "s;animation-delay:-" + start + "s" : "width:" + Number(v.progress || 0) + "%") + '"></span></div>' +
             "</div>";
         }).join("");
@@ -918,9 +921,9 @@
     var pad = inside ? -6 : 4, W = body.clientWidth, H = body.scrollHeight;
     var left = Math.max(3, (r.left - br.left) / k - pad), right = Math.min(W - 3, (r.right - br.left) / k + pad);
     var top = Math.max(3, (r.top - br.top) / k + body.scrollTop - pad), bottom = Math.min(H - 3, (r.bottom - br.top) / k + body.scrollTop + pad);
-    // Mindestgröße der Markierung 36 x 36 px (Rework 4.6: Ziel mindestens 32 x 32 px)
-    if (right - left < 36) { var cx = (left + right) / 2; left = Math.max(3, cx - 18); right = Math.min(W - 3, cx + 18); }
-    if (bottom - top < 36) { var cy = (top + bottom) / 2; top = Math.max(3, cy - 18); bottom = Math.min(H - 3, cy + 18); }
+    // Mindestgröße der Markierung 44 x 44 px (11.10.: kleine Ziele waren im verkleinerten Handy kaum zu sehen)
+    if (right - left < 44) { var cx = (left + right) / 2; left = Math.max(3, cx - 22); right = Math.min(W - 3, cx + 22); }
+    if (bottom - top < 44) { var cy = (top + bottom) / 2; top = Math.max(3, cy - 22); bottom = Math.min(H - 3, cy + 22); }
     var mark = document.createElement("div");
     mark.className = "mark fade-in";
     mark.setAttribute("role", "img");
@@ -1164,7 +1167,7 @@
   function renderPattern(pg) {
     var p = pg.pattern;
     var tpl = SCREENS[p.screen];
-    if (state.sub === "look") state.sub = "est"; // jeder Screen beginnt mit der Einschätzung
+    if (state.sub === "look") state.sub = stepsOf(pg)[0]; // Einschätzung; bei noEst direkt die Frage
     var isB = state.sub === "react" || state.sub === "explain";
     var right = p.screenApp === "lock" ? C.ui.lockLabel : appLabel(p.screenApp);
     app.innerHTML =
@@ -1680,8 +1683,8 @@
     var ids = shownIds();
     return C.zusammenfassung.groups.map(function (g) {
       var names = g.ids.filter(function (id) { return ids.indexOf(id) >= 0; }).map(function (id) { return patternDef(id).short; });
-      return names.length ? g.label + ": " + names.join(", ") + "." : "";
-    }).filter(Boolean).join(" ");
+      return names.length ? "**" + g.label + ":** " + names.join(", ") : "";
+    }).filter(Boolean); // je Gruppe ein Absatz mit fettem Stichwort (11.10.)
   }
 
   function renderSummary() {
@@ -1689,10 +1692,11 @@
     var count = shownIds().length;
     var title = fill(Z.title, { count: Z.numberWords[count] || count });
     var estList = '<ul class="est-list">' + shownIds().map(function (id) {
-      var e = state.est["p" + id] || {};
+      var e = state.est["p" + id];
+      if (!e) return ""; // Muster ohne Einschätzung (Autoplay, TikTok-Feed)
       return "<li><b>" + esc(patternDef(id).short) + "</b><span>" + esc(fill(C.ui.estSummary, { x: C.ui.estLabels[e.a] || "–" })) + "</span></li>";
     }).join("") + "</ul>";
-    app.innerHTML = '<div class="page tp"><div class="tp-body"><h1>' + esc(title) + "</h1>" + paras([groupText()]) + (exportMode ? "" : estList) +
+    app.innerHTML = '<div class="page tp"><div class="tp-body"><h1>' + esc(title) + "</h1>" + paras(groupText()) + (exportMode ? "" : estList) +
       (exportMode ? "" : '<p class="tp-score">' + esc(fill(Z.scores, scores())) + "</p>") +
       "<p>" + esc(Z.outro) + "</p></div>" +
       '<div class="lp-foot"><button class="btn" id="finish" type="button">' + esc(Z.button) + "</button>" +

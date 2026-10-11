@@ -124,7 +124,7 @@
   function simplePage(title, text, extra) {
     var page = shell(null);
     page.appendChild(el("h1", "tp-h1", title));
-    if (text) page.appendChild(el("p", "tp-p", text));
+    if (text) { var t = el("div", "tp-rich"); t.innerHTML = richHtml(text); page.appendChild(t); }
     if (extra) page.appendChild(extra);
   }
 

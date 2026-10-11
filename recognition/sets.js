@@ -72,7 +72,7 @@
     m1: [{ id: "T0-4", app: "ig" }, { id: "T2-4", app: "tt" }],
     m2: [{ id: "T1-5", app: "tt" }, { id: "T2-8", app: "ig" }],
     m3: [{ id: "T0-9", app: "tt" }, { id: "T2-1", app: "ig" }],
-    m4: [{ id: "T0-7", app: "tt" }, { id: "T2-11", app: "ig" }],
+    // m4 (Autoplay) entfällt im Folge-Fragebogen wie in der Schulung: kein Element, das sich sinnvoll umrahmen lässt (11.10.)
     m5: [{ id: "T0-3", app: "tt" }, { id: "T2-7", app: "ig" }],
     m6: [{ id: "T0-5", app: "tt" }, { id: "T1-4", app: "sc" }, { id: "T2-3", app: "ig" }], // Sperrbildschirm, Meldung dieser App
     m7: [{ id: "T1-11", app: "sc" }],
@@ -137,9 +137,10 @@
       var d = pool[j % pool.length];
       dists.push({ id: d.id, muster: "d" + (i + 1), k: i + 1, app: a, target: d.name, distraktor: true });
     }
+    var seq = [], di = 0;
+    shown = shown.filter(function (s) { return FOLLOWUP_POOL[s.muster]; }); // ohne Pool (m4) kein Screen
     var n = shown.length;
     var after = n >= 6 ? [2, 4, 6] : [1, 2, 3].map(function (k) { return Math.max(1, Math.round(k * n / 4)); });
-    var seq = [], di = 0;
     shown.forEach(function (s, idx) {
       var e = pickScreen(s.muster, apps, s.screenApp);
       seq.push({ id: e.id, muster: s.muster, app: e.app, schulungApp: s.screenApp, target: MUSTER[s.muster] });
