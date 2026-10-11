@@ -21,7 +21,7 @@ window.ITEMS = {
     waitTitle: "Vielen Dank!",
     waitText: "Danke, dass du dir die Zeit genommen hast. Deine Antworten helfen uns sehr.\n\n**Wie es weitergeht:** In etwa zehn Tagen schicken wir dir per Mail den Link zu einem kurzen Folgefragebogen (etwa %dauer_t1% Minuten).\n\n**Warum er wichtig ist:** Erst mit deinen Antworten im Folgefragebogen können wir sehen, ob die Schulung etwas bewirkt. Wir freuen uns sehr, wenn du wieder dabei bist.",
     doneTitle: "Vielen Dank für deine Teilnahme",
-    doneText: "Du hast alles geschafft. Danke für deine Zeit und deine Unterstützung!\n\nNach Studienende schicken wir dir eine kurze Zusammenfassung der Ergebnisse per Mail.",
+    doneText: "Du hast alles geschafft. Danke für deine Zeit und deine Unterstützung!",
     unknownCodeTitle: "Code unbekannt",
     unknownCodeText: "Diesen Code kennen wir nicht. Prüfe den Link aus deiner Mail oder gib deinen Code ein.",
     codeInputLabel: "Dein Code (6 Zeichen)",
@@ -40,7 +40,7 @@ window.ITEMS = {
   R: {
     r01: {
       title: "Willkommen zur Studie",
-      text: "**Worum es geht:** Wir untersuchen, wie Social-Media-Apps gestaltet sind, damit man sie länger und öfter nutzt. Die Studie läuft an der Universität Duisburg-Essen (Wirtschaftsinformatik).\n\n**Ablauf:**\n• Heute: Anmeldung, Fragebogen und eine Schulung mit nachgestellten Screens aus deinen Apps (zusammen etwa %dauer_t0% Minuten)\n• In etwa zehn Tagen: ein kurzer Folgefragebogen (etwa %dauer_t1% Minuten)\n\n**Was du bekommst:** Nach Studienende schicken wir dir per Mail eine kurze Zusammenfassung der Ergebnisse.\n\nDanke, dass du dir die Zeit nimmst und uns unterstützt!",
+      text: "**Worum es geht:** Wir untersuchen, wie Social-Media-Apps gestaltet sind, damit man sie länger und öfter nutzt. Die Studie läuft an der Universität Duisburg-Essen (Wirtschaftsinformatik).\n\n**Ablauf:**\n• Heute: Anmeldung, Fragebogen und eine Schulung mit nachgestellten Screens aus deinen Apps (zusammen etwa %dauer_t0% Minuten)\n• In etwa zehn Tagen: ein kurzer Folgefragebogen (etwa %dauer_t1% Minuten)\n\nDanke, dass du dir die Zeit nimmst und uns unterstützt!",
       infoLink: "Teilnahmeinformation und Datenschutz",
       infoHref: "teilnahme.html",
       EW01: "Ich habe die Teilnahmeinformation gelesen und willige ein, an der Studie teilzunehmen.",
@@ -96,7 +96,7 @@ window.ITEMS = {
     },
     r04: {
       title: "Deine E-Mail-Adresse",
-      text: "**Wofür:** Wir schicken dir den Link zum Folgefragebogen und nach Studienende die Ergebnisse.\n\n**Datenschutz:** Deine Adresse wird getrennt von deinen Antworten gespeichert, nur für diese Studie genutzt, nicht weitergegeben und nach Studienende gelöscht.",
+      text: "**Wofür:** Wir schicken dir den Link zum Folgefragebogen.\n\n**Datenschutz:** Deine Adresse wird getrennt von deinen Antworten gespeichert, nur für diese Studie genutzt, nicht weitergegeben und nach Studienende gelöscht.",
       EM01: "E-Mail-Adresse",
       EM02: "E-Mail-Adresse wiederholen",
       error: "Das sieht nicht nach einer E-Mail-Adresse aus. Bitte prüfe die Eingabe.",
