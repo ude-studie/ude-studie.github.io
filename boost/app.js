@@ -299,6 +299,17 @@
       });
     });
   }
+  // Alle Fotos gleich beim Start laden, damit nie ein leerer Farbverlauf zu sehen ist
+  function preloadAssets() {
+    Object.keys(CT.assets || {}).forEach(function (id) {
+      if (assetCache[id]) return;
+      assetCache[id] = "pending";
+      tryImg(id, ["jpg", "png"], function (src) {
+        assetCache[id] = src || false;
+        if (src) document.querySelectorAll('[data-asset="' + id + '"]').forEach(function (e) { setBg(e, src); });
+      });
+    });
+  }
   function setBg(el, src) {
     el.style.background = 'center / cover no-repeat url("' + src + '")';
     el.classList.add("asset-loaded");
@@ -390,7 +401,7 @@
       '<div class="ig-actions" aria-hidden="true">' +
       act(ICON.heartLine, likes) + act(ICON.commentLine, n ? deNum(Math.round(n / 23) + 2) : "") +
       act(ICON.repostLine, n ? deNum(Math.round(n / 61) + 1) : "") + act(ICON.send, n ? deNum(Math.round(n / 40) + 1) : "") +
-      '<span class="ig-save">' + tgt("save-" + i, ICON.bookmark) + "</span></div>" +
+      '<span class="ig-save">' + tgt("save-" + i, ICON.bookmark, "w1t-left") + "</span></div>" +
       (n ? '<div class="ig-line"><span class="ig-likes">Gefällt <b>' + esc(friend) + "</b> und <b>" + deNum(n - 1) + " weiteren Personen</b></span></div>" : "") +
       (cap ? '<div class="ig-cap"><b>' + esc(post.user) + "</b> " + esc(cap) + "</div>" : "") +
       '<div class="ig-time">Vor ' + (i + 2) + " Stunden</div></div>";
@@ -819,6 +830,7 @@
       deviceHtml(tpl.cls, tpl.render(p, isB, { sel: state.sub === "ask" ? picks : (sel || picks) }), tpl.scroll && tpl.scroll()) +
       '<div class="lp-panel"></div></main>' +
       '<div class="lp-foot"><button class="btn" id="main" type="button"></button></div></div>';
+    applyAssets(app); // Fotos bei JEDEM Neuzeichnen einsetzen (vorher fehlten sie nach „Antwort festlegen“)
     showPhase(pg, state.sub);
   }
   function sizeFor(p, phase) {
@@ -1038,6 +1050,7 @@
       '<main class="lp-stage" data-phase="' + (isB ? "react" : "ask") + '"><p class="lp-ctx" id="ctx">' + esc(ctxText) + "</p>" +
       middle + '<div class="lp-panel">' + panel + "</div></main>" +
       '<div class="lp-foot"><button class="btn" id="main" type="button"></button></div></div>';
+    applyAssets(app);
     var wrap = app.querySelector(".lp-stage > .device-wrap");
     if (wrap) wrap.setAttribute("data-size", "full");
     fitDevice();
@@ -1473,6 +1486,7 @@
       render();
       return;
     }
+    preloadAssets();
     if (postFlag) { begin("post", null); return; }
     if (!urlCode || !window.DB) { begin("demo", null); return; }
     app.innerHTML = '<div class="page tp"><div class="tp-body"><p>Einen Moment …</p></div></div>';

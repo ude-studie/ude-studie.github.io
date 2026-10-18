@@ -94,6 +94,10 @@
     friends: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4a3.5 3.5 0 110 7 3.5 3.5 0 010-7zm7.5 1.5a3 3 0 110 6 3 3 0 010-6zM9 12.5c4 0 6.5 2 6.5 5V19h-13v-1.5c0-3 2.5-5 6.5-5zm7.8.3c3 .2 4.7 1.8 4.7 4.2V19h-4.5v-1.5c0-1.9-.7-3.5-1.9-4.7z"/></svg>',
     addFriend: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 4a3.8 3.8 0 110 7.6A3.8 3.8 0 0110 4zm0 9c4.2 0 7 2.1 7 5.3V20H3v-1.7C3 15.1 5.8 13 10 13zm9-6h1.6v2.4H23V11h-2.4v2.4H19V11h-2.4V9.4H19z"/></svg>',
     edit: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 17.2V20h2.8l8.3-8.3-2.8-2.8zM19.7 7.3a1 1 0 000-1.4l-1.6-1.6a1 1 0 00-1.4 0l-1.3 1.3 2.8 2.8z"/></svg>',
+    repostLine: '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M4 11V9a3 3 0 013-3h12l-3-3M20 13v2a3 3 0 01-3 3H5l3 3"/></svg>',
+    plusSquare: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5" fill="none" stroke="currentColor" stroke-width="2"/><path fill="none" stroke="currentColor" stroke-width="2" d="M12 7.5v9M7.5 12h9"/></svg>',
+    homeLine: '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" d="M3.5 10.5L12 3.5l8.5 7V20.5h-6v-6h-5v6h-6z"/></svg>',
+    searchLine: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="2"/><path stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M15.5 15.5l5 5"/></svg>',
     reels: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5" fill="none" stroke="currentColor" stroke-width="2"/><path fill="none" stroke="currentColor" stroke-width="2" d="M3 8.5h18M8 3l3 5.5M14 3l3 5.5"/><path d="M10 12l5 3-5 3z"/></svg>',
     soundOn: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9v6h4l5 4V5L7 9z"/><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M15.5 8.5a5 5 0 010 7M18.5 5.5a9 9 0 010 13"/></svg>',
     status: '<svg viewBox="0 0 58 14" aria-hidden="true"><rect x="0" y="9" width="3" height="5" rx="1"/><rect x="5" y="6" width="3" height="8" rx="1"/><rect x="10" y="3" width="3" height="11" rx="1"/><rect x="15" y="0" width="3" height="14" rx="1"/><path d="M27 4.5a9 9 0 0112 0l-1.4 1.5a7 7 0 00-9.2 0zM29.4 7.2a5.5 5.5 0 017.2 0L35.2 8.7a3.5 3.5 0 00-4.4 0zM33 12.5l-1.7-1.8a2.4 2.4 0 013.4 0z"/><rect x="42" y="2" width="14" height="10" rx="3" fill="none" stroke="currentColor" stroke-width="1.4"/><rect x="44" y="4" width="9" height="6" rx="1.5"/></svg>'
@@ -118,14 +122,25 @@
     return '<div class="nav ig-reels-nav" aria-hidden="true"><span>' + ICON.home + "</span><span>" + ICON.search +
       "</span><span>" + ICON.plus + "</span><span>" + ICON.play + "</span><span>" + ICON.profile + "</span></div>";
   }
-  // Untere Leiste im hellen Instagram-Feed; markIdx 0 = Startseite
+  // Untere Leiste im hellen Instagram-Feed wie in der Schulung (Haus, Lupe, Plus, Reels, eigenes Bild); markIdx 0 = Startseite
   function igLightNav(markIdx) {
-    var items = [ICON.home, ICON.search, ICON.plusThin, ICON.reels, ICON.profile].map(function (ic, i) {
+    var items = [ICON.homeLine, ICON.searchLine, ICON.plusSquare, ICON.reels, avatar("du", "ig-nav-av")].map(function (ic, i) {
       var s = "<span>" + ic + "</span>";
       return i === markIdx ? mark(s) : s;
     });
     return '<div class="nav rec-ig-nav" aria-hidden="true">' + items.join("") + "</div>";
   }
+  // Story-Leiste wie in der Schulung: eigene Story zuerst, dann Konten aus der Liste
+  function igStories(list) {
+    return '<div class="st-bar ig-stbar">' + ["Deine Story"].concat(list).map(function (u, i) {
+      var own = i === 0;
+      var st = own ? avatarStyle("deine-story") : avatarStyle(u);
+      return '<div class="st"><span class="st-ring' + (own ? " own" : "") + '"><span class="st-av av' + (i % 5) + '"' +
+        (st ? ' style="' + st + '"' : "") + ' aria-hidden="true">' + (st ? "" : esc(String(u).charAt(0).toUpperCase())) + "</span>" +
+        (own ? '<span class="st-plus" aria-hidden="true">+</span>' : "") + '</span><span class="st-name">' + esc(u) + "</span></div>";
+    }).join("") + "</div>";
+  }
+  function deNum(n) { return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, "."); }
   // Kopf: „+“ links, Herz und Senden rechts (ohne App-Namen, v4)
   function igHead(o) {
     o = o || {};
@@ -145,17 +160,23 @@
     });
     return '<div class="nav snap-nav" aria-hidden="true">' + items.map(function (it, i) { return i === markIdx ? mark(it) : it; }).join("") + "</div>";
   }
-  // Ein Instagram-Beitrag; o.actions: Symbolleiste (Herz, Kommentar, Senden, Merken)
-  function igPost(o) {
+  // Ein Instagram-Beitrag wie in der Schulung (seit 18.10.: immer Symbolleiste, Likes, Bildunterschrift, Zeit)
+  //   o.likes: Zahl, o.cap: Bildunterschrift, o.friend: Name in „Gefällt …“
+  function igPost(o, i) {
+    var n = Number(o.likes) || 0;
+    var act = function (icon, count) { return '<span class="ig-act">' + icon + (count ? "<span>" + esc(count) + "</span>" : "") + "</span>"; };
     var head = '<div class="ig-post-head">' + markIf(o.markAvatar, avatar(o.user)) +
       '<span class="ig-who"><span class="user">' + esc(o.user) + "</span>" +
       (o.suggested ? markIf(o.markSuggested, '<span class="sugg">' + esc(o.suggested) + "</span>") : "") + "</span>" +
       markIf(o.markDots, '<span class="ig-dots" aria-hidden="true">⋯</span>') + "</div>";
-    var acts = o.actions ? '<div class="ig-actions" aria-hidden="true"><span class="ig-act">' + ICON.heartLine + '</span><span class="ig-act">' +
-      ICON.commentLine + '</span><span class="ig-act">' + ICON.send + '</span><span class="ig-save">' + markIf(o.markSave, ICON.bookmark) + "</span></div>" : "";
+    var acts = '<div class="ig-actions" aria-hidden="true">' + act(ICON.heartLine, n ? deNum(n) : "") +
+      act(ICON.commentLine, n ? deNum(Math.round(n / 23) + 2) : "") + act(ICON.repostLine, n ? deNum(Math.round(n / 61) + 1) : "") +
+      act(ICON.send, n ? deNum(Math.round(n / 40) + 1) : "") + '<span class="ig-save">' + markIf(o.markSave, ICON.bookmark) + "</span></div>";
     var post = '<div class="ig-post">' + (o.markHead ? mark(head, true) : head) +
-      pic(o.picId, "ig-img" + (o.short ? " short" : "")) + acts +
-      (o.line ? '<div class="ig-line">' + esc(o.line) + "</div>" : "") + "</div>";
+      pic(o.picId, "ig-img ig-sq") + acts +
+      (n ? '<div class="ig-line"><span class="ig-likes">Gefällt <b>' + esc(o.friend || "hanna") + "</b> und <b>" + deNum(n - 1) + " weiteren Personen</b></span></div>" : "") +
+      (o.cap ? '<div class="ig-cap"><b>' + esc(o.user) + "</b> " + esc(o.cap) + "</div>" : "") +
+      '<div class="ig-time">Vor ' + ((i || 0) + 2) + " Stunden</div></div>";
     return o.markPost ? mark(post, true) : post; // markPost: ganzer Beitrag (Empfehlungen, seit 18.10.)
   }
 
@@ -173,9 +194,10 @@
       html += igHead(o);
     }
     html += '<div class="ig-content">';
-    (o.posts || []).forEach(function (p) { html += igPost(p); });
+    if (!o.backBar && o.stories !== false) html += igStories(o.stories || ["hanna", "can", "paula", "jule", "ben"]);
+    (o.posts || []).forEach(function (p, i) { html += igPost(p, i); });
     html += "</div>";
-    if (o.nav) html += igLightNav(o.markNav);
+    html += igLightNav(o.markNav == null ? -1 : o.markNav);
     return { cls: "ig", scroll: true, html: html };
   };
 
@@ -207,8 +229,10 @@
     return { cls: "tt", html: html };
   };
 
-  // Autoplay: Video läuft sichtbar – Fortschrittsbalken bewegt sich, Ton-Symbol ist an.
-  // Rot umrahmt (seit 18.10.): nur der laufende Fortschrittsbalken (vorher das ganze Video – zu unklar).
+  // Autoplay als Animation (seit 18.10.): Man sieht kurz das vorige Video, ein Finger wischt nach oben,
+  // das nächste Video startet sofort von selbst (Balken läuft ab 0, Bild bewegt sich, Ton an).
+  // Danach beginnt die Schleife von vorn. Rot umrahmt: der laufende Fortschrittsbalken.
+  //   o.prev = { picId, user, caption, likes, comments }: das Video, von dem weggewischt wird
   B.autoplay = function (o) {
     var html = "";
     if (o.tabs) {
@@ -216,13 +240,20 @@
         return "<span" + (i === o.activeTab ? ' class="on"' : "") + ">" + esc(t) + "</span>";
       }).join("") + "</div>";
     }
-    html += '<div class="feed"><div class="track still"><div class="post">' + pic(o.picId, "post-bg") +
-      '<span class="rec-sound" aria-hidden="true">' + ICON.soundOn + "</span>" +
-      '<div class="meta"><div class="user">' + esc(o.user) + '</div><div class="cap">' + esc(o.caption) + "</div></div>" +
-      '<div class="side"><span>' + ICON.heart + esc(o.likes) + "</span><span>" + ICON.comment + esc(o.comments) +
-      "</span><span>" + ICON.share + esc(o.shares || "Teilen") + "</span></div>" +
-      '<div class="rec-mark-abs bar rec-bar"><span class="run" style="animation-duration:' + (o.loop || 7) + "s;animation-delay:-" + (o.at || 1) + 's"></span></div>' +
-      "</div></div></div>";
+    var side = function (v) {
+      return '<div class="side"><span>' + ICON.heart + esc(v.likes) + "</span><span>" + ICON.comment + esc(v.comments) +
+        "</span><span>" + ICON.share + esc(v.shares || "Teilen") + "</span></div>";
+    };
+    var meta = function (v) { return '<div class="meta"><div class="user">' + esc(v.user) + '</div><div class="cap">' + esc(v.caption) + "</div></div>"; };
+    var prev = o.prev;
+    html += '<div class="feed rec-ap" style="--ap:' + (o.loop || 8) + 's"><div class="track still rec-ap-track">' +
+      '<div class="post rec-ap-prev">' + pic(prev.picId, "post-bg") + meta(prev) + side(prev) +
+      '<div class="bar rec-bar"><span style="width:92%"></span></div></div>' +
+      '<div class="post rec-ap-cur">' + pic(o.picId, "post-bg rec-ap-zoom") +
+      '<span class="rec-sound" aria-hidden="true">' + ICON.soundOn + "</span>" + meta(o) + side(o) +
+      '<div class="rec-mark-abs bar rec-bar"><span class="rec-ap-run"></span></div>' +
+      "</div></div>" +
+      '<span class="rec-ap-finger" aria-hidden="true"></span><span class="rec-ap-fade" aria-hidden="true"></span></div>';
     html += o.nav === "ig" ? igReelsNav() : ttNav();
     return { cls: "rl", html: html };
   };
@@ -331,16 +362,18 @@
     },
     "T0-m4-ig": function () { // Autoplay: Reels laufen von selbst, mit Ton
       return B.autoplay({ picId: "rl-backen", user: "lea.backt", caption: "Der Teig ist IMMER zu klebrig??",
-        likes: "12,9k", comments: "207", nav: "ig", loop: 7, at: 2 });
+        likes: "12,9k", comments: "207", nav: "ig",
+        prev: { picId: "xp0a", user: "lena.unterwegs", caption: "Sonnenuntergang an der Küste 🌅", likes: "3.410", comments: "58" } });
     },
     "T0-m4-tt": function () { // Autoplay: TikTok
       return B.autoplay({ picId: "tt-hund2", user: "struppi.tv", caption: "Erste Autofahrt ans Meer 🐶",
-        likes: "48,1k", comments: "1.022", tabs: ["Folge ich", "Für dich"], activeTab: 1, loop: 6, at: 1 });
+        likes: "48,1k", comments: "1.022", tabs: ["Folge ich", "Für dich"], activeTab: 1,
+        prev: { picId: "x-stadt", user: "niko", caption: "Skyline bei Nacht ✨", likes: "6.120", comments: "97" } });
     },
     "T0-m3-ig": function () { // Empfehlung: fremder Beitrag mit „Vorgeschlagen“
-      return B.lightFeed({ posts: [
-        { user: "ruhrpott.rezepte", suggested: "Vorgeschlagen", markPost: true, picId: "fb-video", line: "Gefällt 2.318 Mal" },
-        { user: "nora.liest", picId: "fb-buch", line: "Gefällt 74 Mal" }
+      return B.lightFeed({ stories: false, posts: [
+        { user: "ruhrpott.rezepte", suggested: "Vorgeschlagen", markPost: true, picId: "fb-video", likes: 2318, friend: "can", cap: "Schmorfleisch aus dem Bräter, Rezept in der Bio" },
+        { user: "nora.liest", picId: "fb-buch", likes: 74, friend: "hanna", cap: "Neues Lieblingsregal im Antiquariat 📚" }
       ] });
     },
     "T0-m3-tt": function () { // Empfehlung: Reiter „Für dich“ (früher T0-9)
@@ -368,8 +401,8 @@
     // Ablenker T0
     "T0-d-ig-1": function () { // Profilbild im Feed (früher T0-2)
       return B.lightFeed({ posts: [
-        { user: "wg.rezepte", picId: "xp8i", line: "Gefällt 214 Mal", markAvatar: true },
-        { user: "lea.backt", picId: "xp3d", line: "Gefällt 89 Mal" }
+        { user: "wg.rezepte", picId: "xp8i", likes: 214, friend: "paula", cap: "Pizza-Abend in der WG 🍕", markAvatar: true },
+        { user: "lea.backt", picId: "xp3d", likes: 89, friend: "jule", cap: "Tiramisu-Torte, zweiter Versuch" }
       ] });
     },
     "T0-d-ig-2": function () { // Suchfeld in den Nachrichten
@@ -431,16 +464,18 @@
     },
     "T1-m4-ig": function () {
       return B.autoplay({ picId: "tt-tanz", user: "finn_ok", caption: "Kickflip endlich gestanden",
-        likes: "7.730", comments: "158", nav: "ig", loop: 6, at: 3 });
+        likes: "7.730", comments: "158", nav: "ig",
+        prev: { picId: "ig-kino", user: "unikino.essen", caption: "Kinoabend im Audimax 🎬", likes: "1.204", comments: "33" } });
     },
     "T1-m4-tt": function () {
       return B.autoplay({ picId: "fb-fest", user: "stadtfest.essen", caption: "Feuerwerk zum Abschluss 🎆",
-        likes: "31,4k", comments: "612", tabs: ["Folge ich", "Für dich"], activeTab: 1, loop: 8, at: 2 });
+        likes: "31,4k", comments: "612", tabs: ["Folge ich", "Für dich"], activeTab: 1,
+        prev: { picId: "xp1b", user: "jule", caption: "Sonntagsrunde mit dem Rad 🚲", likes: "2.980", comments: "41" } });
     },
     "T1-m3-ig": function () {
-      return B.lightFeed({ posts: [
-        { user: "cafe.eckhaus", suggested: "Vorgeschlagen", markPost: true, picId: "ig-kaffee", line: "Gefällt 1.046 Mal" },
-        { user: "campus.garten", picId: "fb-garten", line: "Gefällt 58 Mal" }
+      return B.lightFeed({ stories: false, posts: [
+        { user: "cafe.eckhaus", suggested: "Vorgeschlagen", markPost: true, picId: "ig-kaffee", likes: 1046, friend: "ben", cap: "Fensterplätze mit Blick auf die Stadt ☕" },
+        { user: "campus.garten", picId: "fb-garten", likes: 58, friend: "elif", cap: "Der Grünkohl ist so weit 🥬" }
       ] });
     },
     "T1-m3-tt": function () {
@@ -468,18 +503,18 @@
     // Ablenker T1
     "T1-d-ig-1": function () { // Zurück-Pfeil in der Beitragsansicht (früher T1-9)
       return B.lightFeed({ backBar: "Beitrag", markBack: true,
-        posts: [{ user: "oma.gisela", picId: "xp5f", line: "Gefällt 462 Mal", actions: true }] });
+        posts: [{ user: "oma.gisela", picId: "xp5f", likes: 462, friend: "papa", cap: "Die Tulpen im Garten sind da 🌷" }] });
     },
     "T1-d-ig-2": function () { // Drei Punkte am Beitrag
       return B.lightFeed({ posts: [
-        { user: "mensa.update", picId: "xp8i", line: "Gefällt 241 Mal", markDots: true },
-        { user: "tonio_fit", picId: "rl-skate", line: "Gefällt 77 Mal" }
+        { user: "mensa.update", picId: "xp8i", likes: 241, friend: "can", cap: "Heute in der Mensa: Pizza mit Rucola", markDots: true },
+        { user: "tonio_fit", picId: "rl-skate", likes: 77, friend: "sam", cap: "Sonntag im Skatepark" }
       ] });
     },
     "T1-d-ig-3": function () { // Startseite-Symbol unten
-      return B.lightFeed({ nav: true, markNav: 0, posts: [
-        { user: "chris", picId: "fb-buch", line: "Gefällt 33 Mal" },
-        { user: "aylin", picId: "xp4e", line: "Gefällt 120 Mal" }
+      return B.lightFeed({ markNav: 0, posts: [
+        { user: "chris", picId: "fb-buch", likes: 33, friend: "mara", cap: "Endlich wieder im Lieblingsladen" },
+        { user: "aylin", picId: "xp4e", likes: 120, friend: "leyla", cap: "Letzte Bahn knapp verpasst 🚇" }
       ] });
     },
     "T1-d-tt-1": function () { // Zahnrad auf der Profilseite (früher T2-2)
@@ -528,11 +563,13 @@
     },
     "T2-m4-ig": function () {
       return B.autoplay({ picId: "fb-meme", user: "prokrastinations.memes", caption: "Ich, wenn jemand „kurz“ sagt",
-        likes: "64,3k", comments: "1.871", nav: "ig", loop: 6, at: 1 });
+        likes: "64,3k", comments: "1.871", nav: "ig",
+        prev: { picId: "ig-kaffee", user: "mara.b", caption: "Kaffeepause mit Aussicht ☕", likes: "4.502", comments: "76" } });
     },
     "T2-m4-tt": function () {
       return B.autoplay({ picId: "ig-nebel", user: "lauftreff.essen", caption: "Nebellauf um 7 Uhr 🏃",
-        likes: "2.640", comments: "53", tabs: ["Folge ich", "Für dich"], activeTab: 1, loop: 7, at: 4 });
+        likes: "2.640", comments: "53", tabs: ["Folge ich", "Für dich"], activeTab: 1,
+        prev: { picId: "rl-skate", user: "sam.skatet", caption: "Neuer Trick im Park 🛹", likes: "9.311", comments: "120" } });
     },
     "T2-m3-ig": function () { // Vorschlags-Raster in der Suche (früher T2-1)
       return B.explore({ search: "Suchen", cells: ["xp0a", "xp1b", "xp2c", "xp3d", "xp4e", "xp5f", "xp6g", "xp7h", "xp8i"], marked: true });
@@ -562,14 +599,14 @@
     // Ablenker T2
     "T2-d-ig-1": function () { // Plus oben links (früher FD-ig-plus, jetzt ohne App-Namen)
       return B.lightFeed({ markPlus: true, posts: [
-        { user: "flo.fotografiert", picId: "tt-reel-bg", line: "Gefällt 320 Mal" },
-        { user: "deniz", picId: "rl-backen", line: "Gefällt 89 Mal" }
+        { user: "flo.fotografiert", picId: "tt-reel-bg", likes: 320, friend: "noa", cap: "Latte Art im Eckhaus ☕" },
+        { user: "deniz", picId: "rl-backen", likes: 89, friend: "timo", cap: "Erstes eigenes Brot 🍞" }
       ] });
     },
     "T2-d-ig-2": function () { // Merken-Symbol
       return B.lightFeed({ posts: [
-        { user: "essen.isst", picId: "tt-koch", line: "Gefällt 1.130 Mal", actions: true, markSave: true },
-        { user: "nora.liest", picId: "fb-buch", line: "Gefällt 54 Mal" }
+        { user: "essen.isst", picId: "tt-koch", likes: 1130, friend: "hanna", cap: "Gemüsepfanne in 15 Minuten", markSave: true },
+        { user: "nora.liest", picId: "fb-buch", likes: 54, friend: "deniz", cap: "Lesestoff fürs Wochenende 📚" }
       ] });
     },
     "T2-d-ig-3": function () { // „Profil bearbeiten“

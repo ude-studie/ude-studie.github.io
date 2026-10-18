@@ -105,7 +105,7 @@ window.CONTENT = {
       variants: {
         tt: {
           screen: "tiktok-feed",
-          ctxA: "TikTok, Für-dich-Feed. Du bist bei Video 40.",
+          ctxA: "TikTok, For You Page. Du bist bei Video 40.",
           ctxB: "Du hast weitergewischt. Das nächste Video war schon geladen.",
           tryText: "„Ausprobieren“ wischt zum nächsten Video.",
           hint: "Hier könnte der Feed enden. Stattdessen lädt die App beim Scrollen immer neue Beiträge nach.",
@@ -175,7 +175,7 @@ window.CONTENT = {
         },
         tt: {
           screen: "reels",
-          ctxA: "TikTok, Für-dich-Feed. Ein Video läuft gerade.",
+          ctxA: "TikTok, For You Page. Ein Video läuft gerade.",
           ctxB: "Du hast weitergescrollt. Das nächste Video läuft schon.",
           tryText: "„Ausprobieren“ scrollt zum nächsten Video.",
           hint: "Das Video ist von selbst gestartet und beginnt am Ende von vorn. Du musst nichts tun, damit es weiterläuft.",
@@ -207,11 +207,11 @@ window.CONTENT = {
       satz: "Die App zeigt dir mehr von dem, wobei du hängen bleibst, auch wenn du es eigentlich nicht willst.", // ENTWURF
       was: "Zwischen Beiträgen von Konten, denen du folgst, zeigt die App Inhalte fremder Konten, nur mit „Vorgeschlagen“ markiert. Ausgewählt werden sie danach, wie lange du bei ähnlichen Inhalten hängen bleibst.",
       wirkung: "Die Auswahl folgt deinem Verhalten, nicht deinen Absichten: Was dich kurz fesselt, bekommst du öfter, auch wenn du es eigentlich nicht sehen willst. Weil die Vorschläge so gut passen, halten wir sie für unseren eigenen Geschmack.",
-      zweck: "Passende Vorschläge halten dich länger im Feed. Der Für-dich-Feed bei TikTok besteht nur daraus.",
+      zweck: "Passende Vorschläge halten dich länger im Feed. Die For You Page bei TikTok besteht nur daraus.",
       variants: {
         ig: {
           screen: "ig-feed",
-          ctxA: "Dein Instagram-Feed. Du folgst tom.reist.",
+          ctxA: "Dein Instagram-Feed. Du folgst mia.kocht nicht.",
           ctxB: "mia.kocht steht ganz oben, obwohl du ihr nicht folgst.",
           tryText: "„Ausprobieren“ zeigt, warum der Beitrag von mia.kocht oben steht.",
           hint: "Du folgst mia.kocht nicht. Die App zeigt dir den Beitrag, weil du bei Kochvideos lange hängen bleibst. Einziger Hinweis: das kleine „Vorgeschlagen“.",
@@ -229,10 +229,10 @@ window.CONTENT = {
         tt: {
           screen: "tiktok-feed",
           question: "Warum zeigt dir die App gerade dieses Video, obwohl du ihr nicht folgst?",
-          ctxA: "TikTok, Für-dich-Feed. Du folgst @mia.kocht nicht.",
+          ctxA: "TikTok, For You Page. Du folgst @mia.kocht nicht.",
           ctxB: "Das Video stammt von einem Konto, dem du nicht folgst.",
           tryText: "„Ausprobieren“ zeigt, warum die App dir dieses Video zeigt.",
-          hint: "Im Für-dich-Feed wählt die App jedes Video danach aus, wie lange du bei ähnlichen Videos geblieben bist.",
+          hint: "Auf der For You Page wählt die App jedes Video danach aus, wie lange du bei ähnlichen Videos geblieben bist.",
           markLabel: "Reiter „Für dich“ oben im Screen",
           data: {
             static: true,
@@ -379,7 +379,7 @@ window.CONTENT = {
         { app: "sc", human: false, text: "Du hast neue Spotlight-Videos verpasst. Schau rein!", // ENTWURF
           why: "Die App meldet sich von selbst, um dich zurückzuholen." },
         { app: "tt", human: true, text: "mara.w hat auf deinen Kommentar geantwortet", why: "mara.w hat dir selbst geantwortet." },
-        { app: "tt", human: false, text: "Dein Für-dich-Feed wurde aktualisiert. Schau dir die neuen Videos an.",
+        { app: "tt", human: false, text: "Deine For You Page wurde aktualisiert. Schau dir die neuen Videos an.",
           why: "Die App meldet sich von selbst, um dich zurückzuholen." }
       ]
     }
@@ -475,7 +475,7 @@ window.CONTENT = {
       3: {
         wenn: ["mir ein Beitrag von einem Konto gezeigt wird, dem ich nicht folge",
           "mich ein vorgeschlagenes Video länger festhält, als ich wollte",
-          "ich im Für-dich-Feed lande, obwohl ich nur kurz etwas nachsehen wollte"],
+          "ich auf der For You Page lande, obwohl ich nur kurz etwas nachsehen wollte"],
         dann: ["scrolle ich nicht weiter und schließe die App", "tippe ich auf „Nicht interessiert“", "wechsle ich zu den Beiträgen von Leuten, denen ich folge"]
       },
       6: {

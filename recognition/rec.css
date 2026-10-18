@@ -225,3 +225,25 @@
 .rec-peek-user span { font-weight: 400; font-size: 13px; }
 /* Empfehlungen: Rahmen um den ganzen vorgeschlagenen Beitrag */
 .ig-content > .rec-mark-area { margin: 4px; }
+
+/* Autoplay als Animation (18.10.): vorheriges Video → Wischen → nächstes Video startet sofort.
+   Eine Schleife dauert --ap (8 s). */
+.rec-ap .rec-ap-track { animation: recApScroll var(--ap) infinite; }
+.rec-ap .rec-ap-run { width: 0; animation: recApRun var(--ap) linear infinite; }
+.rec-ap .rec-ap-zoom { animation: recApZoom var(--ap) linear infinite; transform-origin: 50% 40%; }
+.rec-ap .rec-ap-finger { position: absolute; left: 50%; bottom: 120px; width: 44px; height: 44px; border-radius: 50%;
+  background: rgba(255,255,255,.75); box-shadow: 0 0 0 6px rgba(255,255,255,.25); z-index: 5; pointer-events: none;
+  opacity: 0; animation: recApFinger var(--ap) infinite; }
+.rec-ap .rec-ap-fade { position: absolute; inset: 0; background: #000; z-index: 6; pointer-events: none; opacity: 0;
+  animation: recApFade var(--ap) infinite; }
+@keyframes recApScroll { 0%, 15% { transform: translateY(0); } 25%, 100% { transform: translateY(-100%); } }
+@keyframes recApRun { 0%, 25% { width: 0; } 100% { width: 100%; } }
+@keyframes recApZoom { 0%, 25% { transform: scale(1); } 100% { transform: scale(1.14); } }
+@keyframes recApFinger { 0%, 6% { opacity: 0; transform: translate(-50%, 0); } 10% { opacity: 1; transform: translate(-50%, 0); }
+  22% { opacity: 1; transform: translate(-50%, -170px); } 26%, 100% { opacity: 0; transform: translate(-50%, -170px); } }
+@keyframes recApFade { 0% { opacity: .9; } 4%, 95% { opacity: 0; } 100% { opacity: .9; } }
+@media (prefers-reduced-motion: reduce) {
+  .rec-ap .rec-ap-track { animation: none; transform: translateY(-100%); }
+  .rec-ap .rec-ap-run { animation: none; width: 35%; }
+  .rec-ap .rec-ap-zoom, .rec-ap .rec-ap-finger, .rec-ap .rec-ap-fade { animation: none; }
+}
