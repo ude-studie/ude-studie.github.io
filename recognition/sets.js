@@ -117,6 +117,7 @@
       var e = { id: SETS[wave][m][a.app], muster: m, app: a.app, target: MUSTER[m] };
       if (a.fallback) e.fallback = true;
       e.ctx = CTX_SCREEN[e.id] || CTX[m][a.app];
+      if (m === "m4") e.noFrame = true; // Autoplay: kein rot umrahmtes Element (seit 18.10.)
       list.push(e);
     });
     var rot = apps.length ? apps : [FALLBACK_APP];

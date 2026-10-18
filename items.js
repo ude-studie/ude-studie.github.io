@@ -180,24 +180,22 @@ window.ITEMS.T0 = {
   // Wiedererkennung (v4: eigener Block in T0, T1 und T2; vier Kernmuster + drei Ablenker)
   erkennen: {
     title: "Nachgestellte Screens", // ENTWURF v4: Seitentitel
-    instruktion: "Du siehst jetzt {n} nachgestellte Screens aus Social-Media-Apps. In jedem ist ein Element rot umrahmt. Sag uns, ob es aus deiner Sicht versucht, dein Verhalten zu beeinflussen. Nicht jedes umrahmte Element tut das.",
+    instruktion: "Du siehst jetzt {n} nachgestellte Screens aus Social-Media-Apps. Meist ist ein Element rot umrahmt. Sag uns, ob es aus deiner Sicht versucht, dein Verhalten zu beeinflussen. Nicht jedes Element tut das.", // ENTWURF (18.10.: „Meist“, weil Autoplay keinen Rahmen mehr hat)
     ERa: "Versucht das rot umrahmte Element, dein Verhalten zu beeinflussen?",
+    // Autoplay (m4) ohne Rahmen: Es gibt kein Bedienelement, nur das Verhalten der App (seit 18.10., ENTWURF)
+    ERa_ohneRahmen: "Das nächste Video startet von selbst. Versucht die App damit, dein Verhalten zu beeinflussen?",
     ERa_options: [
       { v: "ja", label: "Ja" },
       { v: "nein", label: "Nein" },
       { v: "weiss_nicht", label: "Weiß nicht" }
     ],
     ERb: "Wie? Beschreibe in einem Satz, was das Element macht und wozu es dient.",
+    ERb_ohneRahmen: "Wie? Beschreibe in einem Satz, was die App da macht und wozu.", // ENTWURF (18.10., Autoplay)
     ERc: "Was sind deine Gedanken dazu?",
     screenOf: "Screen {x} von {n}"
   },
   t17: {
-    // seit 18.10. ohne eigene Seite: AK01/AK02 stehen direkt unter jedem Screen der Wiedererkennung
-    AK01: "Wie stark würde dich dieses Element dazu bringen, die App länger oder öfter zu nutzen?",
-    AK01_skala: [
-      { v: 1, label: "gar nicht" }, { v: 2, label: "kaum" }, { v: 3, label: "etwas" },
-      { v: 4, label: "stark" }, { v: 5, label: "sehr stark" }
-    ],
+    // seit 18.10. ohne eigene Seite: AK02 steht direkt unter jedem Screen der Wiedererkennung; AK01 (Einfluss) gestrichen
     AK02: "Findest du es in Ordnung, dass die App das so macht?",
     AK02_skala: [
       { v: 1, label: "gar nicht in Ordnung" }, { v: 2, label: "eher nicht in Ordnung" }, { v: 3, label: "teils, teils" },

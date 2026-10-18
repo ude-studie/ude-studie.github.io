@@ -231,7 +231,7 @@
 
   // Autoplay als Animation (seit 18.10.): Man sieht kurz das vorige Video, ein Finger wischt nach oben,
   // das nächste Video startet sofort von selbst (Balken läuft ab 0, Bild bewegt sich, Ton an).
-  // Danach beginnt die Schleife von vorn. Rot umrahmt: der laufende Fortschrittsbalken.
+  // Danach beginnt die Schleife von vorn. Kein roter Rahmen (seit 18.10.): Die Frage nennt das Verhalten.
   //   o.prev = { picId, user, caption, likes, comments }: das Video, von dem weggewischt wird
   B.autoplay = function (o) {
     var html = "";
@@ -251,7 +251,7 @@
       '<div class="bar rec-bar"><span style="width:92%"></span></div></div>' +
       '<div class="post rec-ap-cur">' + pic(o.picId, "post-bg rec-ap-zoom") +
       '<span class="rec-sound" aria-hidden="true">' + ICON.soundOn + "</span>" + meta(o) + side(o) +
-      '<div class="rec-mark-abs bar rec-bar"><span class="rec-ap-run"></span></div>' +
+      '<div class="bar rec-bar"><span class="rec-ap-run"></span></div>' +
       "</div></div>" +
       '<span class="rec-ap-finger" aria-hidden="true"></span><span class="rec-ap-fade" aria-hidden="true"></span></div>';
     html += o.nav === "ig" ? igReelsNav() : ttNav();

@@ -48,8 +48,8 @@
     return { id: id, items: items };
   }
 
-  // Wiedererkennung einer Welle: ein Screen je Seite, darunter Wiedererkennen (ER) sowie
-  // Einfluss und Akzeptanz (AK). Seiten-IDs: <prefix>-1 … <prefix>-7
+  // Wiedererkennung einer Welle: ein Screen je Seite, darunter Wiedererkennen (ER) und
+  // Akzeptanz (AK02). Seiten-IDs: <prefix>-1 … <prefix>-7
   function recognitionPages(wave, prefix, ctx) {
     var set = R.waveSet(wave, knownApps(ctx), ctx.code);
     var pages = [];
@@ -65,15 +65,15 @@
       }
       items.push({ type: "subtitle", text: fill(E.screenOf, { x: i + 1, n: set.length }) });
       items.push({ type: "screen", entry: entry });
-      items.push({ type: "radio", key: "ER_" + tag + "a", label: E.ERa, options: E.ERa_options,
+      var noFrame = !!entry.noFrame; // Autoplay: kein Rahmen, Frage nach dem Verhalten der App
+      items.push({ type: "radio", key: "ER_" + tag + "a", label: noFrame ? E.ERa_ohneRahmen : E.ERa, options: E.ERa_options,
                    required: true, meta: meta });
-      items.push({ type: "textarea", key: "ER_" + tag + "b", label: E.ERb, rows: 3, saveHidden: true, meta: meta,
+      items.push({ type: "textarea", key: "ER_" + tag + "b", label: noFrame ? E.ERb_ohneRahmen : E.ERb, rows: 3, saveHidden: true, meta: meta,
                    visibleIf: { key: "ER_" + tag + "a", equals: "ja" } });
       items.push({ type: "textarea", key: "ER_" + tag + "c", label: E.ERc, rows: 3, saveHidden: true, meta: meta,
                    visibleIf: { key: "ER_" + tag + "a", equals: ["nein", "weiss_nicht"] } });
-      // Einfluss und Akzeptanz direkt unter dem Screen (seit 18.10.; vorher eigene Seite
-      // „Die Elemente noch einmal“). Bei allen 7 Screens, damit die Ablenker nicht auffallen.
-      items.push({ type: "radio", key: "AK01_" + tag, label: T0.t17.AK01, options: T0.t17.AK01_skala, required: true, meta: meta });
+      // Akzeptanz direkt unter dem Screen (seit 18.10.; vorher eigene Seite „Die Elemente noch einmal“).
+      // Bei allen 7 Screens, damit die Ablenker nicht auffallen. AK01 (Einfluss) seit 18.10. gestrichen.
       items.push({ type: "radio", key: "AK02_" + tag, label: T0.t17.AK02, options: T0.t17.AK02_skala, required: true, meta: meta });
       pages.push({ id: prefix + "-" + (i + 1), items: items });
     });
