@@ -1222,3 +1222,32 @@ div.card { cursor: default; }
 /* G4 (18.10.): vierter Abschnitt der Erklärung und Regeln in der Zusammenfassung */
 .lines > div.regel { background: var(--primary-soft); border-top: 0; border-radius: 12px; padding: 12px 14px; margin: 6px -6px 12px; }
 .sum-rules-title { font-size: 1.125rem; color: var(--primary); margin: 18px 0 8px; }
+
+/* Übung 1 (18.10.): Ladekreis im Instagram-Feed (endloses Scrollen) */
+.ig-loadmore { display: flex; justify-content: center; padding: 14px 0 12px; }
+.ig-spinner { width: 26px; height: 26px; border-radius: 50%; border: 3px solid #dbdbdb; border-top-color: #737373;
+  animation: spin 0.9s linear infinite; display: block; }
+@media (prefers-reduced-motion: reduce) { .ig-spinner { animation: none; } }
+/* Übung 1 für TikTok: Video oben, das nächste Video liegt unten schon bereit */
+.ttw1 { display: flex; flex-direction: column; flex: none; height: 640px; }
+.ttw1 .ttw1-post { position: relative; flex: 1 1 auto; overflow: hidden; }
+.ttw1 .ttw1-post .meta { position: absolute; left: 14px; right: 76px; bottom: 16px; text-shadow: 0 1px 3px rgba(0,0,0,.6); z-index: 1; }
+.ttw1 .ttw1-post .side { position: absolute; right: 8px; bottom: 16px; width: 60px; display: flex; flex-direction: column; align-items: center;
+  gap: 14px; font-size: 0.8125rem; text-shadow: 0 1px 3px rgba(0,0,0,.6); z-index: 2; }
+.ttw1 .ttw1-post .side span { display: flex; flex-direction: column; align-items: center; }
+.ttw1 .ttw1-post .side svg { width: 30px; height: 30px; fill: #fff; color: #fff; }
+.ttw1 .ttw1-post .side .w1t > .spot { right: auto; left: -40px; }
+.ttw1 .w1t-block { flex: 0 0 150px; display: block; }
+.ttw1 .ttw1-next { position: relative; height: 150px; border-top: 2px solid #000; overflow: hidden; }
+.ttw1 .ttw1-next-user { position: absolute; left: 12px; top: 10px; font-weight: 700; color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,.7);
+  display: flex; flex-direction: column; gap: 3px; z-index: 1; }
+.ttw1 .ttw1-next-user span { font-weight: 400; font-size: 0.8125rem; }
+.ttw1 .tt-tabs .w1t > .spot { right: -40px; }
+.ttw1 .w1t { outline-color: #fff; }
+.ttw1 .ttw1-post::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 90px; z-index: 1; pointer-events: none;
+  background: linear-gradient(180deg, rgba(0,0,0,.55), rgba(0,0,0,0)); }
+.ttw1 .ttw1-post::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 45%; pointer-events: none;
+  background: linear-gradient(180deg, rgba(0,0,0,0), rgba(0,0,0,.5)); }
+.ttw1 .tt-tabs { text-shadow: 0 1px 3px rgba(0,0,0,.7); }
+.ttw1 .ttw1-next::after { content: ""; position: absolute; inset: 0; background: rgba(0,0,0,.25); }
+.ttw1 .ttw1-next-user { z-index: 2; }

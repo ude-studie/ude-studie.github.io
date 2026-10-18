@@ -235,6 +235,8 @@ window.CONTENT = {
           screen: "tiktok-feed",
           question: "Warum zeigt dir die App gerade dieses Video, obwohl du ihr nicht folgst?",
           ctxA: "TikTok, For You Page. Du folgst @mia.kocht nicht.",
+          // TikTok kennt kein „Vorgeschlagen“: eigene Erklärung (18.10., ENTWURF)
+          was: "Auf der For You Page zeigt dir die App fast nur Videos von Konten, denen du nicht folgst. Ausgewählt werden sie danach, wie lange du bei ähnlichen Videos hängen bleibst.",
           ctxB: "Das Video stammt von einem Konto, dem du nicht folgst.",
           tryText: "„Ausprobieren“ zeigt, warum die App dir dieses Video zeigt.",
           hint: "Auf der For You Page wählt die App jedes Video danach aus, wie lange du bei ähnlichen Videos geblieben bist.",
@@ -339,28 +341,49 @@ window.CONTENT = {
 
   // ───────────── Übungen ─────────────
   recognition: [
-    // Übung 1: Instagram-Feed mit nummerierten Stellen. v7: Muster 3 („Vorgeschlagen“) und
-    // Muster 1 (der nächste Beitrag ragt unten schon herein) plus ein Ablenker (Merken-Symbol);
-    // Muster 5 entfällt. Ein Beitrag ohne Story-Leiste, damit alle drei Stellen ohne Scrollen sichtbar sind.
+    // Übung 1: Feed mit nummerierten Stellen, in der App, in der die Person Muster 3 gesehen hat
+    // (seit 18.10.; vorher immer Instagram). Muster 3 und Muster 1 plus ein Ablenker.
+    // Muster 1 (endloses Scrollen) ist bei Instagram der Ladekreis am Ende des Feeds (die App lädt
+    // von selbst nach), bei TikTok das nächste Video, das unten schon bereitliegt. ENTWURF.
     {
       id: "W1",
       type: "spots",
-      app: "Instagram",
-      screen: "ig-feed",
       ctx: "Ein neuer Screen. Tipp die Nummern an, hinter denen ein Muster aus der Schulung steckt.",
-      spotDefs: [
-        { key: "sugg-0", pattern: 3, label: "„Vorgeschlagen“ neben mia.kocht" },
-        { key: "save-0", pattern: null, label: "Merken-Symbol" }, // ENTWURF (vorher: Nutzername tom.reist)
-        { key: "edge", pattern: 1, label: "der nächste Beitrag, der unten schon hereinragt" } // ENTWURF (Beschriftung)
-      ],
       noPatternLabel: "kein bekanntes Muster",
       feedbackScore: "{k} von {n} gefunden.",
-      data: {
-        stories: false,
-        posts: [
-          { user: "mia.kocht", suggested: "Vorgeschlagen", line: "♡ 1.204 · Pasta in 10 Minuten", asset: "foto-mia-pasta" }
-        ],
-        more: { user: "tom.reist", asset: "foto-tom-lissabon" }
+      variants: {
+        ig: {
+          app: "Instagram",
+          screen: "ig-feed",
+          spotDefs: [
+            { key: "sugg-0", pattern: 3, label: "„Vorgeschlagen“ neben mia.kocht" },
+            { key: "save-0", pattern: null, label: "Merken-Symbol" },
+            { key: "load", pattern: 1, label: "der Ladekreis: Der Feed lädt von selbst neue Beiträge nach" } // ENTWURF
+          ],
+          data: {
+            stories: false,
+            loadMore: true,
+            posts: [
+              { user: "mia.kocht", suggested: "Vorgeschlagen", line: "♡ 1.204 · Pasta in 10 Minuten", asset: "foto-mia-pasta" }
+            ],
+            more: { user: "tom.reist", asset: "foto-tom-lissabon" }
+          }
+        },
+        tt: {
+          app: "TikTok",
+          screen: "tt-w1",
+          spotDefs: [
+            { key: "tab-1", pattern: 3, label: "der Reiter „Für dich“" },
+            { key: "share", pattern: null, label: "Teilen" },
+            { key: "peek", pattern: 1, label: "das nächste Video, das unten schon bereitliegt" } // ENTWURF
+          ],
+          data: {
+            post: { user: "@tom.reist", caption: "Lissabon im Oktober, 24 Grad. #reisen", likes: "8.911", comments: "204", asset: "video-tom-lissabon" },
+            next: { user: "@mia.kocht", caption: "Pasta in 10 Minuten. #rezept", asset: "video-mia-pasta" },
+            share: "Teilen",
+            nav: ["Start", "Suche", "Plus", "Inbox", "Profil"]
+          }
+        }
       }
     },
     // Übung 2: Meldungen, je Mensch oder App (Muster 6). v7: Streak-Karte (Muster 7) und

@@ -92,6 +92,17 @@
       return entryFor(p, target);
     });
   }
+  // Übung mit Varianten je App (Übung 1): dieselbe App wie bei Muster 3 (Instagram oder TikTok;
+  // nur Snapchat → Instagram). So sieht niemand eine App, die er nicht nutzt (seit 18.10.).
+  function recItem(r) {
+    if (!r.variants) return r;
+    var m3 = (state.shown || []).filter(function (e) { return e.id === 3; })[0];
+    var v = m3 && r.variants[m3.screen] ? m3.screen : (r.variants.ig ? "ig" : Object.keys(r.variants)[0]);
+    var it = Object.assign({}, r, r.variants[v], { variant: v });
+    delete it.variants;
+    return it;
+  }
+  function recItems() { return pages.filter(function (pg) { return pg.type === "recognition"; }).map(function (pg) { return pg.item; }); }
   function resolvePattern(s) {
     var def = patternDef(s.id);
     var v = def.variants[s.screen];
@@ -154,7 +165,7 @@
     shown.forEach(function (s, i) {
       pages.push({ type: "pattern", key: "p" + s.id, shown: s, pattern: resolvePattern(s), index: i + 1, total: shown.length });
     });
-    C.recognition.forEach(function (r, i) { pages.push({ type: "recognition", key: r.id, item: r, index: i + 1 }); });
+    C.recognition.forEach(function (r, i) { pages.push({ type: "recognition", key: r.id, item: recItem(r), index: i + 1 }); });
     pages.push({ type: "einordnung", key: "einordnung" });
     pages.push({ type: "zusammenfassung", key: "zusammenfassung" });
   }
@@ -256,7 +267,7 @@
     var hits = selected.filter(function (n) { return rt.targets.indexOf(n) >= 0; }).length;
     var patterns = {};
     rt.meta.forEach(function (m) { if (m.pattern) patterns[m.n] = m.pattern; });
-    return { id: it.id, selected: selected.slice().sort(num), targets: rt.targets,
+    return { id: it.id, variant: it.variant, selected: selected.slice().sort(num), targets: rt.targets,
              spotPatterns: patterns, hits: hits, falseAlarms: selected.length - hits, seconds: null };
   }
   function shownIds() { return (state.shown || []).map(function (s) { return s.id; }); }
@@ -461,6 +472,7 @@
           if (d.scrollFeed && isB && i === 1) html += '<div class="ig-seam"' + markAttr("seam-1") + "></div>";
           html += igPostHtml(post, i, tgt, markAttr("head-" + i), markAttr("post-" + i));
         });
+        if (d.loadMore) html += '<div class="ig-loadmore">' + tgt("load", '<span class="ig-spinner" aria-hidden="true"></span>') + "</div>";
         if (d.more) {
           html += tgt("edge", '<div class="ig-post ig-more"><div class="ig-post-head">' + avatar(d.more.user) + '<span class="user">' +
             esc(d.more.user) + '</span><span class="ig-dots" aria-hidden="true">⋯</span></div><div class="ig-img short"' +
@@ -483,6 +495,30 @@
         content.style.transition = "none";
         content.style.marginTop = -feedScrollDy(body) + "px";
       }
+    },
+
+    // Übung 1 für TikTok (seit 18.10.): Reiter, laufendes Video, unten liegt das nächste schon bereit
+    "tt-w1": {
+      cls: "tt",
+      render: function (p, isB, opt) {
+        var d = p.data;
+        var spot = (opt && opt.spot) || function () { return ""; };
+        var tgt = function (key, inner, cls) {
+          var s = spot(key);
+          return s ? '<span class="w1t ' + (cls || "") + '">' + inner + s + "</span>" : inner;
+        };
+        var v = d.post, n = d.next;
+        return '<div class="feed ttw1">' +
+          '<div class="tt-tabs"><span>Folge ich</span>' + tgt("tab-1", '<span class="on">Für dich</span>') + "</div>" +
+          '<div class="ttw1-post"><div class="post-bg"' + assetAttr(v.asset) + "></div>" +
+          '<div class="meta"><div class="user">' + esc(v.user) + '</div><div class="cap">' + esc(v.caption) + "</div></div>" +
+          '<div class="side"><span>' + ICON.heart + esc(v.likes) + "</span><span>" + ICON.comment + esc(v.comments) + "</span>" +
+          tgt("share", "<span>" + ICON.share + esc(d.share) + "</span>") + "</div></div>" +
+          tgt("peek", '<div class="ttw1-next"><div class="post-bg"' + assetAttr(n.asset) + '></div><div class="ttw1-next-user">' +
+            esc(n.user) + "<span>" + esc(n.caption) + "</span></div></div>", "w1t-block") +
+          "</div>" + ttNav(d);
+      },
+      toB: function () { return Promise.resolve(); }
     },
 
     "reels": {
@@ -1206,7 +1242,7 @@
   function scores() {
     var x = 0, y = 0, max = 0, ids = shownIds();
     ids.forEach(function (id) { if (patternCorrect(state.patterns[id])) x++; });
-    C.recognition.forEach(function (it) {
+    recItems().forEach(function (it) {
       max += it.type === "spots" ? w1Runtime(it).targets.length : w2Cards(it).length;
       var r = state.recognition[it.id];
       if (r) y += r.hits || 0;
@@ -1285,7 +1321,7 @@
         s.patterns[p.id] = { id: p.id, name: p.key, answer: ans, correct: p.correct, isCorrect: ans === p.correct };
       }
     });
-    C.recognition.forEach(function (it) {
+    recItems().forEach(function (it) {
       if (it.type === "spots") s.recognition[it.id] = spotsResult(it, [1, 2]);
       else s.recognition[it.id] = w2Result(it, w2Cards(it), ["human", "app", "human"]);
     });
