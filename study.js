@@ -942,6 +942,7 @@
     ctx.pilot = ctx.pilot || p.pilot === true;
     ctx.os = p.os || ctx.os;
     ctx.apps = p.apps || [];
+    updatePilotBar();
 
     var last = (p.last_pages || {});
     var now = window.DB.now();
@@ -1019,9 +1020,39 @@
     showDone(F.doneTitle, F.doneText);
   }
 
+  // ── Nur Pilot: Testgruppe vor dem Start wählen ─────────
+  // Leiste über der App, solange noch keine Gruppe zugeteilt ist. Die Wahl landet als
+  // &group= in der Adresse und wird bei der Zuteilung nach T0 an assign_group übergeben
+  // (p_force, nur für Pilot-Codes). „Zufall“ = normale Blockrandomisierung.
+  function updatePilotBar() {
+    var bar = document.getElementById("pilot-group-bar");
+    var show = ctx.pilot && !(ctx.progress && ctx.progress.grp);
+    if (!show) { if (bar) bar.remove(); return; }
+    if (!bar) {
+      bar = el("div", "pilot-group-bar");
+      bar.id = "pilot-group-bar";
+      app.parentNode.insertBefore(bar, app);
+    }
+    bar.innerHTML = "";
+    bar.appendChild(el("span", "pilot-group-label", "Test: Gruppe"));
+    ["", "G1", "G2", "G3", "G4"].forEach(function (g) {
+      var b = el("button", "pilot-group-btn" + (forceGroup === g || (!g && !/^G[1-4]$/.test(forceGroup)) ? " active" : ""), g || "Zufall");
+      b.type = "button";
+      b.addEventListener("click", function () {
+        forceGroup = g;
+        var q = new URLSearchParams(location.search);
+        if (g) q.set("group", g); else q.delete("group");
+        history.replaceState(null, "", location.pathname + "?" + q.toString());
+        updatePilotBar();
+      });
+      bar.appendChild(b);
+    });
+  }
+
   // ── Einstieg (Abschnitt 3 des Auftrags) ────────────────
   function boot() {
     clearOldStorage();
+    updatePilotBar();
     var urlCode = (params.get("c") || "").trim().toUpperCase();
 
     if (urlCode) {           // persönlicher Link: dort weiter, wo die Person ist

@@ -5,7 +5,7 @@
  * .device, .feed/.post, .ig-*, .lock/.note, .snap-*, .st-*), aber ANDERE Konten,
  * Inhalte und Fotos (CC0, recognition/assets/sources.json). Kein Screen kommt in
  * zwei Wellen vor. Das rot umrahmte Zielelement bekommt die Klasse .rec-mark
- * (bzw. .rec-mark-area als Zone, .rec-mark-inset als Rahmen innen am Video).
+ * (bzw. .rec-mark-area als Zone, .rec-mark-abs direkt an absolut positionierten Elementen).
  *
  * Fotos: Innerhalb einer Welle kommt jedes Foto nur einmal vor. Über die Wellen
  * hinweg tauchen einzelne Fotos in Ablenker-Screens wieder auf (andere Screens,
@@ -153,9 +153,10 @@
       markIf(o.markDots, '<span class="ig-dots" aria-hidden="true">⋯</span>') + "</div>";
     var acts = o.actions ? '<div class="ig-actions" aria-hidden="true"><span class="ig-act">' + ICON.heartLine + '</span><span class="ig-act">' +
       ICON.commentLine + '</span><span class="ig-act">' + ICON.send + '</span><span class="ig-save">' + markIf(o.markSave, ICON.bookmark) + "</span></div>" : "";
-    return '<div class="ig-post">' + (o.markHead ? mark(head, true) : head) +
+    var post = '<div class="ig-post">' + (o.markHead ? mark(head, true) : head) +
       pic(o.picId, "ig-img" + (o.short ? " short" : "")) + acts +
       (o.line ? '<div class="ig-line">' + esc(o.line) + "</div>" : "") + "</div>";
+    return o.markPost ? mark(post, true) : post; // markPost: ganzer Beitrag (Empfehlungen, seit 18.10.)
   }
 
   // ── Screen-Bauer ───────────────────────────────────────
@@ -198,7 +199,7 @@
       "</div></div>";
     if (o.peek) {
       var peek = '<div class="rec-peek">' + pic(o.peek.picId, "rec-peek-bg") +
-        '<div class="rec-peek-user">' + esc(o.peek.user) + "</div></div>";
+        '<div class="rec-peek-user">' + esc(o.peek.user) + (o.peek.caption ? '<span>' + esc(o.peek.caption) + "</span>" : "") + "</div></div>";
       html += o.markPeek ? markSelf(peek) : peek;
     }
     html += "</div>";
@@ -206,8 +207,8 @@
     return { cls: "tt", html: html };
   };
 
-  // Autoplay (v4, Etappe 4): Video läuft sichtbar – Fortschrittsbalken bewegt sich,
-  // Ton-Symbol ist an. Rot umrahmt: das laufende Video samt Balken.
+  // Autoplay: Video läuft sichtbar – Fortschrittsbalken bewegt sich, Ton-Symbol ist an.
+  // Rot umrahmt (seit 18.10.): nur der laufende Fortschrittsbalken (vorher das ganze Video – zu unklar).
   B.autoplay = function (o) {
     var html = "";
     if (o.tabs) {
@@ -215,12 +216,12 @@
         return "<span" + (i === o.activeTab ? ' class="on"' : "") + ">" + esc(t) + "</span>";
       }).join("") + "</div>";
     }
-    html += '<div class="feed"><div class="track still"><div class="post rec-mark-inset">' + pic(o.picId, "post-bg") +
+    html += '<div class="feed"><div class="track still"><div class="post">' + pic(o.picId, "post-bg") +
       '<span class="rec-sound" aria-hidden="true">' + ICON.soundOn + "</span>" +
       '<div class="meta"><div class="user">' + esc(o.user) + '</div><div class="cap">' + esc(o.caption) + "</div></div>" +
       '<div class="side"><span>' + ICON.heart + esc(o.likes) + "</span><span>" + ICON.comment + esc(o.comments) +
       "</span><span>" + ICON.share + esc(o.shares || "Teilen") + "</span></div>" +
-      '<div class="bar rec-bar"><span class="run" style="animation-duration:' + (o.loop || 7) + "s;animation-delay:-" + (o.at || 1) + 's"></span></div>' +
+      '<div class="rec-mark-abs bar rec-bar"><span class="run" style="animation-duration:' + (o.loop || 7) + "s;animation-delay:-" + (o.at || 1) + 's"></span></div>' +
       "</div></div></div>";
     html += o.nav === "ig" ? igReelsNav() : ttNav();
     return { cls: "rl", html: html };
@@ -321,12 +322,12 @@
     // ===================== Set T0 =====================
     "T0-m1-ig": function () { // Endloses Scrollen: Reels, das nächste ragt herein (früher T0-4)
       return B.darkVideo({ picId: "rl-skate", user: "timo.rollt", caption: "Erster Versuch nach dem Regen 🛹",
-        likes: "22,4k", comments: "318", nav: "ig", peek: { picId: "rl-skate-next", user: "sam.skatet" }, markPeek: true });
+        likes: "22,4k", comments: "318", nav: "ig", peek: { picId: "rl-skate-next", user: "sam.skatet", caption: "Neues Board, erster Test" }, markPeek: true });
     },
     "T0-m1-tt": function () { // Endloses Scrollen: TikTok
       return B.darkVideo({ picId: "tt-reel-bg", user: "cafe.eckhaus", caption: "Latte Art, Versuch Nr. 27 ☕",
         likes: "4.381", comments: "96", tabs: ["Folge ich", "Für dich"], activeTab: 1,
-        peek: { picId: "fb-grill", user: "jonas_b" }, markPeek: true });
+        peek: { picId: "fb-grill", user: "jonas_b", caption: "Grillabend im Garten 🔥" }, markPeek: true });
     },
     "T0-m4-ig": function () { // Autoplay: Reels laufen von selbst, mit Ton
       return B.autoplay({ picId: "rl-backen", user: "lea.backt", caption: "Der Teig ist IMMER zu klebrig??",
@@ -338,7 +339,7 @@
     },
     "T0-m3-ig": function () { // Empfehlung: fremder Beitrag mit „Vorgeschlagen“
       return B.lightFeed({ posts: [
-        { user: "ruhrpott.rezepte", suggested: "Vorgeschlagen", markSuggested: true, picId: "fb-video", line: "Gefällt 2.318 Mal" },
+        { user: "ruhrpott.rezepte", suggested: "Vorgeschlagen", markPost: true, picId: "fb-video", line: "Gefällt 2.318 Mal" },
         { user: "nora.liest", picId: "fb-buch", line: "Gefällt 74 Mal" }
       ] });
     },
@@ -421,12 +422,12 @@
     // ===================== Set T1 =====================
     "T1-m1-ig": function () {
       return B.darkVideo({ picId: "ig-wandern", user: "berg.und.tal", caption: "Oben angekommen ❄️",
-        likes: "18,2k", comments: "264", nav: "ig", peek: { picId: "ig-see", user: "lena.unterwegs" }, markPeek: true });
+        likes: "18,2k", comments: "264", nav: "ig", peek: { picId: "ig-see", user: "lena.unterwegs", caption: "Abendrunde am See" }, markPeek: true });
     },
     "T1-m1-tt": function () {
       return B.darkVideo({ picId: "tt-koch", user: "kochtmit", caption: "5-Minuten-Nudeln, die wirklich halten",
         likes: "9.812", comments: "233", tabs: ["Folge ich", "Für dich"], activeTab: 1,
-        peek: { picId: "ig-ramen", user: "essen.isst" }, markPeek: true });
+        peek: { picId: "ig-ramen", user: "essen.isst", caption: "Ramen-Test Teil 3 🍜" }, markPeek: true });
     },
     "T1-m4-ig": function () {
       return B.autoplay({ picId: "tt-tanz", user: "finn_ok", caption: "Kickflip endlich gestanden",
@@ -438,7 +439,7 @@
     },
     "T1-m3-ig": function () {
       return B.lightFeed({ posts: [
-        { user: "cafe.eckhaus", suggested: "Vorgeschlagen", markSuggested: true, picId: "ig-kaffee", line: "Gefällt 1.046 Mal" },
+        { user: "cafe.eckhaus", suggested: "Vorgeschlagen", markPost: true, picId: "ig-kaffee", line: "Gefällt 1.046 Mal" },
         { user: "campus.garten", picId: "fb-garten", line: "Gefällt 58 Mal" }
       ] });
     },
@@ -518,12 +519,12 @@
     // ===================== Set T2 =====================
     "T2-m1-ig": function () {
       return B.darkVideo({ picId: "fb-theater", user: "theater.ag", caption: "Requisiten für die Premiere 🎭",
-        likes: "3.902", comments: "71", nav: "ig", peek: { picId: "fb-floh", user: "flohmarkt.rüttenscheid" }, markPeek: true });
+        likes: "3.902", comments: "71", nav: "ig", peek: { picId: "fb-floh", user: "flohmarkt.rüttenscheid", caption: "Sonntag wieder geöffnet" }, markPeek: true });
     },
     "T2-m1-tt": function () {
       return B.darkVideo({ picId: "tt-tanz-next", user: "jule.moves", caption: "Gänsehaut beim letzten Song 🎤",
         likes: "31,7k", comments: "540", tabs: ["Folge ich", "Für dich"], activeTab: 1,
-        peek: { picId: "ig-kino", user: "unikino.essen" }, markPeek: true });
+        peek: { picId: "ig-kino", user: "unikino.essen", caption: "Heute: Filmabend im Audimax" }, markPeek: true });
     },
     "T2-m4-ig": function () {
       return B.autoplay({ picId: "fb-meme", user: "prokrastinations.memes", caption: "Ich, wenn jemand „kurz“ sagt",

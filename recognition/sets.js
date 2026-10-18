@@ -58,24 +58,32 @@
   // Ablenker je Welle und App: harmlose Bedienelemente, in jeder Welle andere
   var DISTRACTORS = {
     T0: {
-      ig: [{ id: "T0-d-ig-1", name: "Profilbild" }, { id: "T0-d-ig-2", name: "Suchfeld (Nachrichten)" }, { id: "T0-d-ig-3", name: "Menü (Profil)" }],
-      tt: [{ id: "T0-d-tt-1", name: "Lupe (Suche)" }, { id: "T0-d-tt-2", name: "Posteingang-Symbol" }, { id: "T0-d-tt-3", name: "Profil bearbeiten" }],
-      sc: [{ id: "T0-d-sc-1", name: "Zahnrad (Einstellungen)" }, { id: "T0-d-sc-2", name: "Kamera-Symbol" }, { id: "T0-d-sc-3", name: "Profilbild" }]
+      ig: [{ id: "T0-d-ig-1", ctx: "Dein Instagram-Feed.", name: "Profilbild" }, { id: "T0-d-ig-2", ctx: "Deine Nachrichten in Instagram.", name: "Suchfeld (Nachrichten)" }, { id: "T0-d-ig-3", ctx: "Dein Profil in Instagram.", name: "Menü (Profil)" }],
+      tt: [{ id: "T0-d-tt-1", ctx: "Dein TikTok-Feed.", name: "Lupe (Suche)" }, { id: "T0-d-tt-2", ctx: "Dein TikTok-Feed.", name: "Posteingang-Symbol" }, { id: "T0-d-tt-3", ctx: "Dein Profil in TikTok.", name: "Profil bearbeiten" }],
+      sc: [{ id: "T0-d-sc-1", ctx: "Deine Chats in Snapchat.", name: "Zahnrad (Einstellungen)" }, { id: "T0-d-sc-2", ctx: "Deine Chats in Snapchat.", name: "Kamera-Symbol" }, { id: "T0-d-sc-3", ctx: "Deine Chats in Snapchat.", name: "Profilbild" }]
     },
     T1: {
-      ig: [{ id: "T1-d-ig-1", name: "Zurück-Pfeil" }, { id: "T1-d-ig-2", name: "Drei Punkte (Menü)" }, { id: "T1-d-ig-3", name: "Startseite-Symbol" }],
-      tt: [{ id: "T1-d-tt-1", name: "Zahnrad (Einstellungen)" }, { id: "T1-d-tt-2", name: "Reiter „Folge ich“" }, { id: "T1-d-tt-3", name: "Teilen" }],
-      sc: [{ id: "T1-d-sc-1", name: "Suchfeld" }, { id: "T1-d-sc-2", name: "Karte-Symbol" }, { id: "T1-d-sc-3", name: "Name im Chat" }]
+      ig: [{ id: "T1-d-ig-1", ctx: "Ein Beitrag in Instagram.", name: "Zurück-Pfeil" }, { id: "T1-d-ig-2", ctx: "Dein Instagram-Feed.", name: "Drei Punkte (Menü)" }, { id: "T1-d-ig-3", ctx: "Dein Instagram-Feed.", name: "Startseite-Symbol" }],
+      tt: [{ id: "T1-d-tt-1", ctx: "Ein Profil in TikTok.", name: "Zahnrad (Einstellungen)" }, { id: "T1-d-tt-2", ctx: "Dein TikTok-Feed.", name: "Reiter „Folge ich“" }, { id: "T1-d-tt-3", ctx: "Dein TikTok-Feed.", name: "Teilen" }],
+      sc: [{ id: "T1-d-sc-1", ctx: "Deine Chats in Snapchat.", name: "Suchfeld" }, { id: "T1-d-sc-2", ctx: "Deine Chats in Snapchat.", name: "Karte-Symbol" }, { id: "T1-d-sc-3", ctx: "Deine Chats in Snapchat.", name: "Name im Chat" }]
     },
     T2: {
-      ig: [{ id: "T2-d-ig-1", name: "Plus (neuer Beitrag)" }, { id: "T2-d-ig-2", name: "Merken-Symbol" }, { id: "T2-d-ig-3", name: "Profil bearbeiten" }],
-      tt: [{ id: "T2-d-tt-1", name: "Profil-Symbol" }, { id: "T2-d-tt-2", name: "Name im Posteingang" }, { id: "T2-d-tt-3", name: "Start-Symbol" }],
-      sc: [{ id: "T2-d-sc-1", name: "Überschrift „Chats“" }, { id: "T2-d-sc-2", name: "Chat-Symbol" }, { id: "T2-d-sc-3", name: "Freund hinzufügen" }]
+      ig: [{ id: "T2-d-ig-1", ctx: "Dein Instagram-Feed.", name: "Plus (neuer Beitrag)" }, { id: "T2-d-ig-2", ctx: "Dein Instagram-Feed.", name: "Merken-Symbol" }, { id: "T2-d-ig-3", ctx: "Dein Profil in Instagram.", name: "Profil bearbeiten" }],
+      tt: [{ id: "T2-d-tt-1", ctx: "Dein TikTok-Feed.", name: "Profil-Symbol" }, { id: "T2-d-tt-2", ctx: "Dein Posteingang in TikTok.", name: "Name im Posteingang" }, { id: "T2-d-tt-3", ctx: "Dein TikTok-Feed.", name: "Start-Symbol" }],
+      sc: [{ id: "T2-d-sc-1", ctx: "Deine Chats in Snapchat.", name: "Überschrift „Chats“" }, { id: "T2-d-sc-2", ctx: "Deine Chats in Snapchat.", name: "Chat-Symbol" }, { id: "T2-d-sc-3", ctx: "Deine Chats in Snapchat.", name: "Freund hinzufügen" }]
     }
   };
 
-  // Kontextsatz über dem Screen (nur Autoplay, Umbau-Auftrag Etappe 4)
-  var CTX = { m4: "Du hast gerade weitergescrollt." }; // ENTWURF (Wortlaut aus dem Auftrag)
+  // Kontextsatz über jedem Screen (seit 18.10.: alle Screens, damit klar ist, was zu sehen ist,
+  // und Autoplay nicht als einziger Screen mit Satz auffällt). m4 Wortlaut aus dem Umbau-Auftrag, Rest ENTWURF.
+  var CTX = {
+    m1: { tt: "Du scrollst durch deinen TikTok-Feed. Unten beginnt schon das nächste Video.",
+          ig: "Du scrollst durch die Reels. Unten beginnt schon das nächste Video." },
+    m4: { tt: "Du hast gerade weitergescrollt.", ig: "Du hast gerade weitergescrollt." },
+    m3: { tt: "Dein TikTok-Feed.", ig: "Dein Instagram-Feed." },
+    m6: { ig: "Dein Sperrbildschirm.", tt: "Dein Sperrbildschirm.", sc: "Dein Sperrbildschirm." }
+  };
+  var CTX_SCREEN = { "T2-m3-ig": "Die Suche in Instagram." };
 
   // Fester Zufall je Code und Welle (FNV-1a + mulberry32)
   function hashCode(s) {
@@ -108,14 +116,14 @@
       var a = appFor(m, apps);
       var e = { id: SETS[wave][m][a.app], muster: m, app: a.app, target: MUSTER[m] };
       if (a.fallback) e.fallback = true;
-      if (CTX[m]) e.ctx = CTX[m];
+      e.ctx = CTX_SCREEN[e.id] || CTX[m][a.app];
       list.push(e);
     });
     var rot = apps.length ? apps : [FALLBACK_APP];
     for (var i = 0; i < 3; i++) {
       var a = rot[i % rot.length], j = Math.floor(i / rot.length);
       var d = DISTRACTORS[wave][a][j % 3];
-      list.push({ id: d.id, muster: "d" + (i + 1), app: a, target: d.name, distraktor: true });
+      list.push({ id: d.id, muster: "d" + (i + 1), app: a, target: d.name, distraktor: true, ctx: d.ctx });
     }
     var rnd = seededRandom(hashCode(String(code || "") + "|" + wave));
     for (var k = list.length - 1; k > 0; k--) {

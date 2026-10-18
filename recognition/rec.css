@@ -213,3 +213,15 @@
 .tt .post .meta .user .rec-mark { display: inline-flex; padding: 0 3px; }
 .tt .post .side > .rec-mark { display: flex; flex-direction: column; align-items: center; padding: 2px; }
 .tt .post .side > .rec-mark > span { display: flex; flex-direction: column; align-items: center; }
+
+/* 18.10.: klarere Ziele in der Wiedererkennung */
+/* Autoplay: nur der laufende Fortschrittsbalken ist umrahmt, Balken etwas kräftiger */
+.rl .bar.rec-bar { height: 6px; bottom: 14px; }
+.rl .bar.rec-bar.rec-mark-abs { outline: 3px solid #d6342c; outline-offset: 7px; border-radius: 3px; z-index: 4; }
+/* Endloses Scrollen: das nächste Video ragt deutlich sichtbar herein, mit Name und Beschreibung */
+.rec-peek { height: 190px; }
+.feed:has(.rec-peek) .track { transform: translateY(-190px); }
+.rec-peek-user { display: flex; flex-direction: column; gap: 3px; }
+.rec-peek-user span { font-weight: 400; font-size: 13px; }
+/* Empfehlungen: Rahmen um den ganzen vorgeschlagenen Beitrag */
+.ig-content > .rec-mark-area { margin: 4px; }

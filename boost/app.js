@@ -12,7 +12,7 @@
  * Schulung abgeschlossen = mark_done BOOST (am Ende der Zusammenfassung). Wer danach
  * abbricht und wiederkommt, steigt direkt beim neutralen Teil bzw. beim Plan ein.
  *
- * Ablauf je Muster (state.sub): ask (Vorhersagen) → try (Ausprobieren, vor dem Tippen)
+ * Ablauf je Muster (state.sub): ask (Antwort) → try (Ausprobieren, vor dem Tippen)
  * → react (Ausprobieren, App hat reagiert) → explain (Erklärung).
  * Übungen: ask → react. Quiz: ask → explain. Plan: drei Seiten.
  *
@@ -375,14 +375,14 @@
     }).join("") + "</div>";
   }
   // Ein Instagram-Beitrag; tgt(key, html) umrahmt Stellen für Übung 1; headAttr markiert die Kopfzeile
-  function igPostHtml(post, i, tgt, headAttr) {
+  function igPostHtml(post, i, tgt, headAttr, postAttr) {
     tgt = tgt || function (k, h) { return h; };
     var m = /^♡\s*([^·]+?)\s*·\s*(.*)$/.exec(post.line || "");
     var likes = m ? m[1] : "", cap = m ? m[2] : (post.line || "");
     var n = Number(String(likes).replace(/\D/g, "")) || 0;
     var friend = post.user === "lena_k" ? "jonas.r" : "lena_k";
     var act = function (icon, count) { return '<span class="ig-act">' + icon + (count ? "<span>" + esc(count) + "</span>" : "") + "</span>"; };
-    return '<div class="ig-post"><div class="ig-post-head"' + (headAttr || "") + ">" + avatar(post.user) +
+    return '<div class="ig-post"' + (postAttr || "") + '><div class="ig-post-head"' + (headAttr || "") + ">" + avatar(post.user) +
       '<span class="ig-who">' + tgt("user-" + i, '<span class="user">' + esc(post.user) + "</span>") +
       (post.suggested ? tgt("sugg-" + i, '<span class="sugg">' + esc(post.suggested) + "</span>") : "") + "</span>" +
       '<span class="ig-dots" aria-hidden="true">⋯</span></div>' +
@@ -457,7 +457,7 @@
         if (d.stories !== false) html += igStoryBar(d.stories);
         d.posts.forEach(function (post, i) {
           if (d.scrollFeed && isB && i === 1) html += '<div class="ig-seam"' + markAttr("seam-1") + "></div>";
-          html += igPostHtml(post, i, tgt, markAttr("head-" + i));
+          html += igPostHtml(post, i, tgt, markAttr("head-" + i), markAttr("post-" + i));
         });
         if (d.more) {
           html += tgt("edge", '<div class="ig-post ig-more"><div class="ig-post-head">' + avatar(d.more.user) + '<span class="user">' +
@@ -616,7 +616,7 @@
           '<div class="pw-meter"><span></span><span></span><span></span><span></span></div><div class="pw-meter-label">Stärke: <b>' + esc(d.meterLabel) + "</b></div>" +
           '<div class="pw-btn">Konto anlegen</div></div>';
         if (isB) {
-          html += '<div class="pw-cracker" data-mark="inside"><div class="pw-cracker-head">Rate-Programm</div>' +
+          html += '<div class="pw-cracker" data-mark="inside"><div class="pw-cracker-head">Angriffsprogramm</div>' +
             d.tries.map(function (t, i) {
               var hit = i === d.tries.length - 1;
               return '<div class="pw-try' + (hit ? " hit" : "") + '"><span>' + esc(t) + "</span><span>" + (hit ? "Treffer" : "falsch") + "</span></div>";
@@ -658,7 +658,10 @@
     var small = wrap.getAttribute("data-size") === "small";
     var maxH = small ? Math.min(availH, Math.max(170, window.innerHeight * 0.3)) : availH;
     var s = Math.min(1, availW / DEVICE_W, maxH / DEVICE_H);
-    s = Math.max(small ? 0.2 : 0.42, s);
+    // Schritt „Antwort“ (ask): Screen in voller Breite, die Frage steht darunter (Seite scrollt)
+    if (wrap.getAttribute("data-size") === "wide") s = Math.min(0.8, availW / DEVICE_W);
+    // Ausprobieren/Ergebnis: nicht kleiner als 0.62, lieber scrollt die Seite ein Stück (18.10.)
+    s = Math.max(small ? 0.2 : Math.min(0.62, availW / DEVICE_W), s);
     wrap.classList.add("no-anim");
     dev.style.transform = "scale(" + s.toFixed(4) + ")";
     wrap.style.width = Math.round(DEVICE_W * s) + "px";
@@ -789,7 +792,6 @@
     app.innerHTML = '<div class="page tp"><div class="tp-body start-body">' +
       "<h1>" + esc(S.title) + "</h1><p>" + rich(S.lead) + "</p>" +
       '<ul class="start-list">' + S.points.map(function (t) { return "<li>" + rich(t) + "</li>"; }).join("") + "</ul>" +
-      '<div class="start-demo">' + stepperHtml(-1) + "</div>" +
       '<p class="start-note">' + esc(S.note) + "</p></div>" +
       '<div class="lp-foot"><button class="btn" id="next" type="button">' + esc(S.button) + "</button></div></div>";
     focusFirst("h1");
@@ -821,7 +823,7 @@
   }
   function sizeFor(p, phase) {
     if (phase === "explain") return "small";
-    if (phase === "ask" && p.type !== "multi") return "small";
+    if (phase === "ask" && p.type !== "multi") return "wide"; // groß, Frage darunter (18.10.)
     return "full";
   }
   function ctxFor(p, phase) {
@@ -844,7 +846,7 @@
     if (phase === "try") {
       var mine = p.type === "multi" ? fill(UI.yourSelection, { n: (r.selected || []).length })
         : fill(UI.yourPrediction, { a: p.options[(r.answer || 1) - 1] });
-      return '<div class="try-card"><p class="try-mine">' + esc(mine) + '</p><p class="try-hint" id="callout">' + esc(UI.tryHint) + "</p></div>";
+      return '<div class="try-card"><p class="try-mine">' + esc(mine) + '</p>' + (p.tryText ? '<p class="try-hint" id="callout">' + esc(p.tryText) + "</p>" : "") + "</div>";
     }
     if (phase === "react") {
       var text = p.type === "multi" ? (exportMode ? "" : fill(p.resultLine, { x: r.hits, y: r.falseAlarms })) : p.hint;
@@ -892,8 +894,7 @@
       });
       if (p.type !== "multi" && app.querySelector('input[name="ans"]:checked')) btn.disabled = false;
       btn.onclick = function () { fixAnswer(pg); };
-      addRelookButton(pg);
-      focusFirst(p.type === "multi" ? "#ctx" : "#q");
+      focusFirst("#ctx");
     } else if (phase === "try") {
       btn.textContent = UI.btnTry;
       app.querySelectorAll(".lp-stage .note").forEach(function (el) { el.disabled = true; });
@@ -930,7 +931,7 @@
     addReviewNote();
   }
 
-  // Schritt 1 abschließen: Vorhersage festlegen
+  // Schritt 1 abschließen: Antwort festlegen
   function fixAnswer(pg) {
     var p = pg.pattern;
     var btn = app.querySelector("#main");
@@ -987,37 +988,6 @@
         onChange();
       });
     });
-  }
-
-  // „Bild vergrößern“: Screen (Zustand A) in voller Größe über der Frage; ein Tipp führt zurück
-  function addRelookButton(pg) {
-    var p = pg.pattern;
-    if (p.type === "multi") return;
-    var panel = app.querySelector(".lp-panel");
-    if (!panel || panel.querySelector(".relook")) return;
-    var tpl = SCREENS[p.screen];
-    var b = document.createElement("button");
-    b.type = "button";
-    b.className = "relook";
-    b.textContent = UI.relook;
-    b.addEventListener("click", function () {
-      var ov = document.createElement("div");
-      ov.className = "relook-overlay";
-      ov.setAttribute("role", "dialog");
-      ov.setAttribute("aria-label", "Screen in voller Größe. Tippen zum Schließen.");
-      ov.innerHTML = '<div class="relook-stage">' + deviceHtml(tpl.cls, tpl.render(p, false, {}), tpl.scroll && tpl.scroll()) +
-        '</div><p class="relook-hint">Tippen, um zur Frage zurückzukehren</p>';
-      document.body.appendChild(ov);
-      applyAssets(ov);
-      var wrap = ov.querySelector(".device-wrap"), dev = wrap.firstChild;
-      var s = Math.min(1, (window.innerWidth - 32) / DEVICE_W, (window.innerHeight - 90) / DEVICE_H);
-      dev.style.transform = "scale(" + s.toFixed(4) + ")";
-      wrap.classList.add("no-anim");
-      wrap.style.width = Math.round(DEVICE_W * s) + "px";
-      wrap.style.height = Math.round(DEVICE_H * s) + "px";
-      ov.addEventListener("click", function () { ov.remove(); });
-    });
-    panel.insertBefore(b, panel.firstChild);
   }
 
   // ── Übungen ────────────────────────────────────────────

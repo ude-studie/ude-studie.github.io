@@ -193,7 +193,8 @@ window.ITEMS.T0 = {
   },
   t17: {
     title: "Die Elemente noch einmal",
-    intro: "Zu jedem Element zwei kurze Fragen. Unter jedem Bild kannst du es vergrößern.",
+    intro: "Vier der Elemente siehst du hier noch einmal. Zu jedem zwei kurze Fragen.", // ENTWURF (18.10.)
+    elementOf: "Element {x} von {n}", // ENTWURF (18.10.)
     AK01: "Wie stark würde dich dieses Element dazu bringen, die App länger oder öfter zu nutzen?",
     AK01_skala: [
       { v: 1, label: "gar nicht" }, { v: 2, label: "kaum" }, { v: 3, label: "etwas" },
@@ -356,7 +357,8 @@ window.ITEMS.T12 = {
     { v: "anderes", label: "anderes", text: true }
   ],
   SH02: "Magst du einen Screenshot davon hochladen?",
-  schlussTitle: "Zwei Fragen zum Schluss",
+  qu03Title: "Eine offene Frage", // ENTWURF (18.10.: QU03 vor der Wiedererkennung)
+  schlussTitle: "Eine letzte Frage", // ENTWURF (18.10.: QU04 allein am Ende)
   QU03: "Hat sich in den letzten Wochen etwas daran verändert, wie du deine Apps nutzt oder wie du sie wahrnimmst? Wenn ja, was und warum?", // ENTWURF (vorher „seit der Schulung“)
   QU04: "Was glaubst du, wollte diese Studie herausfinden?"
 };

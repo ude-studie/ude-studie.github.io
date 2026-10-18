@@ -74,17 +74,18 @@
       pages.push({ id: prefix + "-" + (i + 1), items: items });
     });
 
-    // Einfluss und Akzeptanz je Kernmuster (kleine Bilder mit „Bild vergrößern“), in der gezeigten Reihenfolge
+    // Einfluss und Akzeptanz je Kernmuster (Screens in voller Größe, seit 18.10.), in der gezeigten Reihenfolge
     pages.push({ id: prefix + "-AK", items: function () {
       var out = [
         { type: "title", text: T0.t17.title },
         { type: "text", text: T0.t17.intro }
       ];
-      set.forEach(function (entry) {
-        if (entry.distraktor) return;
+      var core = set.filter(function (e) { return !e.distraktor; });
+      core.forEach(function (entry, k) {
         var meta = { muster: entry.muster, app: entry.app, screen: entry.id, position: entry.position, welle: wave };
         if (entry.fallback) meta.fallback = true;
-        out.push({ type: "screen", entry: entry, mini: true });
+        out.push({ type: "subtitle", text: fill(T0.t17.elementOf, { x: k + 1, n: core.length }) });
+        out.push({ type: "screen", entry: entry });
         out.push({ type: "radio", key: "AK01_" + entry.muster, label: T0.t17.AK01,
                    options: T0.t17.AK01_skala, required: true, meta: meta });
         out.push({ type: "radio", key: "AK02_" + entry.muster, label: T0.t17.AK02,

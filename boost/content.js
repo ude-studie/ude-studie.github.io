@@ -5,7 +5,7 @@
  * v7 (Umbau-Auftrag Etappe 5):
  *  - nur noch die vier Kernmuster, in dieser Reihenfolge: 1 Endloses Scrollen →
  *    4 Autoplay → 3 Empfehlungen nach Schwäche → 6 Rückhol-Benachrichtigungen
- *  - je Muster drei Schritte: Vorhersagen → Ausprobieren → Erklärung
+ *  - je Muster drei Schritte: Antwort → Ausprobieren → Erklärung
  *    (Einschätzen und die Ablenker sind gestrichen; die Messung steckt jetzt im Fragebogen)
  *  - Startseite „So läuft die Schulung ab“, zwei Übungen, Einordnung, Zusammenfassung
  *  - danach je Gruppe: neutraler Teil (filler, nur G3) bzw. Wenn-Dann-Plan (plan, nur G4)
@@ -17,7 +17,7 @@
  *   order            Vorrang der Apps: gezeigt wird die erste App dieser Reihe, die die Person nutzt.
  *                    Gibt es für diese App keinen Screen (z. B. Snapchat), kommt der Instagram-Screen
  *                    mit dem Hinweis „Bei … funktioniert das genauso.“
- *   question, options, correct   Vorhersagefrage, drei Antworten (Nummern 1–3), richtige Nummer.
+ *   question, options, correct   Frage, drei Antworten (Nummern 1–3), richtige Nummer.
  *                    Eine Variante darf eine eigene question haben.
  *   name, was, wirkung, zweck    Erklärung (gleich für alle Varianten)
  *   short, satz      Name und ein Satz für die Zusammenfassung
@@ -40,7 +40,7 @@ window.CONTENT = {
   ui: {
     unitOf: "Muster {x} von {n}",          // ENTWURF (Kopfzeile)
     exerciseOf: "Übung {x} von {n}",       // ENTWURF
-    steps: ["Vorhersagen", "Ausprobieren", "Erklärung"], // ENTWURF (Schrittanzeige)
+    steps: ["Antwort", "Ausprobieren", "Erklärung"], // Schrittanzeige (18.10.: „Antwort“ statt „Vorhersagen“)
     screenTag: "Nachgestellt",             // v7: wie in den Fragebögen (vorher „Screen“)
     statusTime: "21:42",
     fallbackNote: "Bei {app} funktioniert das genauso.",
@@ -60,11 +60,9 @@ window.CONTENT = {
     next: "Weiter",
     back: "Zurück",
     // Schritt „Ausprobieren“, vor dem Tippen (ENTWURF)
-    tryHint: "Tippe auf „Ausprobieren“ und sieh, was die App macht.",
-    yourPrediction: "Deine Vorhersage: {a}",          // ENTWURF
+    yourPrediction: "Deine Antwort: {a}",
     yourSelection: "Deine Auswahl: {n} Meldung(en)",  // ENTWURF
     multiHint: "Du kannst eine oder mehrere Meldungen antippen.", // ENTWURF
-    relook: "Bild vergrößern",
     reviewNote: "Diesen Schritt hast du schon abgeschlossen. Deine Antwort bleibt gespeichert.",
     markPrefix: "Markierung: ",
     spotPrefix: "Stelle ",
@@ -80,7 +78,7 @@ window.CONTENT = {
     lead: "In dieser kurzen Schulung geht es darum, wie Social-Media-Apps gebaut sind.",
     points: [
       "Es kommen **4 Muster** aus deinen Apps.",
-      "Jedes Muster hat **3 Schritte:** ① Vorhersagen ② Ausprobieren ③ Erklärung",
+      "Jedes Muster hat **3 Schritte:** ① Antwort ② Ausprobieren ③ Erklärung",
       "Am Ende kommen **2 kurze Übungen**.",
       "Dauer: etwa **10 Minuten**."
     ],
@@ -109,6 +107,7 @@ window.CONTENT = {
           screen: "tiktok-feed",
           ctxA: "TikTok, Für-dich-Feed. Du bist bei Video 40.",
           ctxB: "Du hast weitergewischt. Das nächste Video war schon geladen.",
+          tryText: "„Ausprobieren“ wischt zum nächsten Video.",
           hint: "Hier könnte der Feed enden. Stattdessen lädt die App beim Scrollen immer neue Beiträge nach.",
           markLabel: "Unterkante des Beitrags, der Übergang zum nächsten Beitrag",
           data: {
@@ -126,6 +125,7 @@ window.CONTENT = {
           screen: "ig-feed",
           ctxA: "Dein Instagram-Feed. Du bist bei Beitrag 40.",
           ctxB: "Du hast weitergescrollt. Der nächste Beitrag war schon geladen.",
+          tryText: "„Ausprobieren“ scrollt im Feed weiter.",
           hint: "Hier könnte der Feed enden. Stattdessen lädt die App beim Scrollen immer neue Beiträge nach.",
           markLabel: "Der nächste Beitrag, den die App schon nachgeladen hat",
           data: {
@@ -162,6 +162,7 @@ window.CONTENT = {
           screen: "reels",
           ctxA: "Instagram Reels. Ein Video läuft gerade.",
           ctxB: "Du hast weitergescrollt. Das nächste Video läuft schon.",
+          tryText: "„Ausprobieren“ scrollt zum nächsten Video.",
           hint: "Das Video ist von selbst gestartet und beginnt am Ende von vorn. Du musst nichts tun, damit es weiterläuft.",
           markLabel: "Fortschrittsbalken des Videos, es läuft bereits",
           data: {
@@ -176,6 +177,7 @@ window.CONTENT = {
           screen: "reels",
           ctxA: "TikTok, Für-dich-Feed. Ein Video läuft gerade.",
           ctxB: "Du hast weitergescrollt. Das nächste Video läuft schon.",
+          tryText: "„Ausprobieren“ scrollt zum nächsten Video.",
           hint: "Das Video ist von selbst gestartet und beginnt am Ende von vorn. Du musst nichts tun, damit es weiterläuft.",
           markLabel: "Fortschrittsbalken des Videos, es läuft bereits",
           data: {
@@ -211,16 +213,17 @@ window.CONTENT = {
           screen: "ig-feed",
           ctxA: "Dein Instagram-Feed. Du folgst tom.reist.",
           ctxB: "mia.kocht steht ganz oben, obwohl du ihr nicht folgst.",
+          tryText: "„Ausprobieren“ zeigt, warum der Beitrag von mia.kocht oben steht.",
           hint: "Du folgst mia.kocht nicht. Die App zeigt dir den Beitrag, weil du bei Kochvideos lange hängen bleibst. Einziger Hinweis: das kleine „Vorgeschlagen“.",
-          markLabel: "Kopfzeile des Beitrags von mia.kocht mit dem Hinweis „Vorgeschlagen“",
+          markLabel: "Der vorgeschlagene Beitrag von mia.kocht",
           data: {
             posts: [
               { user: "mia.kocht", suggested: "Vorgeschlagen", line: "♡ 1.204 · Pasta in 10 Minuten", asset: "foto-mia-pasta" },
               { user: "tom.reist", line: "♡ 856 · Lissabon im Oktober", asset: "foto-tom-lissabon" },
               { user: "jonas.r", line: "♡ 41 · Erste Vorlesung im Semester", asset: "foto-hoersaal" }
             ],
-            mark: "head-0",
-            markPlace: "below"
+            mark: "post-0",
+            markPlace: "inside"
           }
         },
         tt: {
@@ -228,6 +231,7 @@ window.CONTENT = {
           question: "Warum zeigt dir die App gerade dieses Video, obwohl du ihr nicht folgst?",
           ctxA: "TikTok, Für-dich-Feed. Du folgst @mia.kocht nicht.",
           ctxB: "Das Video stammt von einem Konto, dem du nicht folgst.",
+          tryText: "„Ausprobieren“ zeigt, warum die App dir dieses Video zeigt.",
           hint: "Im Für-dich-Feed wählt die App jedes Video danach aus, wie lange du bei ähnlichen Videos geblieben bist.",
           markLabel: "Reiter „Für dich“ oben im Screen",
           data: {
@@ -246,7 +250,7 @@ window.CONTENT = {
     },
 
     // ───────────── Muster 6: Rückhol-Benachrichtigungen (Sperrbildschirm) ─────────────
-    // Immer gezeigt. Die Auswahl per Antippen ist die Vorhersage. Sieben Meldungen, zwei von
+    // Immer gezeigt. Die Auswahl per Antippen ist die Antwort. Sieben Meldungen, zwei von
     // Menschen (humanPositions), fünf von der App, nur aus den Pools der genutzten Apps, fest
     // nach Teilnehmercode. Richtig nur, wenn genau die beiden Meldungen von Menschen getippt sind.
     {
@@ -267,6 +271,7 @@ window.CONTENT = {
           ctxAsk: "Tipp die Meldungen an, die von einer Person kommen.",
           ctxB: "2 von 7 Meldungen kamen von einer Person.",
           ctxBYou: "Du hast {n} angetippt.",
+          tryText: "„Ausprobieren“ zeigt, welche Meldungen wirklich von einer Person kamen.",
           resultLine: "Richtig angetippt: {x} von 2. Falsch angetippt: {y}.",
           markLabel: "Meldungen mit Absender",
           data: {
@@ -394,7 +399,7 @@ window.CONTENT = {
 
   zusammenfassung: {
     title: "Die vier Muster aus deiner Schulung", // ENTWURF
-    scores: "Deine Vorhersagen: {x} von {n} richtig. In den Übungen: {y} von {max} Punkten.", // ENTWURF
+    scores: "Deine Antworten: {x} von {n} richtig. In den Übungen: {y} von {max} Punkten.", // ENTWURF
     // Schlusssatz je Fortsetzung (ENTWURF). v7 ohne „Was du daraus machst, entscheidest du selbst.“
     outroMore: "Gleich folgt noch ein kurzer Teil.",
     outroEnd: "Danke, dass du dir die Schulung angesehen hast.",
