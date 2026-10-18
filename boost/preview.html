@@ -59,8 +59,6 @@
     units.forEach(function (u, i) { sections.push([(modus === "g2" ? "Thema " : "Muster ") + (i + 1), ["A", "T", "B", "E"].map(function (s) { return "p" + u + s; })]); });
     sections.push(["Übungen", ["W1A", "W1B", "W2A", "W2B"]]);
     sections.push(["Einordnung und Zusammenfassung", ["einordnung", "zusammenfassung"]]);
-    if (modus === "g3") sections.push(["Neutraler Teil (Quiz)", ["q1A", "q1E", "q2A", "q2E", "q3A", "q3E"]]);
-    if (modus === "g4") sections.push(["Wenn-Dann-Plan", ["plan1", "plan2", "plan3"]]);
     out.innerHTML = "";
     sections.forEach(function (s) {
       var h = document.createElement("h2"); h.textContent = s[0]; out.appendChild(h);

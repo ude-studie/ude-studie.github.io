@@ -1218,3 +1218,7 @@ div.card { cursor: default; }
 .q-hint.in-stage { position: sticky; bottom: 10px; left: auto; align-self: center; flex: 0 0 auto; margin: -46px 0 0;
   transform: none; animation-name: q-hint-bob-y; }
 @keyframes q-hint-bob-y { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(4px); } }
+
+/* G4 (18.10.): vierter Abschnitt der Erklärung und Regeln in der Zusammenfassung */
+.lines > div.regel { background: var(--primary-soft); border-top: 0; border-radius: 12px; padding: 12px 14px; margin: 6px -6px 12px; }
+.sum-rules-title { font-size: 1.125rem; color: var(--primary); margin: 18px 0 8px; }

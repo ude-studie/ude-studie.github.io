@@ -12,8 +12,8 @@
  * Stand v4 (18.10.2026): vier Gruppen. Ablauf je Person:
  *   R → T0 → Zuteilung (assign_group) → G1: Warteseite
  *                                      → G2: Übergang → Passwort-Schulung (boost/, Welle PLACEBO)
- *                                      → G3: Übergang → Schulung + neutraler Teil (BOOST, FILLER)
- *                                      → G4: Übergang → Schulung + Wenn-Dann-Plan (BOOST, PLAN)
+ *                                      → G3: Übergang → Schulung, rein erklärend (BOOST)
+ *                                      → G4: Übergang → Schulung mit Wenn-dann-Regeln (BOOST)
  *   → [nur Pilot: Rückmeldung FB] → Warteseite → T1 (7 Tage offen) → Warteseite
  *   → T2 (7 Tage offen) → Abschluss; G1/G2 bekommen dort die Schulung freiwillig (POST).
  * Testschalter: ?pilot=1 (Wartezeiten aufheben, &group=G3 erzwingt eine Gruppe),
@@ -998,7 +998,7 @@
     // wenn T1 schon offen ist, macht mit T1 weiter (Zeitplan ab der Zuteilung).
     var needsIntervention = p.grp !== "G1" && !p.intervention_at;
     if (needsIntervention && (ctx.pilot || !(now >= ms(p.t1_opens)))) {
-      if (p.boost_done) { handoff(false); return; } // Schulung fertig, neutraler Teil bzw. Plan fehlt noch
+      if (p.boost_done) { handoff(false); return; } // Schulung fertig, Intervention noch nicht vermerkt
       showTransition();
       return;
     }

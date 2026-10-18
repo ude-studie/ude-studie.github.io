@@ -8,7 +8,8 @@
  *  - je Muster drei Schritte: Antwort → Ausprobieren → Erklärung
  *    (Einschätzen und die Ablenker sind gestrichen; die Messung steckt jetzt im Fragebogen)
  *  - Startseite „So läuft die Schulung ab“, zwei Übungen, Einordnung, Zusammenfassung
- *  - danach je Gruppe: neutraler Teil (filler, nur G3) bzw. Wenn-Dann-Plan (plan, nur G4)
+ *  - G3 und G4 dieselbe Schulung; G4 zusätzlich je Erklärung „So kannst du gegensteuern“ (regel)
+ *    und die vier Regeln in der Zusammenfassung (seit 18.10.; Plan-Modul und Quiz gestrichen)
  *  - Muster 2, 5, 7, 8 sowie Facebook/X sind aus dem Code entfernt (Sicherung: _Sicherung_Schulung-App_v3_2026-10-18)
  *  - einheitliche Beispielkonten in allen Screens: jonas.r, mia.kocht, tom.reist, lena_k
  *
@@ -50,6 +51,7 @@ window.CONTENT = {
     labelWas: "So funktioniert es",
     labelWirkung: "Warum es wirkt",
     labelZweck: "Wozu es dient",
+    labelRegel: "So kannst du gegensteuern", // nur G4 (ENTWURF)
     // Knöpfe (ENTWURF, Wortlaut aus dem Umbau-Auftrag)
     btnFix: "Antwort festlegen",
     btnTry: "Ausprobieren",
@@ -102,6 +104,7 @@ window.CONTENT = {
       was: "Der Feed hat kein Ende und keine Seitenzahlen. Während du scrollst, lädt die App im Hintergrund schon die nächsten Beiträge nach.",
       wirkung: "Ohne Ende fehlt ein Signal zum Aufhören (Stopping Cue), wie das Ende eines Kapitels oder einer Folge. Aufhören wird so zu einer aktiven Entscheidung, und die schiebt man leicht immer weiter auf.",
       zweck: "Mehr Zeit im Feed heißt mehr Platz für Werbung zwischen den Beiträgen.",
+      regel: "Wenn du merkst, dass du schon eine Weile scrollst, ohne etwas Bestimmtes zu suchen, dann halte kurz an und entscheide bewusst: weiter oder Schluss.", // nur G4, ENTWURF
       variants: {
         tt: {
           screen: "tiktok-feed",
@@ -157,6 +160,7 @@ window.CONTENT = {
       was: "Videos starten von selbst, sobald sie im Bild sind, und laufen in Schleife. Einen Play-Knopf gibt es nicht.",
       wirkung: "Die App macht Weiterschauen zur Voreinstellung. Menschen bleiben meist bei der Voreinstellung (Default-Effekt): Anfangen kostet nichts, nur Aufhören braucht eine Entscheidung.",
       zweck: "Videos, die von selbst starten, werden seltener übersprungen. Das bringt mehr Sehzeit und mehr Werbung.",
+      regel: "Wenn du merkst, dass du nur weiterschaust, weil das nächste Video schon läuft, dann halte kurz an und entscheide bewusst: weiterschauen oder weglegen.", // nur G4, ENTWURF
       variants: {
         ig: {
           screen: "reels",
@@ -208,6 +212,7 @@ window.CONTENT = {
       was: "Zwischen Beiträgen von Konten, denen du folgst, zeigt die App Inhalte fremder Konten, nur mit „Vorgeschlagen“ markiert. Ausgewählt werden sie danach, wie lange du bei ähnlichen Inhalten hängen bleibst.",
       wirkung: "Die Auswahl folgt deinem Verhalten, nicht deinen Absichten: Was dich kurz fesselt, bekommst du öfter, auch wenn du es eigentlich nicht sehen willst. Weil die Vorschläge so gut passen, halten wir sie für unseren eigenen Geschmack.",
       zweck: "Passende Vorschläge halten dich länger im Feed. Die For You Page bei TikTok besteht nur daraus.",
+      regel: "Wenn dir die App etwas von einem Konto zeigt, dem du nicht folgst, dann frag dich kurz: Will ich das gerade sehen?", // nur G4, ENTWURF
       variants: {
         ig: {
           screen: "ig-feed",
@@ -264,6 +269,7 @@ window.CONTENT = {
       was: "Auf dem Sperrbildschirm sehen alle Meldungen gleich aus. Nur wenige kommen von Menschen. Die meisten verschickt die App von sich aus, und das ist ab Werk eingeschaltet.",
       wirkung: "Eine Meldung, die nach einer persönlichen Nachricht aussieht, weckt Neugier und die Sorge, etwas zu verpassen (Fear of Missing Out). Ob wirklich jemand etwas von dir will, siehst du erst, wenn die App schon offen ist.",
       zweck: "Jede Meldung ist ein Anlass, die App wieder zu öffnen. Mehr Meldungen, mehr Besuche.",
+      regel: "Wenn eine Meldung nicht von einer Person kommt, dann entscheide bewusst, ob du die App jetzt öffnen willst, statt einfach draufzutippen.", // nur G4, ENTWURF
       variants: {
         lock: {
           screen: "lockscreen",
@@ -400,91 +406,11 @@ window.CONTENT = {
   zusammenfassung: {
     title: "Die vier Muster aus deiner Schulung", // ENTWURF
     scores: "Deine Antworten: {x} von {n} richtig. In den Übungen: {y} von {max} Punkten.", // ENTWURF
-    // Schlusssatz je Fortsetzung (ENTWURF). v7 ohne „Was du daraus machst, entscheidest du selbst.“
-    outroMore: "Gleich folgt noch ein kurzer Teil.",
+    // Schluss (ENTWURF, seit 18.10.): G4 sieht vorher die vier Regeln, G3 den Satz zur eigenen Entscheidung
+    rulesTitle: "So kannst du gegensteuern", // nur G4
+    outroG3: "Was du daraus machst, entscheidest du selbst.", // nur G3 (und POST)
     outroEnd: "Danke, dass du dir die Schulung angesehen hast.",
-    button: "Weiter",
     buttonEnd: "Fertig"
-  },
-
-  // ───────────── Neutraler Teil (nur G3, Welle FILLER) ─────────────
-  // ENTWURF. Kein Bezug zur eigenen Nutzung, keine Handlungsaufforderung, nichts über
-  // Social-Media-Gestaltung, Bildschirmzeit, Aufmerksamkeit oder Selbstkontrolle.
-  filler: {
-    title: "Ein kurzes Quiz zur Geschichte des Handys",
-    lead: "Zum Abschluss drei Fragen zur Geschichte des Handys und des Mobilfunks.",
-    of: "Frage {x} von {n}",
-    items: [
-      {
-        id: "Q1",
-        question: "Wann wurde zum ersten Mal mit einem tragbaren Mobiltelefon telefoniert?",
-        options: ["1953", "1973", "1993"],
-        correct: 2,
-        fact: "Am 3. April 1973 telefonierte der Motorola-Ingenieur Martin Cooper auf einer Straße in New York mit einem tragbaren Telefon. Sein Gerät war etwa so groß wie ein Ziegelstein und wog über ein Kilogramm. Zu kaufen gab es solche Handys erst zehn Jahre später, 1983."
-      },
-      {
-        id: "Q2",
-        question: "Wie lautete die erste SMS, die 1992 verschickt wurde?",
-        options: ["„Hallo, wie geht's?“", "„Merry Christmas“", "„Test 1, 2, 3“"],
-        correct: 2,
-        fact: "Am 3. Dezember 1992 schickte der Ingenieur Neil Papworth in Großbritannien die erste SMS von einem Computer an ein Handy. Der Text lautete „Merry Christmas“. Eine SMS durfte bis zu 160 Zeichen lang sein."
-      },
-      {
-        id: "Q3",
-        question: "In welchem Jahr gingen in Deutschland die ersten digitalen Handynetze (D-Netze) an den Start?",
-        options: ["1985", "1992", "2001"],
-        correct: 2,
-        fact: "1992 starteten in Deutschland die ersten digitalen Mobilfunknetze nach dem GSM-Standard, D1 und D2. Vorher gab es analoge Netze, deren Telefone groß und teuer waren und oft fest im Auto eingebaut wurden."
-      }
-    ],
-    verdictRight: "Richtig.",
-    verdictWrong: "Nicht ganz. Richtig ist: {c}.",
-    buttonLast: "Fertig"
-  },
-
-  // ───────────── Wenn-Dann-Plan (nur G4, Welle PLAN) ─────────────
-  // ENTWURF. Beispiel für Autoplay aus dem Umbau-Auftrag.
-  plan: {
-    title1: "Dein Plan, Schritt 1 von 3",
-    q1: "Welches der vier Muster erwischt dich am häufigsten?",
-    title2: "Dein Plan, Schritt 2 von 3",
-    lead2: "Bau dir einen Plan für dieses Muster: eine Situation und was du dann tust.",
-    qWenn: "Wenn …",
-    qDann: "dann …",
-    ownWenn: "eigene Situation",
-    ownDann: "eigene Reaktion",
-    ownWennPh: "Wenn …",
-    ownDannPh: "dann …",
-    title3: "Dein Plan, Schritt 3 von 3",
-    lead3: "Ich nehme mir vor:",
-    screenshotHint: "Tipp: Mach einen Screenshot davon, dann hast du deinen Plan immer dabei.",
-    button3: "Plan speichern",
-    byPattern: {
-      1: {
-        wenn: ["ich merke, dass ich schon länger scrolle, als ich wollte",
-          "ich die App nur kurz für eine Sache geöffnet habe und danach weiterscrolle",
-          "ich abends im Bett anfange zu scrollen"],
-        dann: ["lege ich das Handy weg", "schließe ich die App und mache etwas anderes", "stelle ich mir einen Timer auf fünf Minuten"]
-      },
-      4: {
-        wenn: ["ein Video von selbst startet, das ich nicht gesucht habe",
-          "nach einem Video gleich das nächste läuft",
-          "ich merke, dass ich nur noch zuschaue, weil es weiterläuft"],
-        dann: ["schließe ich die App", "lege ich das Handy weg", "frage ich mich, ob ich das wirklich sehen will"]
-      },
-      3: {
-        wenn: ["mir ein Beitrag von einem Konto gezeigt wird, dem ich nicht folge",
-          "mich ein vorgeschlagenes Video länger festhält, als ich wollte",
-          "ich auf der For You Page lande, obwohl ich nur kurz etwas nachsehen wollte"],
-        dann: ["scrolle ich nicht weiter und schließe die App", "tippe ich auf „Nicht interessiert“", "wechsle ich zu den Beiträgen von Leuten, denen ich folge"]
-      },
-      6: {
-        wenn: ["eine Meldung kommt, die nicht von einer Person ist",
-          "mein Handy beim Lernen oder Arbeiten eine Meldung zeigt",
-          "eine Meldung mir sagt, dass ich etwas verpasst habe"],
-        dann: ["wische ich sie weg, ohne die App zu öffnen", "schaue ich erst nach, wenn ich fertig bin", "schalte ich diese Art von Meldungen in den Einstellungen aus"]
-      }
-    }
   },
 
   // Farbverläufe als Platzhalter, je Bild-Kennung (Fotos in assets/, CC0)

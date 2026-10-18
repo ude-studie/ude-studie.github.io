@@ -1,25 +1,25 @@
 /*
  * app.js – Ablauf, Zustände, Speichern und Rücksprung der Intervention (boost-v7, 18.10.2026).
- * Texte stehen in content.js (Schulung, neutraler Teil, Plan) und content-pw.js (Placebo).
+ * Texte stehen in content.js (Schulung) und content-pw.js (Placebo).
  *
  * Aufruf (vom Router in study.js): index.html?code=…&apps=ig,tt&return=…[&pilot=1][&dry=1][&nach=1]
  * Was gezeigt wird, entscheidet die Gruppe aus progress() – die Adresse verrät sie nicht:
- *   G3 → Schulung (Welle BOOST)                                  → mark_done INTERVENTION
- *        (neutraler Teil/Quiz FILLER seit 18.10. gestrichen, Entscheidung Daniel; Code bleibt ungenutzt)
- *   G4 → Schulung (Welle BOOST) → Wenn-Dann-Plan (PLAN)          → mark_done INTERVENTION
+ *   G3 → Schulung (Welle BOOST), rein erklärend                  → mark_done BOOST + INTERVENTION
+ *   G4 → dieselbe Schulung, je Erklärung zusätzlich „So kannst du gegensteuern“ (Wenn-dann-Regel)
+ *        und die vier Regeln in der Zusammenfassung              → mark_done BOOST + INTERVENTION
+ *        (seit 18.10.: Plan-Modul PLAN und Quiz FILLER gestrichen)
  *   G2 → Passwort-Schulung (Welle PLACEBO)                       → mark_done INTERVENTION
  *   nach=1 (G1/G2 nach T2) → Schulung freiwillig (Welle POST)    → mark_done POST
  *   G1 ohne nach=1 → sofort zurück (keine Intervention)
- * Schulung abgeschlossen = mark_done BOOST (am Ende der Zusammenfassung). Wer danach
- * abbricht und wiederkommt, steigt direkt beim neutralen Teil bzw. beim Plan ein.
+ * Schulung abgeschlossen = mark_done BOOST, dann INTERVENTION (beides bei „Fertig“ in der Zusammenfassung).
  *
  * Ablauf je Muster (state.sub): ask (Antwort) → try (Ausprobieren, vor dem Tippen)
  * → react (Ausprobieren, App hat reagiert) → explain (Erklärung).
- * Übungen: ask → react. Quiz: ask → explain. Plan: drei Seiten.
+ * Übungen: ask → react.
  *
  * Vorschau (preview.html): index.html?preview=<seite>[&modus=g3|g4|g2|post][&apps=…][&variant=<app>]
  *   <seite> = start, p1A/p1T/p1B/p1E … (A Frage, T Ausprobieren, B Reaktion, E Erklärung),
- *   W1A/W1B, W2A/W2B, einordnung, zusammenfassung, q1A/q1E …, plan1/plan2/plan3
+ *   W1A/W1B, W2A/W2B, einordnung, zusammenfassung
  */
 (function () {
   "use strict";
@@ -157,13 +157,6 @@
     C.recognition.forEach(function (r, i) { pages.push({ type: "recognition", key: r.id, item: r, index: i + 1 }); });
     pages.push({ type: "einordnung", key: "einordnung" });
     pages.push({ type: "zusammenfassung", key: "zusammenfassung" });
-    if (mode === "g4") {
-      ["plan1", "plan2", "plan3"].forEach(function (k) { pages.push({ type: k, key: k, extra: true }); });
-    }
-  }
-  function firstExtraPage() {
-    for (var i = 0; i < pages.length; i++) if (pages[i].extra) return i;
-    return pages.length - 1;
   }
 
   // ── Zustand ────────────────────────────────────────────
@@ -177,7 +170,7 @@
       apps: null, shown: null, startedAt: null, finishedAt: null,
       page: 0, sub: "look", maxPage: 0, maxSub: "look",
       pageStart: Date.now(), bStart: null,
-      patterns: {}, recognition: {}, quiz: {}, plan: {}, pageSeconds: {}
+      patterns: {}, recognition: {}, pageSeconds: {}
     };
   }
   function load() {
@@ -194,7 +187,6 @@
     if (!pg) return ["look"];
     if (pg.type === "pattern") return ["ask", "try", "react", "explain"];
     if (pg.type === "recognition") return ["ask", "react"];
-    if (pg.type === "quiz") return ["ask", "explain"];
     return ["look"];
   }
   function stepIndex(page, sub) {
@@ -727,9 +719,7 @@
     else if (pg.type === "pattern") renderPattern(pg);
     else if (pg.type === "recognition") renderRecognition(pg);
     else if (pg.type === "einordnung") renderEinordnung();
-    else if (pg.type === "zusammenfassung") renderSummary();
-    else if (pg.type === "quiz") renderQuiz(pg);
-    else renderPlan(pg);
+    else renderSummary();
     applyAssets(app);
     addBackButton();
     addContactLine();
@@ -881,7 +871,9 @@
         '<dl class="lines">' +
         "<div><dt>" + esc(UI.labelWas) + "</dt><dd>" + esc(p.was) + "</dd></div>" +
         "<div><dt>" + esc(UI.labelWirkung) + "</dt><dd>" + esc(p.wirkung) + "</dd></div>" +
-        "<div><dt>" + esc(UI.labelZweck) + "</dt><dd>" + esc(p.zweck) + "</dd></div></dl></section>";
+        "<div><dt>" + esc(UI.labelZweck) + "</dt><dd>" + esc(p.zweck) + "</dd></div>" +
+        (mode === "g4" && p.regel ? '<div class="regel"><dt>' + esc(UI.labelRegel) + "</dt><dd>" + esc(p.regel) + "</dd></div>" : "") +
+        "</dl></section>";
     }
     return "";
   }
@@ -933,7 +925,8 @@
           r.secondsC = secondsSince(state.pageStart);
           var s = pg.shown || {};
           dbSave("p" + p.id, "P" + p.id,
-            Object.assign({}, r, { app: s.app || p.targetApp, screen: s.screen || p.screenApp, fallback: !!(s.fallback || p.fallback) }),
+            Object.assign({}, r, { app: s.app || p.targetApp, screen: s.screen || p.screenApp, fallback: !!(s.fallback || p.fallback) },
+              mode === "g4" && p.regel ? { regel: true } : {}),
             (r.secondsA || 0) + (r.secondsB || 0) + (r.secondsC || 0));
         }
         goto(state.page + 1);
@@ -1222,31 +1215,32 @@
   }
   function renderSummary() {
     var Z = C.zusammenfassung;
-    var more = mode === "g4"; // nur G4 hat danach noch etwas (Plan); G3 endet hier (seit 18.10.)
     var list = '<ul class="sum-list">' + shownIds().map(function (id) {
       var d = patternDef(id);
       return "<li><b>" + esc(d.short) + "</b><span>" + esc(d.satz) + "</span></li>";
     }).join("") + "</ul>";
-    app.innerHTML = '<div class="page tp"><div class="tp-body"><h1>' + esc(Z.title) + "</h1>" + list +
+    // G4: die vier Regeln noch einmal; G3 (und POST): Satz zur eigenen Entscheidung (seit 18.10.)
+    var rules = mode === "g4" ? '<h2 class="sum-rules-title">' + esc(Z.rulesTitle) + '</h2><ul class="sum-list sum-rules">' +
+      shownIds().map(function (id) {
+        var d = patternDef(id);
+        return d.regel ? "<li><b>" + esc(d.short) + "</b><span>" + esc(d.regel) + "</span></li>" : "";
+      }).join("") + "</ul>" : "";
+    var outro = (mode === "g3" || mode === "post") && Z.outroG3 ? Z.outroG3 + " " + Z.outroEnd : Z.outroEnd;
+    app.innerHTML = '<div class="page tp"><div class="tp-body"><h1>' + esc(Z.title) + "</h1>" + list + rules +
       (exportMode ? "" : '<p class="tp-score">' + esc(fill(Z.scores, scores())) + "</p>") +
-      "<p>" + esc(more ? Z.outroMore : Z.outroEnd) + "</p></div>" +
-      '<div class="lp-foot"><button class="btn" id="finish" type="button">' + esc(more ? Z.button : Z.buttonEnd) + "</button>" +
+      "<p>" + esc(outro) + "</p></div>" +
+      '<div class="lp-foot"><button class="btn" id="finish" type="button">' + esc(Z.buttonEnd) + "</button>" +
       '<p class="status-line" id="status" role="status"></p></div></div>';
     focusFirst("h1");
     if (previewKey) return;
     app.querySelector("#finish").addEventListener("click", function (e) {
       var btn = e.currentTarget;
       btn.disabled = true;
-      if (isReview()) { goto(state.page + 1); return; }
+      if (isReview() && state.page < pages.length - 1) { goto(state.page + 1); return; }
       var result = finish();
       dbSave("zusammenfassung", "SUMMARY", result, state.pageSeconds.zusammenfassung);
-      if (more) {
-        // Schulung abgeschlossen; danach der Plan (G4)
-        Promise.resolve(markDone("BOOST")).then(function () { goto(state.page + 1); }, function () { goto(state.page + 1); });
-        return;
-      }
       var wave = mode === "post" ? "POST" : "INTERVENTION";
-      var pre = mode === "g3" ? Promise.resolve(markDone("BOOST")).catch(function () {}) : Promise.resolve();
+      var pre = (mode === "g3" || mode === "g4") ? Promise.resolve(markDone("BOOST")).catch(function () {}) : Promise.resolve();
       pre.then(function () { return markDone(wave); }).then(backToStudy, backToStudy);
     });
   }
@@ -1258,177 +1252,10 @@
       version: C.version, mode: mode,
       startedAt: state.startedAt, finishedAt: state.finishedAt,
       apps: state.apps || [], shown: state.shown || [], scores: scores(),
-      pageSeconds: { start: state.pageSeconds.start, einordnung: state.pageSeconds.einordnung, zusammenfassung: state.pageSeconds.zusammenfassung }
+      pageSeconds: { start: state.pageSeconds.start, einordnung: state.pageSeconds.einordnung, zusammenfassung: state.pageSeconds.zusammenfassung },
+      regeln: mode === "g4" ? shownIds().filter(function (id) { return !!patternDef(id).regel; }) : [] // Muster, deren Regel G4 gesehen hat
     };
   }
-  // Ende des neutralen Teils bzw. des Plans: Intervention abgeschlossen, zurück in die Studie
-  function finishIntervention(btn) {
-    if (btn) btn.disabled = true;
-    Promise.resolve(markDone("INTERVENTION")).then(backToStudy, backToStudy);
-  }
-
-  // ── Neutraler Teil (G3): kurzes Quiz ───────────────────
-  function renderQuiz(pg) {
-    var F = CT.filler, q = pg.item;
-    if (stepsOf(pg).indexOf(state.sub) < 0) state.sub = "ask";
-    var isE = state.sub === "explain";
-    var r = state.quiz[q.id];
-    var last = pg.index === F.items.length;
-    var body = '<fieldset class="q-card"><legend class="q" id="q">' + esc(q.question) + "</legend>" +
-      q.options.map(function (o, i) {
-        var checked = r && r.answer === i + 1 ? " checked" : "";
-        return '<label class="opt' + (isE && i + 1 === q.correct ? " is-correct" : "") + '"><input type="radio" name="ans" value="' + (i + 1) + '"' + checked +
-          (isE ? " disabled" : "") + "><span>" + esc(o) + "</span></label>";
-      }).join("") + "</fieldset>";
-    if (isE && r) {
-      body += '<section class="ex-card quiz-fact"><p class="verdict">' + esc(r.isCorrect ? F.verdictRight : fill(F.verdictWrong, { c: q.options[q.correct - 1] })) +
-        "</p><p>" + esc(q.fact) + "</p></section>";
-    }
-    app.innerHTML = '<div class="page lp">' + lpHead(fill(F.of, { x: pg.index, n: F.items.length }), "") +
-      '<main class="lp-stage quiz-stage">' + (pg.index === 1 ? '<h1 class="quiz-title">' + esc(F.title) + '</h1><p class="lp-ctx">' + esc(F.lead) + "</p>" : "") +
-      '<div class="lp-panel">' + body + "</div></main>" +
-      '<div class="lp-foot"><button class="btn" id="main" type="button"></button></div></div>';
-    var btn = app.querySelector("#main");
-    if (!isE) {
-      btn.textContent = UI.btnFix;
-      btn.disabled = !app.querySelector('input[name="ans"]:checked');
-      app.querySelectorAll('input[name="ans"]').forEach(function (inp) { inp.addEventListener("change", function () { btn.disabled = false; }); });
-      btn.onclick = function () {
-        if (isReview()) { stepForward(); return; }
-        var sel = app.querySelector('input[name="ans"]:checked');
-        if (!sel) return;
-        var ans = Number(sel.value);
-        state.quiz[q.id] = { id: q.id, answer: ans, correct: q.correct, isCorrect: ans === q.correct, secondsA: secondsSince(state.pageStart) };
-        state.sub = "explain";
-        state.pageStart = Date.now();
-        save();
-        render();
-      };
-      focusFirst("#q");
-    } else {
-      btn.textContent = last ? F.buttonLast : UI.next;
-      btn.onclick = function () {
-        if (!isReview() && r) {
-          r.secondsB = secondsSince(state.pageStart);
-          dbSaveWave("FILLER", q.id, q.id, r, (r.secondsA || 0) + r.secondsB);
-        }
-        if (last && !isReview()) { finishIntervention(btn); return; }
-        if (last) { finishIntervention(btn); return; }
-        goto(state.page + 1);
-      };
-      focusFirst(".quiz-fact");
-    }
-    if (isReview()) { app.querySelectorAll(".lp-panel input").forEach(function (el) { el.disabled = true; }); addReviewNote(); }
-  }
-
-  // ── Wenn-Dann-Plan (G4) ────────────────────────────────
-  function planSentence(pl) {
-    var P = CT.plan.byPattern[pl.muster] || { wenn: [], dann: [] };
-    var clean = function (t, word) {
-      return String(t || "").trim().replace(new RegExp("^" + word + "\\s+", "i"), "").replace(/^…\s*/, "").replace(/[.!…\s]+$/, "");
-    };
-    var w = pl.wenn === "eigen" ? clean(pl.wenn_eigen, "wenn") : P.wenn[pl.wenn - 1];
-    var d = pl.dann === "eigen" ? clean(pl.dann_eigen, "dann") : P.dann[pl.dann - 1];
-    return "Wenn " + w + ", dann " + d + ".";
-  }
-  // kleines Bild des Musters (Screen nach dem Ausprobieren)
-  function thumbHtml(id) {
-    var s = (state.shown || []).filter(function (e) { return e.id === id; })[0];
-    if (!s) return "";
-    var p = resolvePattern(s), tpl = SCREENS[p.screen];
-    return '<span class="plan-thumb" aria-hidden="true">' + deviceHtml(tpl.cls, tpl.render(p, true, {}), false) + "</span>";
-  }
-  function renderPlan(pg) {
-    var P = CT.plan, pl = state.plan;
-    var html = "", valid;
-    if (pg.type === "plan1") {
-      html = '<h1 class="quiz-title">' + esc(P.title1) + '</h1><fieldset class="q-card"><legend class="q" id="q">' + esc(P.q1) + "</legend>" +
-        shownIds().map(function (id) {
-          var d = patternDef(id);
-          return '<label class="opt plan-opt"><input type="radio" name="muster" value="' + id + '"' + (pl.muster === id ? " checked" : "") + ">" +
-            thumbHtml(id) + "<span>" + esc(d.short) + "</span></label>";
-        }).join("") + "</fieldset>";
-    } else if (pg.type === "plan2") {
-      var B = P.byPattern[pl.muster] || { wenn: [], dann: [] };
-      var group = function (name, title, list, ownLabel, ownPh, val, own) {
-        return '<fieldset class="q-card" data-group="' + name + '"><legend class="q">' + esc(title) + "</legend>" +
-          list.map(function (t, i) {
-            return '<label class="opt"><input type="radio" name="' + name + '" value="' + (i + 1) + '"' + (val === i + 1 ? " checked" : "") + "><span>" + esc(t) + "</span></label>";
-          }).join("") +
-          '<label class="opt"><input type="radio" name="' + name + '" value="eigen"' + (val === "eigen" ? " checked" : "") + "><span>" + esc(ownLabel) + "</span></label>" +
-          '<input type="text" class="plan-own" name="' + name + '-eigen" placeholder="' + esc(ownPh) + '" value="' + esc(own || "") + '"' + (val === "eigen" ? "" : " hidden") + ">" +
-          '<p class="q-err"></p></fieldset>';
-      };
-      html = '<h1 class="quiz-title">' + esc(P.title2) + '</h1><p class="lp-ctx">' + esc(P.lead2) + "</p>" +
-        group("wenn", P.qWenn, B.wenn, P.ownWenn, P.ownWennPh, pl.wenn, pl.wenn_eigen) +
-        group("dann", P.qDann, B.dann, P.ownDann, P.ownDannPh, pl.dann, pl.dann_eigen);
-    } else {
-      html = '<h1 class="quiz-title">' + esc(P.title3) + '</h1><section class="plan-card"><p class="plan-lead">' + esc(P.lead3) + "</p>" +
-        '<p class="plan-sentence">' + esc(planSentence(pl)) + "</p></section>" +
-        '<p class="tp-hint">' + esc(P.screenshotHint) + "</p>";
-    }
-    app.innerHTML = '<div class="page lp"><main class="lp-stage quiz-stage"><div class="lp-panel">' + html + "</div></main>" +
-      '<div class="lp-foot"><button class="btn" id="main" type="button"></button></div></div>';
-    applyAssets(app);
-    var btn = app.querySelector("#main");
-    var review = isReview();
-    if (pg.type === "plan1") {
-      btn.textContent = UI.next;
-      valid = function () { return !!app.querySelector('input[name="muster"]:checked'); };
-      app.querySelectorAll('input[name="muster"]').forEach(function (i) { i.addEventListener("change", function () { btn.disabled = !valid(); }); });
-      btn.disabled = !valid();
-      btn.onclick = function () {
-        var m = Number(app.querySelector('input[name="muster"]:checked').value);
-        if (m !== pl.muster) { pl.wenn = null; pl.dann = null; }
-        pl.muster = m;
-        state.pageSeconds.plan1 = secondsSince(state.pageStart);
-        goto(state.page + 1);
-      };
-    } else if (pg.type === "plan2") {
-      btn.textContent = UI.next;
-      ["wenn", "dann"].forEach(function (g) {
-        app.querySelectorAll('input[name="' + g + '"]').forEach(function (i) {
-          i.addEventListener("change", function () {
-            var own = app.querySelector('input[name="' + g + '-eigen"]');
-            own.hidden = i.value !== "eigen";
-            if (!own.hidden) own.focus();
-          });
-        });
-      });
-      btn.onclick = function () {
-        var ok = true;
-        ["wenn", "dann"].forEach(function (g) {
-          var box = app.querySelector('[data-group="' + g + '"]');
-          var sel = app.querySelector('input[name="' + g + '"]:checked');
-          var own = app.querySelector('input[name="' + g + '-eigen"]');
-          var msg = !sel ? UI.missing : (sel.value === "eigen" && !own.value.trim() ? UI.missingOwn : "");
-          box.classList.toggle("missing", !!msg);
-          box.querySelector(".q-err").textContent = msg;
-          if (msg) ok = false;
-          if (sel) { pl[g] = sel.value === "eigen" ? "eigen" : Number(sel.value); pl[g + "_eigen"] = sel.value === "eigen" ? own.value.trim() : null; }
-        });
-        if (!ok) { var first = app.querySelector(".q-card.missing"); if (first) first.scrollIntoView({ block: "center", behavior: "smooth" }); return; }
-        state.pageSeconds.plan2 = secondsSince(state.pageStart);
-        goto(state.page + 1);
-      };
-    } else {
-      btn.textContent = CT.plan.button3;
-      btn.onclick = function () {
-        if (!review) {
-          state.pageSeconds.plan3 = secondsSince(state.pageStart);
-          dbSaveWave("PLAN", "plan", "PLAN", {
-            muster: "m" + pl.muster, wenn: pl.wenn, dann: pl.dann,
-            wenn_eigen: pl.wenn_eigen || null, dann_eigen: pl.dann_eigen || null,
-            satz: planSentence(pl),
-            seconds: { schritt1: state.pageSeconds.plan1, schritt2: state.pageSeconds.plan2, schritt3: state.pageSeconds.plan3 }
-          }, (state.pageSeconds.plan1 || 0) + (state.pageSeconds.plan2 || 0) + state.pageSeconds.plan3);
-        }
-        finishIntervention(btn);
-      };
-    }
-    if (review && pg.type !== "plan3") addReviewNote();
-  }
-
   // ── Vorschau-Zustand ───────────────────────────────────
   function previewState(key) {
     var s = fresh();
@@ -1438,7 +1265,7 @@
     s.apps = urlApps.length ? urlApps : ["ig", "tt", "sc"];
     s.shown = assignPatterns(s.apps);
     var variant = params.get("variant");
-    var m = /^(p(\d+)|W\d|q\d)([ATBE])$/.exec(key);
+    var m = /^(p(\d+)|W\d)([ATBE])$/.exec(key);
     if (m && m[2] && variant) {
       s.shown = s.shown.map(function (e) {
         if (e.id !== Number(m[2])) return e;
@@ -1462,19 +1289,15 @@
       if (it.type === "spots") s.recognition[it.id] = spotsResult(it, [1, 2]);
       else s.recognition[it.id] = w2Result(it, w2Cards(it), ["human", "app", "human"]);
     });
-    CT.filler.items.forEach(function (q) { s.quiz[q.id] = { id: q.id, answer: 1, correct: q.correct, isCorrect: q.correct === 1 }; });
-    s.plan = { muster: 4, wenn: 1, dann: 1 };
     var phaseOf = { A: "ask", T: "try", B: "react", E: "explain" };
     var pageKey = m ? m[1] : key;
     s.sub = m ? phaseOf[m[3]] : "look";
     if (m && /^W/.test(m[1])) s.sub = m[3] === "B" ? "react" : "ask";
-    if (m && /^q/.test(m[1])) { pageKey = "Q" + m[1].slice(1); s.sub = m[3] === "E" ? "explain" : "ask"; }
     s.page = Math.max(0, pages.findIndex(function (pg) { return pg.key === pageKey; }));
     if (s.sub === "ask") {
       var pg = pages[s.page];
       if (pg.pattern) delete s.patterns[pg.pattern.id];
       if (pg.item && pg.type === "recognition") delete s.recognition[pg.item.id];
-      if (pg.type === "quiz") delete s.quiz[pg.item.id];
     }
     s.maxPage = s.page; s.maxSub = s.sub;
     return s;
@@ -1491,9 +1314,10 @@
       state.shown = assignPatterns(state.apps);
       state.startedAt = isoNow();
       buildPages();
-      // Schulung schon abgeschlossen (G3/G4): direkt beim neutralen Teil bzw. Plan einsteigen
+      // Schulung schon abgeschlossen, Intervention aber nicht vermerkt (Abbruch genau dazwischen):
+      // Zusammenfassung zeigen, „Fertig“ vermerkt die Intervention
       if (progress && progress.boost_done && (mode === "g3" || mode === "g4")) {
-        state.page = state.maxPage = firstExtraPage();
+        state.page = state.maxPage = pages.length - 1;
         state.sub = state.maxSub = stepsOf(pages[state.page])[0];
       } else {
         dbSave("start", "APPS", { apps: state.apps, shown: state.shown, mode: mode }, null);
