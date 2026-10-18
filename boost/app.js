@@ -4,7 +4,8 @@
  *
  * Aufruf (vom Router in study.js): index.html?code=…&apps=ig,tt&return=…[&pilot=1][&dry=1][&nach=1]
  * Was gezeigt wird, entscheidet die Gruppe aus progress() – die Adresse verrät sie nicht:
- *   G3 → Schulung (Welle BOOST) → neutraler Teil (FILLER)        → mark_done INTERVENTION
+ *   G3 → Schulung (Welle BOOST)                                  → mark_done INTERVENTION
+ *        (neutraler Teil/Quiz FILLER seit 18.10. gestrichen, Entscheidung Daniel; Code bleibt ungenutzt)
  *   G4 → Schulung (Welle BOOST) → Wenn-Dann-Plan (PLAN)          → mark_done INTERVENTION
  *   G2 → Passwort-Schulung (Welle PLACEBO)                       → mark_done INTERVENTION
  *   nach=1 (G1/G2 nach T2) → Schulung freiwillig (Welle POST)    → mark_done POST
@@ -156,9 +157,7 @@
     C.recognition.forEach(function (r, i) { pages.push({ type: "recognition", key: r.id, item: r, index: i + 1 }); });
     pages.push({ type: "einordnung", key: "einordnung" });
     pages.push({ type: "zusammenfassung", key: "zusammenfassung" });
-    if (mode === "g3") {
-      CT.filler.items.forEach(function (q, i) { pages.push({ type: "quiz", key: q.id, item: q, index: i + 1, extra: true }); });
-    } else if (mode === "g4") {
+    if (mode === "g4") {
       ["plan1", "plan2", "plan3"].forEach(function (k) { pages.push({ type: k, key: k, extra: true }); });
     }
   }
@@ -745,6 +744,14 @@
     p.innerHTML = 'Technische Probleme? Schreib an <a href="mailto:' + esc(mail) + '">' + esc(mail) + "</a>.";
     foot.appendChild(p);
   }
+  // Nach JEDEM Neuzeichnen (auch Schrittwechsel innerhalb einer Seite) Fotos, Zurück, Kontaktzeile
+  // und Fortschritt ergänzen (18.10.: vorher fehlte „Zurück“ z. B. nach „Antwort festlegen“)
+  if (window.MutationObserver) {
+    new MutationObserver(function () {
+      if (!pages.length || !state) return;
+      applyAssets(app); addBackButton(); addContactLine(); updateProgress();
+    }).observe(app, { childList: true });
+  }
   function addReviewNote() {
     var panel = app.querySelector(".lp-panel") || app.querySelector(".tp-body");
     if (!panel || panel.querySelector(".review-note")) return;
@@ -906,6 +913,7 @@
       });
       if (p.type !== "multi" && app.querySelector('input[name="ans"]:checked')) btn.disabled = false;
       btn.onclick = function () { fixAnswer(pg); };
+      addQuestionHint(app.querySelector(".lp-panel .q-card"));
       focusFirst("#ctx");
     } else if (phase === "try") {
       btn.textContent = UI.btnTry;
@@ -933,6 +941,25 @@
       focusFirst("#ex-title");
     }
     if (isReview()) reviewPhase(pg, phase, btn);
+  }
+
+  // Frage unter dem großen Screen: schwebender Hinweis „↓ Zur Frage“, bis sie im Bild ist (18.10.)
+  function addQuestionHint(q) {
+    if (!q || previewKey || !window.IntersectionObserver) return;
+    var pill = document.createElement("button");
+    pill.type = "button";
+    pill.className = "q-hint in-stage";
+    pill.textContent = "↓ Zur Frage";
+    pill.hidden = true;
+    pill.addEventListener("click", function () { q.scrollIntoView({ behavior: "smooth", block: "start" }); });
+    var stage = app.querySelector(".lp-stage"), wrap = stage && stage.querySelector(".device-wrap");
+    if (!wrap) return;
+    stage.insertBefore(pill, wrap.nextSibling); // klebt unten im scrollenden Bereich, über den Knöpfen
+    var io = new IntersectionObserver(function (es) {
+      if (es[0].isIntersecting) { pill.remove(); io.disconnect(); }
+      else pill.hidden = false;
+    }, { threshold: 0.6 });
+    io.observe(q.querySelector("legend") || q);
   }
 
   // Zurückgegangen: frühere Antworten zeigen, nichts mehr änderbar, Weiter = nächster Schritt
@@ -1195,7 +1222,7 @@
   }
   function renderSummary() {
     var Z = C.zusammenfassung;
-    var more = mode === "g3" || mode === "g4";
+    var more = mode === "g4"; // nur G4 hat danach noch etwas (Plan); G3 endet hier (seit 18.10.)
     var list = '<ul class="sum-list">' + shownIds().map(function (id) {
       var d = patternDef(id);
       return "<li><b>" + esc(d.short) + "</b><span>" + esc(d.satz) + "</span></li>";
@@ -1214,12 +1241,13 @@
       var result = finish();
       dbSave("zusammenfassung", "SUMMARY", result, state.pageSeconds.zusammenfassung);
       if (more) {
-        // Schulung abgeschlossen; danach der neutrale Teil (G3) bzw. der Plan (G4)
+        // Schulung abgeschlossen; danach der Plan (G4)
         Promise.resolve(markDone("BOOST")).then(function () { goto(state.page + 1); }, function () { goto(state.page + 1); });
         return;
       }
       var wave = mode === "post" ? "POST" : "INTERVENTION";
-      Promise.resolve(markDone(wave)).then(backToStudy, backToStudy);
+      var pre = mode === "g3" ? Promise.resolve(markDone("BOOST")).catch(function () {}) : Promise.resolve();
+      pre.then(function () { return markDone(wave); }).then(backToStudy, backToStudy);
     });
   }
   function finish() {

@@ -467,6 +467,28 @@
 
     fire(page); // Notices mit gespeicherten Antworten sofort richtig anzeigen
     page.__ready = true; // ab jetzt: neu eingeblendete Felder ins Bild scrollen
+    addQuestionHint(page);
+  }
+
+  // Seiten mit großem Screen: Solange die erste Frage darunter nicht zu sehen ist, schwebt unten
+  // ein Hinweis „↓ Zur Frage“ (Tippen scrollt hin). Er verschwindet, sobald die Frage im Bild ist (18.10.).
+  function addQuestionHint(page) {
+    var scr = page.querySelector(".rec-stage");
+    if (!scr || !window.IntersectionObserver) return;
+    var q = Array.prototype.filter.call(page.querySelectorAll(".field"), function (f) {
+      return !f.hidden && (scr.compareDocumentPosition(f) & 4);
+    })[0];
+    if (!q) return;
+    var pill = el("button", "q-hint", "↓ Zur Frage");
+    pill.type = "button";
+    pill.hidden = true;
+    pill.addEventListener("click", function () { q.scrollIntoView({ behavior: "smooth", block: "start" }); });
+    app.appendChild(pill);
+    var io = new IntersectionObserver(function (es) {
+      if (es[0].isIntersecting) { pill.remove(); io.disconnect(); }
+      else pill.hidden = false;
+    }, { threshold: 0.6 });
+    io.observe(q.firstElementChild || q);
   }
 
   // ── Element-Renderer ───────────────────────────────────

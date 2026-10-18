@@ -192,9 +192,7 @@ window.ITEMS.T0 = {
     screenOf: "Screen {x} von {n}"
   },
   t17: {
-    title: "Die Elemente noch einmal",
-    intro: "Vier der Elemente siehst du hier noch einmal. Zu jedem zwei kurze Fragen.", // ENTWURF (18.10.)
-    elementOf: "Element {x} von {n}", // ENTWURF (18.10.)
+    // seit 18.10. ohne eigene Seite: AK01/AK02 stehen direkt unter jedem Screen der Wiedererkennung
     AK01: "Wie stark würde dich dieses Element dazu bringen, die App länger oder öfter zu nutzen?",
     AK01_skala: [
       { v: 1, label: "gar nicht" }, { v: 2, label: "kaum" }, { v: 3, label: "etwas" },

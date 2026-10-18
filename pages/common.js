@@ -48,8 +48,8 @@
     return { id: id, items: items };
   }
 
-  // Wiedererkennung einer Welle: ein Screen je Seite, danach Einfluss und Akzeptanz
-  // je Kernmuster. Seiten-IDs: <prefix>-1 … <prefix>-7, <prefix>-AK
+  // Wiedererkennung einer Welle: ein Screen je Seite, darunter Wiedererkennen (ER) sowie
+  // Einfluss und Akzeptanz (AK). Seiten-IDs: <prefix>-1 … <prefix>-7
   function recognitionPages(wave, prefix, ctx) {
     var set = R.waveSet(wave, knownApps(ctx), ctx.code);
     var pages = [];
@@ -71,28 +71,13 @@
                    visibleIf: { key: "ER_" + tag + "a", equals: "ja" } });
       items.push({ type: "textarea", key: "ER_" + tag + "c", label: E.ERc, rows: 3, saveHidden: true, meta: meta,
                    visibleIf: { key: "ER_" + tag + "a", equals: ["nein", "weiss_nicht"] } });
+      // Einfluss und Akzeptanz direkt unter dem Screen (seit 18.10.; vorher eigene Seite
+      // „Die Elemente noch einmal“). Bei allen 7 Screens, damit die Ablenker nicht auffallen.
+      items.push({ type: "radio", key: "AK01_" + tag, label: T0.t17.AK01, options: T0.t17.AK01_skala, required: true, meta: meta });
+      items.push({ type: "radio", key: "AK02_" + tag, label: T0.t17.AK02, options: T0.t17.AK02_skala, required: true, meta: meta });
       pages.push({ id: prefix + "-" + (i + 1), items: items });
     });
 
-    // Einfluss und Akzeptanz je Kernmuster (Screens in voller Größe, seit 18.10.), in der gezeigten Reihenfolge
-    pages.push({ id: prefix + "-AK", items: function () {
-      var out = [
-        { type: "title", text: T0.t17.title },
-        { type: "text", text: T0.t17.intro }
-      ];
-      var core = set.filter(function (e) { return !e.distraktor; });
-      core.forEach(function (entry, k) {
-        var meta = { muster: entry.muster, app: entry.app, screen: entry.id, position: entry.position, welle: wave };
-        if (entry.fallback) meta.fallback = true;
-        out.push({ type: "subtitle", text: fill(T0.t17.elementOf, { x: k + 1, n: core.length }) });
-        out.push({ type: "screen", entry: entry });
-        out.push({ type: "radio", key: "AK01_" + entry.muster, label: T0.t17.AK01,
-                   options: T0.t17.AK01_skala, required: true, meta: meta });
-        out.push({ type: "radio", key: "AK02_" + entry.muster, label: T0.t17.AK02,
-                   options: T0.t17.AK02_skala, required: true, meta: meta });
-      });
-      return out;
-    } });
     return pages;
   }
 

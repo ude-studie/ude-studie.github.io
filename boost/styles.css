@@ -326,11 +326,11 @@ button, input { font: inherit; }
 
 /* Hinweis unter dem Handy (statt des Kastens im Screen) */
 .callout {
-  background: var(--card);
-  border-left: 5px solid var(--mark);
+  background: #fff6d8; /* 18.10.: Hervorhebung statt Rot – Rot wirkte wie ein Fehler */
+  border-left: 5px solid #e0a400;
   border-radius: 14px;
   padding: 14px 16px;
-  color: var(--mark-text);
+  color: #2b2410;
   font-weight: 600;
   line-height: 1.45;
   box-shadow: var(--shadow);
@@ -1200,3 +1200,21 @@ div.card { cursor: default; }
 .pw-call-who span { margin-left: auto; font-size: 0.8125rem; color: #9ca3af; }
 .pw-call-text { margin: 8px 0 0; font-size: 0.9375rem; line-height: 1.4; }
 .w1 .pw-page .w1t-block, .w1 .pw-urlbar .w1t-block { display: block; }
+
+/* Übung 1, Stelle „nächster Beitrag“ (18.10.): ganzer Block leicht hinterlegt, Nummer im Block,
+   Block passt ganz auf den Screen */
+.w1 .ig-img.ig-sq { height: 200px; }
+.w1t.w1t-block { background: rgba(31,58,95,.07); outline-offset: -2px; }
+.w1t.w1t-block > .spot { top: 50%; left: 50%; transform: translate(-50%, -50%); }
+
+/* Hinweis „↓ Zur Frage“ (18.10.): schwebt über der unteren Leiste, bis die Frage im Bild ist */
+.q-hint { position: fixed; left: 50%; bottom: 112px; transform: translateX(-50%); z-index: 30;
+  border: 0; border-radius: 999px; padding: 10px 18px; font: inherit; font-weight: 700; font-size: 0.9375rem;
+  background: var(--primary); color: #fff; box-shadow: 0 4px 14px rgba(0,0,0,.25); cursor: pointer;
+  animation: q-hint-bob 1.6s ease-in-out infinite; }
+.q-hint[hidden] { display: none; }
+@keyframes q-hint-bob { 0%, 100% { transform: translate(-50%, 0); } 50% { transform: translate(-50%, 4px); } }
+@media (prefers-reduced-motion: reduce) { .q-hint { animation: none; } }
+.q-hint.in-stage { position: sticky; bottom: 10px; left: auto; align-self: center; flex: 0 0 auto; margin: -46px 0 0;
+  transform: none; animation-name: q-hint-bob-y; }
+@keyframes q-hint-bob-y { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(4px); } }
