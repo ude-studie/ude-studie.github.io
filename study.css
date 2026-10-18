@@ -131,3 +131,10 @@ textarea, select { font: inherit; }
 .tp-rich b, .steps b { font-weight: 700; }
 .tp-list { margin: 0 0 10px; padding-left: 1.2em; }
 .tp-list li { margin: 0 0 6px; }
+
+/* v4: Hinweis und QR-Code am Computer (Screenshot am Handy hochladen) */
+.desk-qr { margin: 0 0 16px; padding: 14px; border: 1px dashed var(--primary, #1f3a5f); border-radius: 12px; background: #fff; }
+.desk-qr .tp-rich { margin-bottom: 10px; }
+.desk-qr-code { display: flex; justify-content: center; margin: 6px 0 10px; }
+.desk-qr-code svg { width: 180px; height: 180px; }
+.desk-qr-label { font-size: 0.85rem; color: #5f6b7a; margin-bottom: 4px; }

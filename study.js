@@ -2,13 +2,22 @@
  * study.js – Router und Seitenlogik der Studie (Auftrag v3).
  *
  * Aufgaben:
- *  - Code aus ?c=, localStorage oder Eingabe ermitteln (Abschnitt 3 des Auftrags)
+ *  - Code NUR aus ?c= in der Adresse oder aus der Eingabe „Ich habe schon einen Code“
+ *    (seit 18.10.: nichts mehr im Browser gemerkt; ohne ?c= beginnt immer eine neue Anmeldung)
  *  - progress() fragen und entscheiden, welcher Block/welche Seite dran ist
  *  - Seiten aus pages/*.js rendern, validieren, je "Weiter" alle Variablen
  *    der Seite plus page_seconds als Events speichern
  *  - Zeitfenster (Europe/Berlin) und Pilotmodus (?pilot=1)
  *
- * Stand Abnahme 1: Block R komplett; T0/T1/T2 zeigen Wartesite bzw. Platzhalter.
+ * Stand v4 (18.10.2026): vier Gruppen. Ablauf je Person:
+ *   R → T0 → Zuteilung (assign_group) → G1: Warteseite
+ *                                      → G2: Übergang → Passwort-Schulung (boost/, Welle PLACEBO)
+ *                                      → G3: Übergang → Schulung + neutraler Teil (BOOST, FILLER)
+ *                                      → G4: Übergang → Schulung + Wenn-Dann-Plan (BOOST, PLAN)
+ *   → [nur Pilot: Rückmeldung FB] → Warteseite → T1 (7 Tage offen) → Warteseite
+ *   → T2 (7 Tage offen) → Abschluss; G1/G2 bekommen dort die Schulung freiwillig (POST).
+ * Testschalter: ?pilot=1 (Wartezeiten aufheben, &group=G3 erzwingt eine Gruppe),
+ * ?dry=1 (ohne Supabase, siehe db.js), &jetzt=… (gespielte Uhrzeit, nur mit dry=1).
  */
 (function () {
   "use strict";
@@ -26,18 +35,30 @@
     progress: null
   };
 
-  var LS_CODE = "study-code";
-  var LS_ANSWERS = "study-answers-"; // + wave
-  var currentWave = null;
+  // Früher im Browser gemerkt (bis v4 vor dem 18.10.): Code und Antworten je Welle.
+  // Wird beim Start gelöscht, damit alte Einträge niemanden mehr automatisch „wiedererkennen“.
+  var OLD_KEYS = /^study-(code|answers-)/;
   var MISSING = "Bitte beantworte diese Frage."; // Rework 6.1
-  var backFromBoost = params.get("zurueck") === "1"; // Rückweg aus der Schulung
+  var forceGroup = (params.get("group") || "").toUpperCase(); // nur Pilot: ?pilot=1&group=G3
 
-  // Platzhalter in Texten ersetzen; %woche% gibt es seit 06.10. nicht mehr
-  // (keine festen Termine), [App] ersetzt pages/*.js selbst
+  // Platzhalter in Texten ersetzen; [App] ersetzt pages/*.js selbst
   function tpl(s) {
     if (s == null) return s;
-    return String(s).replace(/\s*\(%woche%\)/g, "").replace(/%woche%/g, "letzte Woche")
-      .replace(/%dauer_t0%/g, CFG.DAUER_T0_MIN || "30").replace(/%dauer_t1%/g, CFG.DAUER_T1_MIN || "10");
+    return String(s)
+      .replace(/%dauer_t0_fragebogen%/g, CFG.DAUER_T0_FRAGEBOGEN_MIN || "12")
+      .replace(/%dauer_t0%/g, CFG.DAUER_T0_MIN || "25").replace(/%dauer_t1%/g, CFG.DAUER_T1_MIN || "10")
+      .replace(/%dauer_t2%/g, CFG.DAUER_T2_MIN || "10").replace(/%dauer_schulung%/g, CFG.DAUER_SCHULUNG_MIN || "10");
+  }
+  // Tag als „Montag, 16. November“ (Zeitzone Berlin)
+  function dayDe(iso) {
+    try {
+      return new Intl.DateTimeFormat("de-DE", { timeZone: CFG.TIMEZONE, weekday: "long", day: "numeric", month: "long" })
+        .format(new Date(iso));
+    } catch (e) { return ""; }
+  }
+  // Touch-Gerät (Handy, Tablet): Diktier-Hinweis ja, QR-Code nein
+  function isTouch() {
+    return (navigator.maxTouchPoints || 0) > 0 || !!(window.matchMedia && matchMedia("(pointer: coarse)").matches);
   }
 
   // ── Hilfen ─────────────────────────────────────────────
@@ -48,11 +69,22 @@
     return n;
   }
   function esc(s) { return String(s == null ? "" : s); }
-  function lsGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
-  function lsSet(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+  function clearOldStorage() {
+    try {
+      Object.keys(localStorage).forEach(function (k) { if (OLD_KEYS.test(k)) localStorage.removeItem(k); });
+    } catch (e) {}
+  }
 
   function personalLink(code) {
     return location.origin + location.pathname + "?c=" + encodeURIComponent(code);
+  }
+  // Test-Schalter, die beim Weiterleiten erhalten bleiben (Pilot, Trockenmodus, gespielte Uhrzeit)
+  function testFlags() {
+    var s = ctx.pilot ? "&pilot=1" : "";
+    if (ctx.pilot && /^G[1-4]$/.test(forceGroup)) s += "&group=" + forceGroup;
+    if (window.DB.dry && params.get("dry") === "1") s += "&dry=1";
+    if (window.DB.dry && params.get("jetzt")) s += "&jetzt=" + encodeURIComponent(params.get("jetzt"));
+    return s;
   }
 
   // Jetzt-Zeit als "YYYY-MM-DDTHH:mm:ss" in Europe/Berlin (lexikalisch vergleichbar)
@@ -62,14 +94,6 @@
       hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false
     }).format(new Date());
     return s.replace(" ", "T");
-  }
-  function inWindow(w) {
-    if (ctx.pilot) return true;
-    var now = nowBerlin();
-    return now >= CFG.WINDOWS[w].from && now <= CFG.WINDOWS[w].to;
-  }
-  function beforeWindow(w) {
-    return !ctx.pilot && nowBerlin() < CFG.WINDOWS[w].from;
   }
   function afterWindow(w) {
     return !ctx.pilot && nowBerlin() > CFG.WINDOWS[w].to;
@@ -124,16 +148,38 @@
   function simplePage(title, text, extra) {
     var page = shell(null);
     page.appendChild(el("h1", "tp-h1", title));
-    if (text) { var t = el("div", "tp-rich"); t.innerHTML = richHtml(text); page.appendChild(t); }
+    if (text) { var t = el("div", "tp-rich"); t.innerHTML = richHtml(tpl(text)); page.appendChild(t); }
     if (extra) page.appendChild(extra);
+  }
+  // Knopfzeile für Rahmenseiten (ein Hauptknopf)
+  function buttonRow(label, onClick) {
+    var row = el("div", "nav-row");
+    var b = el("button", "btn", label);
+    b.type = "button";
+    b.addEventListener("click", function () { b.disabled = true; onClick(); });
+    row.appendChild(b);
+    return row;
   }
 
   // ── Statische Ansichten ────────────────────────────────
-  function showWait() {
-    simplePage(F.waitTitle, tpl(F.waitText));
+  // Warteseite mit Termin des nächsten Fragebogens. Im Pilotmodus mit Knopf zum Überspringen.
+  function showWait(title, text, opens, closes, wave) {
+    var t = String(text).replace(/%datum%/g, dayDe(opens)).replace(/%ende%/g, dayDe(closes));
+    var extra = ctx.pilot ? buttonRow(F.pilotSkip, function () { pilotSkip[wave] = true; start(ctx.code); }) : null;
+    simplePage(title, t, extra);
   }
-  function showDone() { simplePage(F.doneTitle, F.doneText); }
+  // Abschluss; G1/G2 bekommen die Schulung freiwillig angeboten (Welle POST)
+  function showDone(title, text) {
+    var p = ctx.progress || {};
+    var offer = (p.grp === "G1" || p.grp === "G2") && !p.post_done;
+    var body = text + (p.post_done ? "\n\n" + F.postDoneText : "") + (offer ? "\n\n" + F.offerText : "");
+    simplePage(title, body, offer ? buttonRow(F.offerButton, function () { handoff(true); }) : null);
+  }
   function showRegistrationClosed() { simplePage(F.waitTitle, F.registrationClosed); }
+  // Übergang nach T0 für G2–G4: gruppenneutral, ohne Zurück (T0 ist abgeschlossen)
+  function showTransition() {
+    simplePage(F.transitionTitle, F.transitionText, buttonRow(F.transitionButton, function () { handoff(false); }));
+  }
 
   function showCodeEntry(introTitle, introText) {
     var box = el("div", "field");
@@ -152,8 +198,7 @@
       var res = await window.DB.progress(code);
       btn.disabled = false;
       if (res.ok && res.data && res.data.exists) {
-        lsSet(LS_CODE, code);
-        history.replaceState(null, "", personalLink(code) + (ctx.pilot ? "&pilot=1" : ""));
+        history.replaceState(null, "", personalLink(code) + testFlags());
         start(code);
       } else {
         err.textContent = F.unknownCodeText;
@@ -174,8 +219,7 @@
   // Ohne gültigen Code von vorn mit der Anmeldung beginnen
   function backToRegistration() {
     ctx.code = null;
-    try { localStorage.removeItem(LS_CODE); } catch (e) {}
-    history.replaceState(null, "", location.pathname + (ctx.pilot ? "?pilot=1" : ""));
+    history.replaceState(null, "", location.pathname + testFlags().replace(/^&/, "?"));
     if (afterWindow("R")) { showRegistrationClosed(); return; }
     runBlock(window.PAGES_R, window.PAGES_R.start);
   }
@@ -189,21 +233,21 @@
     var res = await window.DB.createParticipant(ctx.pilot);
     if (!res.ok) return false;
     ctx.code = res.code;
-    lsSet(LS_CODE, res.code);
-    history.replaceState(null, "", personalLink(res.code) + (ctx.pilot ? "&pilot=1" : ""));
+    history.replaceState(null, "", personalLink(res.code) + testFlags()); // Code steht ab jetzt nur in der Adresse
     return true;
   }
 
   // ── Seiten-Engine ──────────────────────────────────────
   function waveAnswers(wave) {
-    try { return JSON.parse(lsGet(LS_ANSWERS + wave)) || {}; } catch (e) { return {}; }
+    return memAnswers[wave] || (memAnswers[wave] = {});
   }
-  function saveWaveAnswers(wave, a) { lsSet(LS_ANSWERS + wave, JSON.stringify(a)); }
+  // Antworten nur für die laufende Sitzung im Speicher (für „Zurück“); gesichert wird über den Code in Supabase
+  var memAnswers = {};
+  function saveWaveAnswers(wave, a) { memAnswers[wave] = a; }
 
   function runBlock(def, startId) {
     // Blöcke mit dynamischen Seiten (T1/T2: Erkennen nur gezeigte Muster)
     if (typeof def.build === "function") def = def.build(ctx);
-    currentWave = def.wave;
     var answers = waveAnswers(def.wave);
     // „Zurück" auch nach Neuladen oder späterem Wiedereinstieg: Verlauf aus
     // der Seitenreihenfolge rekonstruieren (ohne Endseiten wie R-X)
@@ -438,46 +482,6 @@
         var ol = el("ol", "steps");
         (list || []).forEach(function (s) { var li = el("li"); li.innerHTML = richHtml(tpl(s)).replace(/^<p class="tp-p">|<\/p>$/g, ""); ol.appendChild(li); });
         return ol;
-      }
-
-      case "sketch": {
-        // Schematische Skizze (eigene Zeichnung, keine System-Screenshots)
-        var kind = item.byOs ? (item.byOs[ctx.os || "ios"] || "ios") : "ios";
-        var wrapS = el("div", "sketch");
-        wrapS.innerHTML = kind === "android"
-          ? '<svg viewBox="0 0 260 120" role="img" aria-label="Skizze: Einstellungen, Kreis mit Nutzungszeit, Wochenansicht">' +
-            '<rect x="6" y="8" width="70" height="104" rx="10" fill="#fff" stroke="#9aa6b4"/>' +
-            '<rect x="14" y="20" width="54" height="8" rx="3" fill="#d4dbe3"/><rect x="14" y="34" width="54" height="8" rx="3" fill="#d4dbe3"/>' +
-            '<rect x="14" y="48" width="54" height="10" rx="3" fill="#1f3a5f"/><text x="17" y="56" font-size="6.5" fill="#fff">Wohlbefinden</text>' +
-            '<rect x="14" y="64" width="54" height="8" rx="3" fill="#d4dbe3"/>' +
-            '<path d="M84 60h18" stroke="#6b7486" stroke-width="2" marker-end="url(#ar)"/>' +
-            '<rect x="108" y="8" width="70" height="104" rx="10" fill="#fff" stroke="#9aa6b4"/>' +
-            '<circle cx="143" cy="48" r="22" fill="none" stroke="#1f3a5f" stroke-width="6"/><text x="143" y="51" font-size="8" text-anchor="middle" fill="#1a2233">4 Std.</text>' +
-            '<rect x="118" y="82" width="50" height="7" rx="3" fill="#d4dbe3"/><rect x="118" y="94" width="38" height="7" rx="3" fill="#d4dbe3"/>' +
-            '<path d="M186 60h18" stroke="#6b7486" stroke-width="2" marker-end="url(#ar)"/>' +
-            '<rect x="210" y="8" width="44" height="104" rx="8" fill="#fff" stroke="#d6342c" stroke-width="2"/>' +
-            '<text x="232" y="22" font-size="7" text-anchor="middle" fill="#1a2233">Woche</text>' +
-            '<rect x="216" y="30" width="32" height="6" rx="2" fill="#d4dbe3"/><rect x="216" y="42" width="26" height="6" rx="2" fill="#d4dbe3"/>' +
-            '<rect x="216" y="54" width="30" height="6" rx="2" fill="#d4dbe3"/><text x="232" y="100" font-size="7" text-anchor="middle" fill="#d6342c">Screenshot</text>' +
-            '<defs><marker id="ar" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><path d="M0 0l6 3-6 3z" fill="#6b7486"/></marker></defs></svg>'
-          : '<svg viewBox="0 0 260 120" role="img" aria-label="Skizze: Einstellungen, Bildschirmzeit mit Balken, Wochenansicht">' +
-            '<rect x="6" y="8" width="70" height="104" rx="10" fill="#fff" stroke="#9aa6b4"/>' +
-            '<rect x="14" y="20" width="54" height="8" rx="3" fill="#d4dbe3"/><rect x="14" y="34" width="54" height="8" rx="3" fill="#d4dbe3"/>' +
-            '<rect x="14" y="48" width="54" height="10" rx="3" fill="#1f3a5f"/><text x="17" y="56" font-size="6" fill="#fff">Bildschirmzeit</text>' +
-            '<rect x="14" y="64" width="54" height="8" rx="3" fill="#d4dbe3"/>' +
-            '<path d="M84 60h18" stroke="#6b7486" stroke-width="2" marker-end="url(#ai)"/>' +
-            '<rect x="108" y="8" width="70" height="104" rx="10" fill="#fff" stroke="#9aa6b4"/>' +
-            '<text x="143" y="24" font-size="7" text-anchor="middle" fill="#1a2233">Woche ◂ ▸</text>' +
-            '<rect x="118" y="34" width="8" height="28" fill="#8fa3bb"/><rect x="130" y="42" width="8" height="20" fill="#8fa3bb"/>' +
-            '<rect x="142" y="30" width="8" height="32" fill="#1f3a5f"/><rect x="154" y="46" width="8" height="16" fill="#8fa3bb"/>' +
-            '<rect x="118" y="74" width="50" height="7" rx="3" fill="#d4dbe3"/><rect x="118" y="86" width="40" height="7" rx="3" fill="#d4dbe3"/><rect x="118" y="98" width="46" height="7" rx="3" fill="#d4dbe3"/>' +
-            '<path d="M186 60h18" stroke="#6b7486" stroke-width="2" marker-end="url(#ai)"/>' +
-            '<rect x="210" y="8" width="44" height="104" rx="8" fill="#fff" stroke="#d6342c" stroke-width="2"/>' +
-            '<text x="232" y="22" font-size="7" text-anchor="middle" fill="#1a2233">App-Liste</text>' +
-            '<rect x="216" y="30" width="32" height="6" rx="2" fill="#d4dbe3"/><rect x="216" y="42" width="26" height="6" rx="2" fill="#d4dbe3"/>' +
-            '<rect x="216" y="54" width="30" height="6" rx="2" fill="#d4dbe3"/><text x="232" y="100" font-size="7" text-anchor="middle" fill="#d6342c">Screenshot</text>' +
-            '<defs><marker id="ai" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><path d="M0 0l6 3-6 3z" fill="#6b7486"/></marker></defs></svg>';
-        return wrapS;
       }
 
       case "doclink": {
@@ -809,15 +813,40 @@
       }
 
       case "hint": {
-        // kleiner grauer Hinweis, z. B. zum Einsprechen langer Antworten
+        // kleiner grauer Hinweis, z. B. zum Einsprechen langer Antworten (touchOnly: nur auf Touch-Geräten)
+        if (item.touchOnly && !isTouch()) return null;
         return el("p", "tp-hint", tpl(item.text));
+      }
+
+      case "desktopqr": {
+        // Nur am Computer (kein Touch, Fenster breiter als 700 px): Hinweis und QR-Code
+        // mit dem persönlichen Link, damit der Screenshot am Handy hochgeladen werden kann
+        if (isTouch() || window.innerWidth <= 700 || !ctx.code) return null;
+        var boxQ = el("div", "desk-qr");
+        var tq = el("div", "tp-rich"); tq.innerHTML = richHtml(tpl(item.text)); boxQ.appendChild(tq);
+        var link = personalLink(ctx.code) + testFlags();
+        if (window.QR) {
+          var qr = el("div", "desk-qr-code");
+          qr.innerHTML = window.QR.svg(link, { label: item.linkLabel });
+          boxQ.appendChild(qr);
+        }
+        boxQ.appendChild(el("div", "desk-qr-label", item.linkLabel));
+        boxQ.appendChild(el("div", "linkbox-url", link));
+        return boxQ;
       }
 
       case "screen": {
         var entry = item.entry || {};
         if (window.RECOGNITION.render) {
           var stage = window.RECOGNITION.render(entry, { mini: !!item.mini });
-          if (!item.mini) return stage;
+          if (!item.mini) {
+            if (!entry.ctx) return stage;
+            // Kontextsatz über dem Screen (v4: Autoplay „Du hast gerade weitergescrollt.“)
+            var wrapC2 = el("div", "rec-with-ctx");
+            wrapC2.appendChild(el("p", "rec-ctx", entry.ctx));
+            wrapC2.appendChild(stage);
+            return wrapC2;
+          }
           // Kleine Bilder (Bewertungsseiten): darunter „Bild vergrößern"
           var wrapM = el("div", "rec-mini-wrap");
           wrapM.appendChild(stage);
@@ -835,24 +864,6 @@
         return ph;
       }
 
-      case "linkbox": {
-        var T5 = window.ITEMS.R.r05;
-        var box5 = el("div", "linkbox");
-        var url = personalLink(ctx.code);
-        var urlEl = el("div", "linkbox-url", url);
-        box5.appendChild(urlEl);
-        var copy = el("button", "btn", T5.copy);
-        copy.type = "button";
-        copy.addEventListener("click", function () {
-          var done = function () { copy.textContent = T5.copied; setTimeout(function () { copy.textContent = T5.copy; }, 2000); };
-          if (navigator.clipboard && navigator.clipboard.writeText) {
-            navigator.clipboard.writeText(url).then(done, function () { fallbackCopy(url); done(); });
-          } else { fallbackCopy(url); done(); }
-        });
-        box5.appendChild(copy);
-        box5.appendChild(foldout(T5.homescreen, ctx.os === "android" ? T5.homescreen_android : T5.homescreen_ios));
-        return box5;
-      }
     }
     return null;
   }
@@ -882,19 +893,6 @@
     close.focus();
   }
 
-  function foldout(label, text) {
-    var d = el("details", "foldout");
-    var s = el("summary", null, label);
-    d.appendChild(s);
-    d.appendChild(el("p", "tp-p", text));
-    return d;
-  }
-  function fallbackCopy(text) {
-    var ta = el("textarea"); ta.value = text;
-    document.body.appendChild(ta); ta.select();
-    try { document.execCommand("copy"); } catch (e) {}
-    document.body.removeChild(ta);
-  }
   function fire(page) {
     page.dispatchEvent(new CustomEvent("study:answer"));
   }
@@ -905,6 +903,7 @@
   // ── Router ─────────────────────────────────────────────
   // Statische Fortsetzungs-Zuordnung: letzte gespeicherte Seite → nächste Seite
   var RESUME_R = { "R-01": "R-02", "R-02": "R-03", "R-03": "R-04", "R-04": "R-05", "R-05": "R-05", "R-X": "R-X" };
+  var pilotSkip = {}; // Pilot: übersprungene Wartezeiten (nur in dieser Sitzung)
 
   // Für lineare Blöcke (T0/T1/T2): Fortsetzen bei der Seite NACH der letzten
   // gespeicherten; Seiten ohne Variablen hinterlassen keine Spur und werden
@@ -916,16 +915,21 @@
     if (i < 0) return def.start;
     return ids[i + 1] || last;
   }
+  function built(def) { return typeof def.build === "function" ? def.build(ctx) : def; }
 
-  // Übergabe an die Schulung: ohne Zwischenseite (Rework 07.10.). replace(),
-  // damit „Zurück" im Browser nicht auf eine leere Übergabe führt.
-  function showBoostHandoff() {
-    var ret = personalLink(ctx.code) + (ctx.pilot ? "&pilot=1" : "");
+  // Übergabe an die Intervention (boost/): Welche Teile gezeigt werden (Schulung,
+  // neutraler Teil, Plan, Passwort-Schulung), entscheidet boost/app.js anhand der
+  // Gruppe aus progress() – die Adresse verrät die Gruppe nicht. nach=1: die
+  // freiwillige Schulung nach T2 (Welle POST). replace(), damit „Zurück“ im
+  // Browser nicht auf eine leere Übergabe führt.
+  function handoff(post) {
+    var ret = personalLink(ctx.code) + testFlags();
     location.replace("boost/index.html?code=" + encodeURIComponent(ctx.code) +
-      "&apps=" + encodeURIComponent((ctx.apps || []).join(",")) +
-      (ctx.pilot ? "&pilot=1" : "") +
+      "&apps=" + encodeURIComponent((ctx.apps || []).join(",")) + testFlags() + (post ? "&nach=1" : "") +
       "&return=" + encodeURIComponent(ret));
   }
+
+  function ms(iso) { return iso ? Date.parse(iso) : NaN; }
 
   async function start(code) {
     ctx.code = code;
@@ -940,6 +944,7 @@
     ctx.apps = p.apps || [];
 
     var last = (p.last_pages || {});
+    var now = window.DB.now();
 
     // Block R
     if (!p.r_done) {
@@ -950,63 +955,78 @@
       return;
     }
 
-    // Zurück vom ersten Schulungs-Screen: letzte Seite des Fragebogens (einmalig)
-    if (backFromBoost && p.t0_done && !p.boost_done) {
-      backFromBoost = false;
-      history.replaceState(null, "", personalLink(code) + (ctx.pilot ? "&pilot=1" : ""));
-      var t0p = window.PAGES_T0.pages;
-      runBlock(window.PAGES_T0, t0p[t0p.length - 1].id);
-      return;
-    }
-
-    // Schulung: direkt nach T0, am selben Tag, unabhängig vom nächsten Fenster
-    if (p.t0_done && !p.boost_done) { showBoostHandoff(); return; }
-
-    // Feedback zur Schulung: direkt danach, am selben Tag. Es gibt keine
-    // fb_done-Spalte; fertig ist, wer FB-01 abgeschickt hat (seit 08.10. die
-    // einzige FB-Seite, FB-02 von früher zählt ebenso).
-    if (p.boost_done && !last.FB) {
-      runBlock(window.PAGES_FB, resumeNext(window.PAGES_FB, last.FB));
-      return;
-    }
-
-    // T0: direkt nach der Anmeldung (keine festen Termine mehr, 06.10.)
+    // T0: direkt nach der Anmeldung
     if (!p.t0_done) {
       if (afterWindow("T0")) { simplePage(F.t0MissedTitle, F.t0MissedText); return; }
-      runBlock(window.PAGES_T0, resumeNext(window.PAGES_T0, last.T0));
+      var d0 = built(window.PAGES_T0);
+      runBlock(d0, resumeNext(d0, last.T0));
       return;
     }
 
-    // Ein Folge-Fragebogen (Welle T1), FOLLOWUP_AFTER_DAYS Tage nach dem
-    // eigenen T0. T2 gibt es nicht mehr; die Spalte t2_done bleibt leer.
-    if (p.t1_done) { showDone(); return; }
-    var opens = followupOpensAt(p.t0_done);
-    if (!ctx.pilot && nowBerlin() < opens) { showWait(); return; }
-    var def = window.PAGES_T1.build(ctx);
-    runBlock(def, resumeNext(def, last.T1));
-  }
+    // Zuteilung direkt nach T0 (serverseitig, idempotent)
+    if (!p.grp) {
+      var ag = await window.DB.assignGroup(code, ctx.pilot && /^G[1-4]$/.test(forceGroup) ? forceGroup : null);
+      if (!ag.ok) { simplePage("Keine Verbindung", F.noConnectionRegister); return; }
+      start(code); // Zeitplan und Gruppe neu laden
+      return;
+    }
 
-  // Öffnungszeitpunkt des Folge-Fragebogens: Kalendertag des T0-Abschlusses
-  // (Berlin) plus FOLLOWUP_AFTER_DAYS, 0:00 Uhr – als "YYYY-MM-DDTHH:mm:ss"
-  function followupOpensAt(t0done) {
-    var day = new Intl.DateTimeFormat("sv-SE", { timeZone: CFG.TIMEZONE, year: "numeric", month: "2-digit", day: "2-digit" })
-      .format(new Date(t0done)).split("-").map(Number);
-    var d = new Date(Date.UTC(day[0], day[1] - 1, day[2] + (CFG.FOLLOWUP_AFTER_DAYS || 14)));
-    return d.toISOString().slice(0, 10) + "T00:00:00";
+    // Intervention (G2–G4), am selben Tag. Wer sie abbricht und erst wiederkommt,
+    // wenn T1 schon offen ist, macht mit T1 weiter (Zeitplan ab der Zuteilung).
+    var needsIntervention = p.grp !== "G1" && !p.intervention_at;
+    if (needsIntervention && (ctx.pilot || !(now >= ms(p.t1_opens)))) {
+      if (p.boost_done) { handoff(false); return; } // Schulung fertig, neutraler Teil bzw. Plan fehlt noch
+      showTransition();
+      return;
+    }
+
+    // Nur Pilot: Rückmeldung der Testpersonen direkt nach der Intervention
+    if (ctx.pilot && p.grp !== "G1" && !last.FB) {
+      runBlock(window.PAGES_FB, window.PAGES_FB.start);
+      return;
+    }
+
+    // T1: Montag nach der ersten vollen Woche, 7 Tage offen
+    var t1Missed = !p.t1_done && !ctx.pilot && now > ms(p.t1_closes);
+    if (!p.t1_done && !t1Missed) {
+      if (now < ms(p.t1_opens) && !(ctx.pilot && pilotSkip.T1)) {
+        showWait(F.waitTitle, F.waitT1Text, p.t1_opens, p.t1_closes, "T1");
+        return;
+      }
+      var d1 = built(window.PAGES_T1);
+      runBlock(d1, resumeNext(d1, last.T1));
+      return;
+    }
+    if (t1Missed && last.T1 !== "T1-VERPASST") {
+      // als verpasst markieren (einmal), T2 bleibt erreichbar
+      window.DB.saveEvent(code, "T1", "T1-VERPASST", "T1_VERPASST", true, null, ctx.pilot);
+    }
+
+    // T2: Montag nach der vierten vollen Woche, 7 Tage offen
+    if (!p.t2_done) {
+      var t2Missed = !ctx.pilot && now > ms(p.t2_closes);
+      if (t2Missed) { showDone(F.t2MissedTitle, F.t2MissedText); return; }
+      if (now < ms(p.t2_opens) && !(ctx.pilot && pilotSkip.T2)) {
+        if (t1Missed) showWait(F.t1MissedTitle, F.t1MissedText, p.t2_opens, p.t2_closes, "T2");
+        else showWait(F.waitTitle, F.waitT2Text, p.t2_opens, p.t2_closes, "T2");
+        return;
+      }
+      var d2 = built(window.PAGES_T2);
+      runBlock(d2, resumeNext(d2, last.T2));
+      return;
+    }
+
+    showDone(F.doneTitle, F.doneText);
   }
 
   // ── Einstieg (Abschnitt 3 des Auftrags) ────────────────
   function boot() {
+    clearOldStorage();
     var urlCode = (params.get("c") || "").trim().toUpperCase();
-    var lsCode = (lsGet(LS_CODE) || "").trim().toUpperCase();
 
-    if (urlCode) {           // Punkt 3: ?c= gewinnt gegenüber localStorage
-      lsSet(LS_CODE, urlCode);
+    if (urlCode) {           // persönlicher Link: dort weiter, wo die Person ist
       start(urlCode);
-    } else if (lsCode) {     // Punkt 1: bekanntes Gerät
-      history.replaceState(null, "", personalLink(lsCode) + (ctx.pilot ? "&pilot=1" : ""));
-      start(lsCode);
-    } else {                 // Punkt 1/4: kein Code bekannt → Registrierung
+    } else {                 // kein Code in der Adresse → neue Anmeldung
       if (afterWindow("R")) { showRegistrationClosed(); return; }
       runBlock(window.PAGES_R, window.PAGES_R.start);
     }

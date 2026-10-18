@@ -143,3 +143,73 @@
 .ig-head > .rec-mark { flex: 1 1 auto; }
 .rec-mark > .rec-search { flex: 1 1 auto; }
 .ig-head > .rec-search, .ig-head > .rec-mark:has(> .rec-search) { grid-column: 1 / -1; display: flex; }
+
+/* ── v4 (18.10.2026): neue Screen-Typen der Wiedererkennung ─────────────── */
+/* Neutrale Symbole für gewöhnliche Meldungen auf dem Sperrbildschirm (keine fremden Marken) */
+.ai-msg { background: linear-gradient(180deg, #5fd36b, #2fb344); }
+.ai-cal { background: #fff; box-shadow: inset 0 9px 0 #e5483f, inset 0 0 0 1px rgba(0,0,0,.12); }
+.ai-wx { background: linear-gradient(180deg, #4aa3f0, #1f6fd1); }
+.ai-bahn { background: #6b7684; }
+
+/* Autoplay: Rahmen innen um das laufende Video samt Fortschrittsbalken, Ton-Symbol an */
+.post.rec-mark-inset::before {
+  content: ""; position: absolute; inset: 6px; z-index: 4; pointer-events: none;
+  border: 3px solid #d6342c; border-radius: 12px;
+}
+.rec-sound { position: absolute; right: 14px; top: 62px; z-index: 3; width: 38px; height: 38px; border-radius: 50%;
+  background: rgba(0,0,0,.45); display: flex; align-items: center; justify-content: center; }
+.rec-sound svg { width: 22px; height: 22px; fill: #fff; color: #fff; }
+.rl .bar.rec-bar { bottom: 10px; left: 12px; right: 12px; height: 4px; border-radius: 2px; }
+
+/* Kontextsatz über einem Screen (Autoplay) */
+.rec-with-ctx { margin: 0; }
+.rec-ctx { margin: 0 0 10px; padding: 10px 14px 10px 16px; border-left: 5px solid var(--primary, #1f3a5f);
+  border-radius: 12px; background: #fff; font-weight: 600; line-height: 1.4; }
+
+/* Heller Instagram-Feed: untere Leiste */
+.device-wrap.rec .device > .rec-ig-nav, .rec-ig-nav { flex: 0 0 auto; display: flex; justify-content: space-around; align-items: center;
+  background: #fff; border-top: 1px solid #efefef; padding: 10px 0 24px; color: #111; }
+.rec-ig-nav span { display: inline-flex; }
+.rec-ig-nav svg { width: 26px; height: 26px; fill: currentColor; color: #111; }
+.rec-ig-nav .rec-mark { padding: 2px; }
+.ig-actions .ig-save .rec-mark { padding: 2px; }
+.ig-post-head .rec-mark { display: inline-flex; }
+.ig-post-head > .rec-mark:last-child { margin-left: auto; }
+.ig-post-head > .rec-mark:last-child .ig-dots { margin-left: 0; padding: 0 4px; }
+.ig-head.rec-backbar .ig-icons svg { width: 24px; height: 24px; fill: currentColor; }
+
+/* Instagram-Nachrichten */
+.rec-dm-search { padding: 4px 12px 8px; display: flex; }
+.rec-dm-search > .rec-mark, .rec-dm-search > .rec-search { flex: 1 1 auto; display: flex; }
+.rec-dm-sub { padding: 8px 14px 4px; font-weight: 700; font-size: 15px; }
+.rec-dm-row { display: flex; align-items: center; gap: 12px; padding: 9px 14px; }
+.rec-dm-row .avatar { width: 52px; height: 52px; }
+.rec-dm-text { flex: 1 1 auto; min-width: 0; font-size: 14px; }
+.rec-dm-text .user { font-weight: 600; }
+.rec-dm-msg { color: #737373; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rec-dm-cam svg { width: 24px; height: 24px; fill: #8a8a8a; }
+
+/* Profilseiten (Instagram, TikTok) */
+.rec-prof-top { display: flex; align-items: center; gap: 22px; padding: 10px 16px 6px; }
+.avatar.rec-prof-av { width: 84px; height: 84px; font-size: 1.6rem; }
+.rec-prof-stats { display: flex; flex: 1 1 auto; justify-content: space-around; text-align: center; font-size: 13px; }
+.rec-prof-stats b { display: block; font-size: 17px; }
+.rec-prof-bio { padding: 2px 16px 10px; font-size: 14px; line-height: 1.4; }
+.rec-prof-btns, .rec-tt-btns { display: flex; gap: 8px; padding: 0 16px 12px; }
+.rec-prof-btns > *, .rec-tt-btns > * { flex: 1 1 0; display: flex; }
+.rec-prof-btn, .rec-tt-btn { flex: 1 1 auto; text-align: center; padding: 7px 4px; border-radius: 8px; font-weight: 600; font-size: 13.5px;
+  background: #efefef; color: #111; }
+.rec-tt-btn { background: rgba(255,255,255,.14); color: #f1f1f1; }
+.rec-prof-btns .rec-mark, .rec-tt-btns .rec-mark { display: flex; }
+.ig-head .ig-icons .rec-mark { display: inline-flex; }
+.rec-menuicon svg { fill: #111; }
+
+/* Snapchat: Symbole rechts im Kopf */
+.rec-snap-icons { margin-left: auto; display: inline-flex; gap: 4px; align-items: center; }
+.snap-head .rec-gearicon svg { fill: #111; }
+.snap-head > .rec-mark:first-child { display: inline-flex; padding: 0 4px; }
+.snap-text .user .rec-mark { display: inline-flex; padding: 0 3px; }
+.rec-inbox-text .user .rec-mark { display: inline-flex; padding: 0 3px; }
+.tt .post .meta .user .rec-mark { display: inline-flex; padding: 0 3px; }
+.tt .post .side > .rec-mark { display: flex; flex-direction: column; align-items: center; padding: 2px; }
+.tt .post .side > .rec-mark > span { display: flex; flex-direction: column; align-items: center; }

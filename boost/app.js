@@ -1,30 +1,30 @@
 /*
- * app.js – Ablauf, Zustände, Speichern und Rücksprung der Schulung.
- * Texte stehen in content.js.
+ * app.js – Ablauf, Zustände, Speichern und Rücksprung der Intervention (boost-v7, 18.10.2026).
+ * Texte stehen in content.js (Schulung, neutraler Teil, Plan) und content-pw.js (Placebo).
  *
- * Aufruf: index.html?code=…&apps=ig,tt,sc,fb,x&return=…[&pilot=1]
- * Antworten gehen als events (wave=BOOST) ins Studien-Backend (../db.js);
- * „Weiter zum Fragebogen" setzt boost_done und springt zu return zurück.
+ * Aufruf (vom Router in study.js): index.html?code=…&apps=ig,tt&return=…[&pilot=1][&dry=1][&nach=1]
+ * Was gezeigt wird, entscheidet die Gruppe aus progress() – die Adresse verrät sie nicht:
+ *   G3 → Schulung (Welle BOOST) → neutraler Teil (FILLER)        → mark_done INTERVENTION
+ *   G4 → Schulung (Welle BOOST) → Wenn-Dann-Plan (PLAN)          → mark_done INTERVENTION
+ *   G2 → Passwort-Schulung (Welle PLACEBO)                       → mark_done INTERVENTION
+ *   nach=1 (G1/G2 nach T2) → Schulung freiwillig (Welle POST)    → mark_done POST
+ *   G1 ohne nach=1 → sofort zurück (keine Intervention)
+ * Schulung abgeschlossen = mark_done BOOST (am Ende der Zusammenfassung). Wer danach
+ * abbricht und wiederkommt, steigt direkt beim neutralen Teil bzw. beim Plan ein.
  *
- * Ablauf je Muster in vier Schritten (state.sub):
- *   look     nur der Screen
- *   ask      Screen klein, darunter die Frage; der Button ist die Handlung
- *   react    Screen groß, die App reagiert, rote Umrandung, Hinweis darunter
- *   explain  Erklärung (Was, Wirkung, Zweck)
- * Muster 6 beginnt direkt mit ask (die Auswahl im Screen ist die Antwort).
+ * Ablauf je Muster (state.sub): ask (Vorhersagen) → try (Ausprobieren, vor dem Tippen)
+ * → react (Ausprobieren, App hat reagiert) → explain (Erklärung).
+ * Übungen: ask → react. Quiz: ask → explain. Plan: drei Seiten.
  *
- * Vorschau (preview.html): index.html?preview=<seite>[&apps=…][&variant=<app>][&export=1]
- *   <seite> = intro, apps, p1L/p1A/p1B/p1E … p8E, W1A, W1B, W2A, W2B, einordnung, zusammenfassung
- *   (L = ansehen, A = Frage, B = Reaktion mit Markierung, E = Erklärung)
- *   variant=<app> zeigt das Muster in dieser App (oder deren Fallback).
- *   export=1 blendet alles Persönliche aus (für statische Ersatzbilder).
+ * Vorschau (preview.html): index.html?preview=<seite>[&modus=g3|g4|g2|post][&apps=…][&variant=<app>]
+ *   <seite> = start, p1A/p1T/p1B/p1E … (A Frage, T Ausprobieren, B Reaktion, E Erklärung),
+ *   W1A/W1B, W2A/W2B, einordnung, zusammenfassung, q1A/q1E …, plan1/plan2/plan3
  */
 (function () {
   "use strict";
 
-  var C = window.CONTENT;
-  var STUDY_APPS = C.appOrder; // Instagram, TikTok, Snapchat
-  var STORE_KEY = "boost-state-" + C.version; // boost-v4: Schritt-Navigation, ohne Bewertung (08.10.)
+  var CT = window.CONTENT;      // Schulung
+  var CP = window.CONTENT_PW;   // Placebo (Passwörter)
   var app = document.getElementById("app");
 
   // ── Aufrufparameter ────────────────────────────────────
@@ -35,13 +35,12 @@
   var urlApps = parseApps(params.get("apps"));
   var previewKey = params.get("preview");
   var exportMode = params.get("export") === "1";
+  var postFlag = params.get("nach") === "1";
 
-  // apps=ig,tt,… → bekannte Kürzel in fester Reihenfolge, Unbekanntes wird ignoriert
   function parseApps(raw) {
     var got = String(raw || "").toLowerCase().split(",").map(function (s) { return s.trim(); });
-    return C.appOrder.filter(function (k) { return got.indexOf(k) >= 0; });
+    return CT.appOrder.filter(function (k) { return got.indexOf(k) >= 0; });
   }
-
   function safeUrl(raw) {
     if (!raw) return null;
     try {
@@ -50,108 +49,58 @@
     } catch (e) { return null; }
   }
 
+  // ── Modus und Inhalt ───────────────────────────────────
+  // mode: g3 | g4 | g2 | post | demo (ohne Code: nur ansehen, nichts speichern)
+  var mode = null, C = CT, UI = CT.ui, WAVE = "BOOST";
+  function setMode(m) {
+    mode = m;
+    C = m === "g2" ? CP : CT;
+    UI = Object.assign({}, CT.ui, m === "g2" ? CP.ui : {});
+    WAVE = m === "g2" ? "PLACEBO" : (m === "post" ? "POST" : "BOOST");
+  }
   function patternDef(id) { return C.patterns.filter(function (p) { return p.id === id; })[0]; }
-  function appLabel(key) { return (C.apps[key] || {}).label || key; }
+  function appLabel(key) { return (CT.apps[key] || {}).label || key; }
 
-  // ── Speichern ins Studien-Backend (db.js, geladen aus ../db.js) ────────
-  // Eine Zeile je abgeschlossener Seite, wave=BOOST. In der Vorschau oder
-  // ohne db.js (eigenständiger Aufruf) passiert nichts.
-  function dbSave(page, key, value, seconds) {
-    if (previewKey || !window.DB || !state.code) return;
-    window.DB.saveEvent(state.code, "BOOST", page, key, value, seconds, pilotFlag, C.version);
+  // ── Speichern (db.js aus ../db.js) ─────────────────────
+  function dbSaveWave(wave, page, key, value, seconds) {
+    if (previewKey || !window.DB || !state.code || mode === "demo") return;
+    window.DB.saveEvent(state.code, wave, page, key, value, seconds, pilotFlag, C.version);
+  }
+  function dbSave(page, key, value, seconds) { dbSaveWave(WAVE, page, key, value, seconds); }
+  function markDone(wave) {
+    if (previewKey || !window.DB || !state.code || mode === "demo") return Promise.resolve();
+    return window.DB.markDone(state.code, wave);
+  }
+  function backToStudy() {
+    var back = returnUrl || ("../index.html" + (state.code ? "?c=" + encodeURIComponent(state.code) + (pilotFlag ? "&pilot=1" : "") : ""));
+    location.href = back;
   }
 
   // ── Zuordnung Muster × App ─────────────────────────────
-  // Je Muster die erste App aus order, die die Person nutzt. Ist dafür kein Screen gebaut,
-  // greift ein Fallback: immer der Instagram-Screen; nur falls es keinen gibt, die nächste gebaute App in der Reihe.
-  function fallbackFor(p, target) {
-    if (p.variants.ig) return "ig";
-    var o = p.order, i = o.indexOf(target);
-    for (var k = 1; k <= o.length; k++) {
-      var a = o[(i + k) % o.length];
-      if (p.variants[a]) return a;
-    }
-    return Object.keys(p.variants)[0];
-  }
-  // screen = ID der gezeigten Variante (bei Fallback eine andere App als app)
+  // Je Muster die erste App aus order, die die Person nutzt. Ist dafür kein Screen gebaut
+  // (Snapchat), kommt der Instagram-Screen mit Hinweis. Placebo: immer die eine Variante „web“.
   function entryFor(p, target) {
     if (p.variants[target]) return { id: p.id, app: target, screen: target };
-    return { id: p.id, app: target, fallback: true, screen: fallbackFor(p, target) };
+    var fb = p.variants.ig ? "ig" : Object.keys(p.variants)[0];
+    return { id: p.id, app: target, fallback: true, screen: fb };
   }
   function assignPatterns(apps) {
-    var shown = [];
-    C.patterns.forEach(function (p) {
-      if (p.always) { shown.push({ id: p.id, app: "lock", screen: "lock" }); return; }
-      var target = p.order.filter(function (a) { return apps.indexOf(a) >= 0; })[0];
-      if (target) shown.push(entryFor(p, target));
+    return C.patterns.map(function (p) {
+      if (p.always) { var v = Object.keys(p.variants)[0]; return { id: p.id, app: v, screen: v }; }
+      var target = p.order.filter(function (a) { return apps.indexOf(a) >= 0; })[0] || "ig";
+      return entryFor(p, target);
     });
-    return shown;
   }
-
-  // Ablenker für die Apps der Person: reihum über die Apps, je App bis zu drei Elemente
-  function distractorList(apps) {
-    var list = STUDY_APPS.filter(function (a) { return apps.indexOf(a) >= 0; });
-    if (!list.length) list = ["ig"];
-    var out = [];
-    for (var i = 0; i < 3; i++) {
-      var a = list[i % list.length], pool = C.distractors[a], j = Math.floor(i / list.length);
-      out.push({ k: i + 1, app: a, def: pool[j % pool.length] });
-    }
-    return out;
-  }
-  // Screen eines Ablenkers: Daten eines Muster-Screens, ohne dessen Markierung
-  function resolveDistractor(d) {
-    var base = resolvePattern({ id: d.def.base.pattern, app: d.app, screen: d.def.base.variant });
-    var p = Object.assign({}, base, {
-      isDistractor: true, ctxA: d.def.ctx, ctxB: d.def.ctx, markLabel: "Element", fallback: false,
-      data: JSON.parse(JSON.stringify(base.data))
-    });
-    p.data.mark = null;
-    p.data.refresh = null; p.data.toast = null; // keine Bestandteile eines Musters im Ablenker
-    (p.data.posts || []).forEach(function (q) { delete q.suggested; }); // kein „Vorgeschlagen“ (Muster 3)
-    (p.data.rows || []).forEach(function (r) { r.mark = false; });
-    return p;
-  }
-  // Zielelement im Ausgangszustand: aus C.markA (Muster) bzw. dem Ablenker
-  function markSpec(pg) {
-    if (pg.type === "distractor") return pg.dist.markA;
-    return C.markA[pg.pattern.id + ":" + pg.pattern.screenApp] || null;
-  }
-  function clearMarkA(body) {
-    body.querySelectorAll(".mark").forEach(function (el) { el.remove(); });
-    body.querySelectorAll(".mark-a-target").forEach(function (el) { el.removeAttribute("data-mark"); el.classList.remove("mark-a-target"); });
-    body.querySelectorAll(".mark-zone-bottom").forEach(function (el) { el.remove(); });
-  }
-  function applyMarkA(body, pg) {
-    clearMarkA(body);
-    var sp = markSpec(pg), t = null;
-    if (!sp) return;
-    if (sp.zone === "bottom") {
-      t = document.createElement("div");
-      t.className = "mark-zone-bottom";
-      (body.querySelector(".feed") || body).appendChild(t);
-    } else {
-      t = body.querySelectorAll(sp.sel)[sp.n || 0];
-    }
-    if (!t) return;
-    t.classList.add("mark-a-target");
-    t.setAttribute("data-mark", sp.place || "below");
-  }
-
-  // Muster mit der gewählten Variante zusammensetzen
   function resolvePattern(s) {
     var def = patternDef(s.id);
-    var screenApp = s.screen || s.app;
-    var v = def.variants[screenApp];
-    var p = Object.assign({}, def, v, { screenApp: screenApp, targetApp: s.app, fallback: !!s.fallback });
+    var v = def.variants[s.screen];
+    var p = Object.assign({}, def, v, { screenApp: s.screen, targetApp: s.app, fallback: !!s.fallback });
     delete p.variants; delete p.pools;
-    if (def.always) {
-      p.data = Object.assign({}, v.data, { items: composeLock(def, state.apps, state.code) });
-    }
+    if (def.pools) p.data = Object.assign({}, v.data, { items: composeLock(def, state.apps, state.code) });
     return p;
   }
 
-  // Sperrbildschirm: 2 Meldungen von Menschen, 5 von der App, nur aus genutzten Apps, fest nach Code
+  // Fester Zufall je Code (FNV-1a + mulberry32)
   function hashCode(s) {
     var h = 2166136261;
     for (var i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
@@ -166,6 +115,7 @@
       return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
     };
   }
+  // Sperrbildschirm (Muster 6): 2 Meldungen von Menschen, 5 von der App, nur aus genutzten Apps
   function composeLock(def, apps, code) {
     var v = def.variants.lock.data;
     var rnd = seededRandom(hashCode(String(code || "")));
@@ -198,89 +148,54 @@
   // ── Seitenfolge ────────────────────────────────────────
   var pages = [];
   function buildPages() {
-    // Einleitung und App-Abfrage nur noch, wenn die Schulung ohne Apps aufgerufen wird
-    pages = state.appsSource === "param" ? [] : [{ type: "intro", key: "intro" }, { type: "apps", key: "apps" }];
+    pages = [{ type: "start", key: "start" }];
     var shown = state.shown || [];
-    // Drei Ablenker nach dem 2., 4. und 6. Muster; bei weniger Mustern gleichmäßig verteilt, nie an erster Stelle
-    var n = shown.length, dists = distractorList(state.apps || []);
-    var after = n >= 6 ? [2, 4, 6] : [1, 2, 3].map(function (k) { return Math.max(1, Math.round(k * n / 4)); });
-    var seq = [], di = 0;
     shown.forEach(function (s, i) {
-      seq.push({ type: "pattern", key: "p" + s.id, shown: s, pattern: resolvePattern(s) });
-      while (di < dists.length && after[di] === i + 1) {
-        var d = dists[di];
-        seq.push({ type: "distractor", key: "d" + d.k, k: d.k, dist: d.def, distApp: d.app, pattern: resolveDistractor(d) });
-        di++;
-      }
+      pages.push({ type: "pattern", key: "p" + s.id, shown: s, pattern: resolvePattern(s), index: i + 1, total: shown.length });
     });
-    seq.forEach(function (pg, j) { pg.pos = j + 1; pg.index = j + 1; pg.total = seq.length; });
-    pages = pages.concat(seq);
     C.recognition.forEach(function (r, i) { pages.push({ type: "recognition", key: r.id, item: r, index: i + 1 }); });
     pages.push({ type: "einordnung", key: "einordnung" });
     pages.push({ type: "zusammenfassung", key: "zusammenfassung" });
+    if (mode === "g3") {
+      CT.filler.items.forEach(function (q, i) { pages.push({ type: "quiz", key: q.id, item: q, index: i + 1, extra: true }); });
+    } else if (mode === "g4") {
+      ["plan1", "plan2", "plan3"].forEach(function (k) { pages.push({ type: k, key: k, extra: true }); });
+    }
+  }
+  function firstExtraPage() {
+    for (var i = 0; i < pages.length; i++) if (pages[i].extra) return i;
+    return pages.length - 1;
   }
 
   // ── Zustand ────────────────────────────────────────────
-  var state;
-  if (previewKey) {
-    state = previewState(previewKey);
-  } else {
-    state = load();
-    if (!state || state.version !== C.version || (urlCode && state.code && state.code !== urlCode)) state = fresh();
-    if (urlCode) state.code = urlCode;
-    if (state.page > 0 && !state.code) state = fresh();
-    if (state.page > 1 && !state.shown) state = fresh();
-    if (state.sub === "A") state.sub = "look";
-    if (state.sub === "B") state.sub = "react";
-    if (!state.shown && urlApps.length) {
-      // Apps stehen seit der Anmeldung fest (Rework 07.10.): Schulung beginnt direkt mit dem ersten Screen
-      state.apps = urlApps.slice();
-      state.appsSource = "param";
-      state.shown = assignPatterns(state.apps);
-      state.startedAt = isoNow();
-      dbSave("start", "APPS", { apps: state.apps, source: state.appsSource, shown: state.shown }, null);
-    }
-    buildPages();
-  }
-  var picks = [];   // laufende Mehrfachauswahl (Apps, Muster 6, W1) vor dem Tipp
+  var state = null;
+  var picks = [];   // laufende Mehrfachauswahl (Muster 6, Übung 1) vor dem Festlegen
 
+  function storeKey() { return "boost-state-" + CT.version + "-" + mode; }
   function fresh() {
     return {
-      version: C.version,
-      code: urlCode || "",
-      apps: null,        // genutzte Apps (Kürzel), nach Bildschirm 2
-      appsSource: null,  // "param" oder "asked"
-      shown: null,       // gezeigte Muster: [{ id, app, fallback?, screen? }]
-      startedAt: null,
-      finishedAt: null,
-      page: 0,
-      sub: "look",       // Schritt auf der Seite: look, ask, react, explain
-      maxPage: 0,        // weiteste erreichte Seite; davor nur Ansicht (Zurück, Antworten gesperrt)
-      maxSub: "look",    // Schritt auf der weitesten Seite, um dorthin zurückzukehren
-      pageStart: Date.now(),
-      bStart: null,
-      patterns: {},      // id -> Ergebnis
-      est: {},           // Seiten-Key -> Einschätzung { a, b, c } (gespeichert mit wave T0)
-      recognition: {},   // id -> Ergebnis
-      pageSeconds: {}
+      version: CT.version, mode: mode, code: urlCode || "",
+      apps: null, shown: null, startedAt: null, finishedAt: null,
+      page: 0, sub: "look", maxPage: 0, maxSub: "look",
+      pageStart: Date.now(), bStart: null,
+      patterns: {}, recognition: {}, quiz: {}, plan: {}, pageSeconds: {}
     };
   }
   function load() {
-    try { return JSON.parse(sessionStorage.getItem(STORE_KEY)); } catch (e) { return null; }
+    try { return JSON.parse(sessionStorage.getItem(storeKey())); } catch (e) { return null; }
   }
   function save() {
     if (previewKey) return;
     if (state.maxPage == null || state.page > state.maxPage) { state.maxPage = state.page; state.maxSub = state.sub; }
     else if (state.page === state.maxPage && stepIndex(state.page, state.sub) > stepIndex(state.page, state.maxSub)) state.maxSub = state.sub;
-    try { sessionStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch (e) { /* ohne Zwischenstand weiter */ }
+    try { sessionStorage.setItem(storeKey(), JSON.stringify(state)); } catch (e) { /* ohne Zwischenstand weiter */ }
   }
-  // Schritte je Seite (Rework 08.10.): Zurück geht immer genau einen Schritt zurück,
-  // auch innerhalb eines Screens; Weiter führt Schritt für Schritt bis zur aktuellen Stelle
+
   function stepsOf(pg) {
     if (!pg) return ["look"];
-    if (pg.type === "pattern") return pg.pattern.noEst ? ["ask", "react", "explain"] : ["est", "ask", "react", "explain"];
-    if (pg.type === "distractor") return ["est", "dres"];
-    if (pg.type === "recognition") return ["look", "react"];
+    if (pg.type === "pattern") return ["ask", "try", "react", "explain"];
+    if (pg.type === "recognition") return ["ask", "react"];
+    if (pg.type === "quiz") return ["ask", "explain"];
     return ["look"];
   }
   function stepIndex(page, sub) {
@@ -298,7 +213,6 @@
     state.sub = sub;
     state.pageStart = Date.now();
     state.bStart = null;
-    // Ansicht einer früheren Auswahl (Muster 6, Wiederfinden 1): die damalige Auswahl zeigen
     var pg = pages[state.page], r = null;
     if (pg.type === "pattern" && pg.pattern.type === "multi") r = state.patterns[pg.pattern.id];
     if (pg.type === "recognition") r = state.recognition[pg.item.id];
@@ -317,55 +231,16 @@
     var ps = stepsOf(pages[state.page - 1]);
     setStep(state.page - 1, ps[ps.length - 1]);
   }
+  function goto(i) { setStep(i, stepsOf(pages[Math.max(0, Math.min(i, pages.length - 1))])[0]); }
   function secondsSince(t) { return Math.max(0, Math.round((Date.now() - t) / 1000)); }
   function isoNow() { return new Date().toISOString().replace(/\.\d{3}Z$/, "Z"); }
 
-  function goto(i) {
-    state.page = Math.max(0, Math.min(i, pages.length - 1));
-    var max = state.maxPage == null ? state.page : state.maxPage;
-    if (state.page === max && state.maxSub) state.sub = state.maxSub; // zurück an der aktuellen Stelle
-    else state.sub = stepsOf(pages[state.page])[0];
-    state.pageStart = Date.now();
-    state.bStart = null;
-    picks = [];
-    save();
-    render();
-  }
-
-  // ── Auswertung einzelner Antworten ─────────────────────
+  // ── Auswertung ─────────────────────────────────────────
   function multiResult(p, selected) {
     var humans = [];
     p.data.items.forEach(function (it, i) { if (it.human) humans.push(i + 1); });
     var hits = selected.filter(function (n) { return humans.indexOf(n) >= 0; }).length;
     return { selected: selected.slice().sort(num), humans: humans, hits: hits, falseAlarms: selected.length - hits };
-  }
-  // Wiederfinden 1 zur Laufzeit: nur Stellen zu gezeigten Mustern (plus
-  // Ablenker), fortlaufend nummeriert; Elemente nicht gezeigter Muster
-  // verschwinden aus dem Screen (d.refresh entfällt z. B. ohne Muster 2).
-  function w1Runtime(it) {
-    var ids = (state.shown || []).map(function (s) { return s.id; });
-    var active = it.spotDefs.filter(function (d) { return d.pattern == null || ids.indexOf(d.pattern) >= 0; });
-    var spots = {}, meta = [];
-    active.forEach(function (d, i) {
-      spots[d.key] = i + 1;
-      meta.push({ n: i + 1, key: d.key, pattern: d.pattern, label: d.label });
-    });
-    var data = Object.assign({}, it.data, { spots: spots });
-    if (ids.indexOf(2) < 0) data.refresh = null;
-    return {
-      data: data,
-      meta: meta,
-      targets: meta.filter(function (m) { return m.pattern != null; }).map(function (m) { return m.n; })
-    };
-  }
-  function spotsResult(it, selected) {
-    var rt = w1Runtime(it);
-    var hits = selected.filter(function (n) { return rt.targets.indexOf(n) >= 0; }).length;
-    var falseAlarms = selected.length - hits;
-    var patterns = {};
-    rt.meta.forEach(function (m) { if (m.pattern) patterns[m.n] = m.pattern; });
-    return { id: it.id, selected: selected.slice().sort(num), targets: rt.targets,
-             spotPatterns: patterns, hits: hits, falseAlarms: falseAlarms, seconds: null };
   }
   function num(a, b) { return a - b; }
   function patternCorrect(r) {
@@ -373,59 +248,27 @@
     if (r.humans) return r.hits === r.humans.length && r.falseAlarms === 0;
     return !!r.isCorrect;
   }
-
-  // ── Vorschau-Zustand ───────────────────────────────────
-  function previewState(key) {
-    var s = fresh();
-    state = s;
-    s.code = urlCode || "VORSCHAU";
-    s.startedAt = "2026-10-12T10:31:04Z";
-    s.apps = urlApps.length ? urlApps : ["ig", "tt", "sc"];
-    s.appsSource = "param";
-    s.shown = assignPatterns(s.apps);
-    var m = /^(p(\d+)|W\d+|d\d)([LKABER])$/.exec(key);
-    var pageKey = m ? m[1] : key;
-    var variant = params.get("variant");
-    if (m && m[2]) {
-      // gewünschtes Muster in gewünschter App erzwingen (auch wenn es für diese Apps sonst entfiele)
-      var def = patternDef(Number(m[2]));
-      if (def) {
-        var current = s.shown.filter(function (e) { return e.id === def.id; })[0];
-        var entry = def.always ? { id: def.id, app: "lock", screen: "lock" } : entryFor(def, variant || (current && current.app) || def.order[0]);
-        s.shown = s.shown.filter(function (e) { return e.id !== def.id; });
-        s.shown.push(entry);
-        s.shown.sort(function (x, y) { return x.id - y.id; });
-      }
-    }
-    buildPages();
-    var forced = Number(params.get("answer")) || 0;
-    pages.forEach(function (pg) {
-      if (pg.type !== "pattern") return;
-      var p = pg.pattern;
-      if (p.type === "multi") {
-        var sel = exportMode ? p.data.items.map(function (it, i) { return it.human ? i + 1 : 0; }).filter(Boolean) : [1, 2, 4];
-        s.patterns[p.id] = Object.assign({ id: p.id, name: p.key }, multiResult(p, sel), { secondsA: 0, secondsB: 0 });
-      } else {
-        var ans = forced || (p.correct === 1 ? 2 : 1);
-        s.patterns[p.id] = { id: p.id, name: p.key, answer: ans, correct: p.correct, isCorrect: ans === p.correct, secondsA: 0, secondsB: 0 };
-      }
-    });
-    C.recognition.forEach(function (it) {
-      if (it.type === "spots") s.recognition[it.id] = spotsResult(it, [1, 2, 4]);
-      else s.recognition[it.id] = w2Result(it, w2Cards(it), ["human", "app", "human"]);
-    });
-    var phaseOf = { L: "est", K: "ak", A: "ask", B: "react", E: "explain", R: "dres" };
-    s.sub = m ? phaseOf[m[3]] : "look";
-    if (m && /^W/.test(m[1])) s.sub = m[3] === "B" ? "react" : "ask"; // Wiedererkennen: A Frage, B Rückmeldung
-    s.page = Math.max(0, pages.findIndex(function (pg) { return pg.key === pageKey; }));
-    if (s.sub === "look" || s.sub === "ask" || s.sub === "est" || s.sub === "ak") {
-      // Zustand A: noch keine Antwort auf dieser Seite
-      var pg = pages[s.page];
-      if (pg.pattern) delete s.patterns[pg.pattern.id];
-      if (pg.item) delete s.recognition[pg.item.id];
-    }
-    return s;
+  // Übung 1: Stellen, fortlaufend nummeriert (nur Muster, die gezeigt wurden, plus Ablenker)
+  function w1Runtime(it) {
+    var ids = shownIds();
+    var active = it.spotDefs.filter(function (d) { return d.pattern == null || ids.indexOf(d.pattern) >= 0; });
+    var spots = {}, meta = [];
+    active.forEach(function (d, i) { spots[d.key] = i + 1; meta.push({ n: i + 1, key: d.key, pattern: d.pattern, label: d.label }); });
+    return {
+      data: Object.assign({}, it.data, { spots: spots }),
+      meta: meta,
+      targets: meta.filter(function (m) { return m.pattern != null; }).map(function (m) { return m.n; })
+    };
   }
+  function spotsResult(it, selected) {
+    var rt = w1Runtime(it);
+    var hits = selected.filter(function (n) { return rt.targets.indexOf(n) >= 0; }).length;
+    var patterns = {};
+    rt.meta.forEach(function (m) { if (m.pattern) patterns[m.n] = m.pattern; });
+    return { id: it.id, selected: selected.slice().sort(num), targets: rt.targets,
+             spotPatterns: patterns, hits: hits, falseAlarms: selected.length - hits, seconds: null };
+  }
+  function shownIds() { return (state.shown || []).map(function (s) { return s.id; }); }
 
   // ── Hilfen ─────────────────────────────────────────────
   function esc(s) {
@@ -436,18 +279,13 @@
   function fill(tpl, vals) {
     return String(tpl).replace(/\{(\w+)\}/g, function (_, k) { return vals[k] != null ? vals[k] : ""; });
   }
-  function paras(list) {
-    return list.map(function (t) { return "<p>" + esc(t).replace(/\*\*(.+?)\*\*/g, "<b>$1</b>") + "</p>"; }).join("");
-  }
-  function joinList(nums) {
-    if (nums.length <= 1) return nums.join("");
-    return nums.slice(0, -1).join(", ") + C.ui.listAnd + nums[nums.length - 1];
-  }
+  function rich(t) { return esc(t).replace(/\*\*(.+?)\*\*/g, "<b>$1</b>"); }
+  function paras(list) { return list.map(function (t) { return "<p>" + rich(t) + "</p>"; }).join(""); }
   function assetAttr(id) {
-    var g = C.assets[id] || "#888";
+    var g = (CT.assets || {})[id] || "#888";
     return ' data-asset="' + esc(id) + '" style="background:' + esc(g) + '"';
   }
-  // Echte Bilder einhängen: assets/<kennung>.jpg oder .png, falls vorhanden.
+  // Echte Bilder einhängen: assets/<kennung>.jpg oder .png, falls vorhanden
   var assetCache = {};
   function applyAssets(root) {
     root.querySelectorAll("[data-asset]").forEach(function (el) {
@@ -463,7 +301,7 @@
   }
   function setBg(el, src) {
     el.style.background = 'center / cover no-repeat url("' + src + '")';
-    el.classList.add("asset-loaded"); // Avatare: Initiale ausblenden, Foto zeigen
+    el.classList.add("asset-loaded");
   }
   function tryImg(id, exts, done) {
     if (!exts.length) return done(null);
@@ -473,8 +311,6 @@
     img.onerror = function () { tryImg(id, exts.slice(1), done); };
     img.src = src;
   }
-  // Profilbild: rundes Foto (assets/av-<name>.jpg, CC0), sonst farbiger
-  // Kreis mit Anfangsbuchstabe als Rückfall (z. B. Gruppen, Nebenfiguren)
   function avatar(name, extra) {
     var clean = String(name || "").replace(/^@/, "").replace(/\s*·.*$/, "");
     var slug = clean.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
@@ -482,7 +318,6 @@
     return '<span class="avatar avc' + n + (extra ? " " + extra : "") +
       '" data-asset="av-' + esc(slug) + '" aria-hidden="true">' + esc(clean.charAt(0).toUpperCase()) + "</span>";
   }
-
   function focusFirst(sel) {
     if (previewKey) return true;
     var el = app.querySelector(sel);
@@ -515,28 +350,22 @@
     plusSquare: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5" fill="none" stroke="currentColor" stroke-width="2"/><path fill="none" stroke="currentColor" stroke-width="2" d="M12 7.5v9M7.5 12h9"/></svg>',
     homeLine: '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" d="M3.5 10.5L12 3.5l8.5 7V20.5h-6v-6h-5v6h-6z"/></svg>',
     searchLine: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="2"/><path stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M15.5 15.5l5 5"/></svg>',
+    lock: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10V7a5 5 0 0110 0v3h1a1 1 0 011 1v9a1 1 0 01-1 1H6a1 1 0 01-1-1v-9a1 1 0 011-1zm2 0h6V7a3 3 0 00-6 0z"/></svg>',
+    phone: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.6 10.8a15.2 15.2 0 006.6 6.6l2.2-2.2a1 1 0 011-.25 11.4 11.4 0 003.6.57 1 1 0 011 1V20a1 1 0 01-1 1A17 17 0 013 4a1 1 0 011-1h3.5a1 1 0 011 1c0 1.25.2 2.45.57 3.57a1 1 0 01-.25 1z"/></svg>',
+    warn: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2L1 21h22zm-1 7h2v6h-2zm0 8h2v2h-2z"/></svg>',
     status: '<svg viewBox="0 0 58 14" aria-hidden="true"><rect x="0" y="9" width="3" height="5" rx="1"/><rect x="5" y="6" width="3" height="8" rx="1"/><rect x="10" y="3" width="3" height="11" rx="1"/><rect x="15" y="0" width="3" height="14" rx="1"/><path d="M27 4.5a9 9 0 0112 0l-1.4 1.5a7 7 0 00-9.2 0zM29.4 7.2a5.5 5.5 0 017.2 0L35.2 8.7a3.5 3.5 0 00-4.4 0zM33 12.5l-1.7-1.8a2.4 2.4 0 013.4 0z"/><rect x="42" y="2" width="14" height="10" rx="3" fill="none" stroke="currentColor" stroke-width="1.4"/><rect x="44" y="4" width="9" height="6" rx="1.5"/></svg>'
   };
-  function iconClass(key) { return (C.apps[key] || {}).icon || ""; }
-
-  // Kopf der Instagram-artigen Screens: ohne App-Namen (keine Wortmarke), nur neutrale Symbole
-  // Aufbau wie die aktuelle Instagram-Startseite: schlichtes „+" links, Herz rechts
-  function igHead(d) {
+  function iconClass(key) { return (CT.apps[key] || {}).icon || ""; }
+  function igHead() {
     return '<div class="ig-head"><span class="ig-plus" aria-hidden="true">' + ICON.plusThin + "</span>" +
-      '<span class="ig-title">' + (d.title ? esc(d.title) : "") + "</span>" +
-      '<span class="ig-icons">' + ICON.heartLine + "</span></div>";
+      '<span class="ig-title"></span><span class="ig-icons">' + ICON.heartLine + "</span></div>";
   }
-
-  // 1204 → „1.204"
   function deNum(n) { return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, "."); }
-
-  // Profilbild in der Story-Leiste: Foto (assets/av-<name>.jpg), sonst Initiale
   function stAv(user, i, own) {
     var slug = own ? "du" : String(user).toLowerCase().replace(/^@/, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
     return '<span class="st-av av' + (i % 5) + '" data-asset="av-' + esc(slug) + '" aria-hidden="true">' +
       esc(String(user).charAt(0).toUpperCase()) + "</span>";
   }
-  // Story-Leiste oben im Instagram-Feed: eigene Story + Kontakte mit Farbring und Foto
   function igStoryBar(list) {
     list = list || ["Deine Story", "lena_k", "tom.reist", "jonas.r", "mia.kocht"];
     return '<div class="st-bar ig-stbar">' + list.map(function (u, i) {
@@ -545,10 +374,8 @@
         (own ? '<span class="st-plus" aria-hidden="true">+</span>' : "") + '</span><span class="st-name">' + esc(u) + "</span></div>";
     }).join("") + "</div>";
   }
-  // Ein Instagram-Beitrag. „♡ 1.204 · Pasta in 10 Minuten" → Zähler an den Symbolen,
-  // „Gefällt … und N weiteren Personen", Bildunterschrift, Zeitangabe.
-  // tgt(key, html) umrahmt Stellen für Wiederfinden 1; headAttr markiert die Kopfzeile.
-  function igPostHtml(post, i, tgt, headAttr, imgCls) {
+  // Ein Instagram-Beitrag; tgt(key, html) umrahmt Stellen für Übung 1; headAttr markiert die Kopfzeile
+  function igPostHtml(post, i, tgt, headAttr) {
     tgt = tgt || function (k, h) { return h; };
     var m = /^♡\s*([^·]+?)\s*·\s*(.*)$/.exec(post.line || "");
     var likes = m ? m[1] : "", cap = m ? m[2] : (post.line || "");
@@ -559,60 +386,36 @@
       '<span class="ig-who">' + tgt("user-" + i, '<span class="user">' + esc(post.user) + "</span>") +
       (post.suggested ? tgt("sugg-" + i, '<span class="sugg">' + esc(post.suggested) + "</span>") : "") + "</span>" +
       '<span class="ig-dots" aria-hidden="true">⋯</span></div>' +
-      '<div class="ig-img ' + (imgCls || "ig-sq") + '"' + assetAttr(post.asset) + "></div>" +
+      '<div class="ig-img ig-sq"' + assetAttr(post.asset) + "></div>" +
       '<div class="ig-actions" aria-hidden="true">' +
       act(ICON.heartLine, likes) + act(ICON.commentLine, n ? deNum(Math.round(n / 23) + 2) : "") +
       act(ICON.repostLine, n ? deNum(Math.round(n / 61) + 1) : "") + act(ICON.send, n ? deNum(Math.round(n / 40) + 1) : "") +
-      '<span class="ig-save">' + ICON.bookmark + "</span></div>" +
-      (n ? '<div class="ig-line">' + tgt("likes-" + i, '<span class="ig-likes">Gefällt <b>' + esc(friend) + "</b> und <b>" +
-        deNum(n - 1) + " weiteren Personen</b></span>") + "</div>" : "") +
+      '<span class="ig-save">' + tgt("save-" + i, ICON.bookmark) + "</span></div>" +
+      (n ? '<div class="ig-line"><span class="ig-likes">Gefällt <b>' + esc(friend) + "</b> und <b>" + deNum(n - 1) + " weiteren Personen</b></span></div>" : "") +
       (cap ? '<div class="ig-cap"><b>' + esc(post.user) + "</b> " + esc(cap) + "</div>" : "") +
       '<div class="ig-time">Vor ' + (i + 2) + " Stunden</div></div>";
   }
-  // Untere Leiste wie bei Instagram (nur Symbole)
   function igNavHtml() {
     return '<div class="ig-nav" aria-hidden="true">' + ICON.homeLine + ICON.searchLine + ICON.plusSquare + ICON.reels +
       avatar("du", "ig-nav-av") + "</div>";
   }
-
-  // Untere Leiste im TikTok-Stil (Start, Suche, Plus, Inbox, Profil)
   function ttNav(d) {
     var navIcons = [ICON.home, ICON.search, ICON.plus, ICON.inbox, ICON.profile];
     return '<div class="nav" aria-hidden="true">' + d.nav.map(function (n, i) {
       return '<span class="' + (i === 2 ? "plus" : "") + '">' + navIcons[i] + (i === 2 ? "" : esc(n)) + "</span>";
     }).join("") + "</div>";
   }
-
-  // Datum des Sperrbildschirms: immer heute, z. B. „Dienstag, 6. Oktober"
   function todayDe() {
     try { return new Intl.DateTimeFormat("de-DE", { weekday: "long", day: "numeric", month: "long" }).format(new Date()); }
     catch (e) { return ""; }
   }
 
-  // „0:02 · läuft" → 2 Sekunden
-  function timeSeconds(t) {
-    var m = /(\d+):(\d+)/.exec(String(t || ""));
-    return m ? Number(m[1]) * 60 + Number(m[2]) : 0;
-  }
-  // Laufende Zeitangabe im Video (Muster 4, Zustand B), passend zum Balken; springt mit der Schleife auf 0:00
-  setInterval(function () {
-    if (previewKey && exportMode) return;
-    document.querySelectorAll(".time[data-loop]").forEach(function (el) {
-      if (!el.dataset.t0) el.dataset.t0 = String(Date.now());
-      var loop = Number(el.dataset.loop), start = Number(el.dataset.start);
-      var sec = Math.floor(((Date.now() - Number(el.dataset.t0)) / 1000 + start) % loop);
-      el.textContent = el.dataset.tpl.replace(/\d+:\d+/, "0:" + (sec < 10 ? "0" : "") + sec);
-    });
-  }, 200);
-
   // ── Vorlagen der nachgestellten Screens ────────────────
-  // render(p, isB, opt) liefert HTML. opt.animate: Zustand B wird gerade erreicht.
-  // toB(body, p) spielt die Reaktion der App auf den Tipp ab (Zustand A → B).
+  // render(p, isB, opt) liefert HTML; toB(body, p) spielt die Reaktion ab (Zustand A → B).
   // Ein Element mit data-mark erhält in Zustand B die rote Umrandung.
   var SCREENS = {
     "tiktok-feed": {
       cls: "tt",
-      // d.static: ein Video, das stehen bleibt (Muster 3); sonst wischt der Tipp zum nächsten (Muster 1)
       render: function (p, isB) {
         var d = p.data;
         var list = d.static ? d.posts.slice(0, 1) : d.posts;
@@ -626,10 +429,8 @@
             "</div>";
         }).join("");
         var tabs = d.tabs ? '<div class="tt-tabs">' + d.tabs.map(function (t, i) {
-          var on = i === d.activeTab;
-          return '<span class="' + (on ? "on" : "") + '"' + (isB && d.mark === "tab-" + i ? ' data-mark="below"' : "") + ">" + esc(t) + "</span>";
+          return '<span class="' + (i === d.activeTab ? "on" : "") + '"' + (isB && d.mark === "tab-" + i ? ' data-mark="below"' : "") + ">" + esc(t) + "</span>";
         }).join("") + "</div>" : "";
-        // Muster 1: Auch vor dem Wischen ragt das nächste Video unten herein (wie nach dem Wischen, 11.10.)
         return '<div class="feed">' + tabs + '<div class="track' + (isB && !d.static ? " to-b still" : (!d.static ? " peek" : "")) + '">' + posts + "</div>" +
           (isB && !d.static ? '<div class="seam-zone" data-mark="above"></div>' : "") + "</div>" + ttNav(d);
       },
@@ -643,25 +444,16 @@
     "ig-feed": {
       cls: "ig",
       scroll: function (item) { return !!(item && item.type === "spots"); },
-      // opt.spot(key) liefert die nummerierte Stelle (nur Wiedererkennen 1)
       render: function (p, isB, opt) {
         var d = p.data;
         var spot = (opt && opt.spot) || function () { return ""; };
-        // Wiederfinden 1: Element gestrichelt umrahmen, Nummer sitzt auf der Ecke des Rahmens
         var tgt = function (key, inner, cls) {
           var s = spot(key);
           return s ? '<span class="w1t ' + (cls || "") + '">' + inner + s + "</span>" : inner;
         };
         var markAttr = function (key) { return isB && d.mark === key ? ' data-mark="' + (d.markPlace || "below") + '"' : ""; };
-        var html = igHead(d);
-        html += '<div class="ig-content' + (opt && opt.animate && d.toast ? " settle" : "") + '">';
-        if (d.refresh) {
-          html += '<div class="ig-refresh"' + markAttr("refresh") + ">" +
-            tgt("refresh", '<span class="ig-refresh-in"><span class="spinner" aria-hidden="true"></span><span>' + esc(d.refresh) + "</span></span>") +
-            (isB && d.toast ? '<span class="toast' + (opt && opt.animate ? " fade-in" : "") + '">' + esc(d.toast) + "</span>" : "") +
-            "</div>";
-        }
-        // Story-Leiste oben im Feed (nicht mehr sichtbar, sobald weitergescrollt ist)
+        var html = igHead();
+        html += '<div class="ig-content">';
         if (d.stories !== false) html += igStoryBar(d.stories);
         d.posts.forEach(function (post, i) {
           if (d.scrollFeed && isB && i === 1) html += '<div class="ig-seam"' + markAttr("seam-1") + "></div>";
@@ -676,21 +468,13 @@
         return html;
       },
       toB: function (body, p) {
-        if (p.data.scrollFeed) {
-          // Weiter scrollen: der Feed rückt nach oben, vom ersten Beitrag bleibt das Bildende sichtbar
-          var content = body.querySelector(".ig-content");
-          var dy = feedScrollDy(body);
-          content.style.transition = "transform " + ms(350) + "ms cubic-bezier(.2,.7,.2,1)";
-          content.style.transform = "translateY(-" + Math.round(dy) + "px)";
-          return wait(ms(360));
-        }
-        if (!p.data.toast) return Promise.resolve();
-        // Ziehen: Inhalt rutscht nach unten, das Rad dreht sich etwa 1 Sekunde
-        body.querySelector(".ig-content").classList.add("pulled");
-        body.querySelector(".spinner").classList.add("spin");
-        return wait(ms(1000));
+        if (!p.data.scrollFeed) return Promise.resolve();
+        var content = body.querySelector(".ig-content");
+        var dy = feedScrollDy(body);
+        content.style.transition = "transform " + ms(350) + "ms cubic-bezier(.2,.7,.2,1)";
+        content.style.transform = "translateY(-" + Math.round(dy) + "px)";
+        return wait(ms(360));
       },
-      // Endzustand nach dem Scrollen (Muster 1): gleiche Verschiebung wie in der Animation
       afterB: function (body, p) {
         if (!p.data.scrollFeed) return;
         var content = body.querySelector(".ig-content");
@@ -701,11 +485,10 @@
 
     "reels": {
       cls: "rl",
-      // Video-Feed mit Sofortstart. Zustand B: Balken läuft, springt am Ende auf den Anfang (Schleife),
-      // die Zeitangabe läuft mit. d.nav vorhanden = TikTok-Leiste mit Beschriftung, sonst Reels-Leiste.
+      // Video-Feed mit Sofortstart. Zustand B: Balken läuft und springt am Ende auf den Anfang (Schleife).
       render: function (p, isB) {
         var d = p.data;
-        var loop = Number(d.loopSeconds || 4), start = timeSeconds(d.time);
+        var loop = Number(d.loopSeconds || 4);
         var videos = d.videos.map(function (v, i) {
           var live = isB && i === 1;
           var hidden = (!isB && i > 0) || (isB && i === 0);
@@ -713,12 +496,11 @@
             '<div class="meta"><div class="user">' + esc(v.user) + '</div><div class="cap">' + esc(v.caption) + "</div></div>" +
             '<div class="side"><span>' + ICON.heart + esc(v.likes || "") + "</span><span>" + ICON.comment + esc(v.comments || "") + "</span><span>" +
             (d.nav ? ICON.share + esc(d.share || "") : ICON.send) + "</span></div>" +
-            '<div class="bar"><span class="' + (live ? "run" : "") + '" style="' + // Autoplay: kein Rahmen (Daniel 11.10.)
-            (live ? "animation-duration:" + loop + "s;animation-delay:-" + start + "s" : "width:" + Number(v.progress || 0) + "%") + '"></span></div>' +
+            '<div class="bar"><span class="' + (live ? "run" : "") + '" style="' +
+            (live ? "animation-duration:" + loop + "s" : "width:" + Number(v.progress || 0) + "%") + '"></span></div>' +
             "</div>";
         }).join("");
-        return '<div class="feed"><div class="track' +
-          (isB ? " to-b still" : "") + '">' + videos + "</div></div>" +
+        return '<div class="feed"><div class="track' + (isB ? " to-b still" : "") + '">' + videos + "</div></div>" +
           (d.nav ? ttNav(d) : '<div class="nav" aria-hidden="true"><span>' + ICON.home + "</span><span>" + ICON.search + "</span><span>" +
             ICON.play + "</span><span>" + ICON.send + "</span><span>" + ICON.profile + "</span></div>");
       },
@@ -728,36 +510,15 @@
       }
     },
 
-    "ig-comments": {
-      cls: "igc",
-      render: function (p, isB) {
-        var d = p.data;
-        return (d.reel ? '<div class="igc-reel"' + assetAttr(d.reel) + "></div>" : "") +
-          '<div class="igc-sheet"><div class="igc-grip" aria-hidden="true"></div><div class="igc-head">' + esc(d.title) + "</div>" + d.comments.map(function (c) {
-          var n = isB && c.likesB ? c.likesB : c.likes;
-          return '<div class="igc-row' + (c.mine ? " mine" : "") + '">' + avatar(c.mine ? "du" : c.user) +
-            '<div class="igc-text"><div class="user">' + esc(c.user) + "</div><div>" + esc(c.text) + "</div></div>" +
-            '<div class="igc-like"' + (isB && c.mine ? ' data-mark="' + (d.markPlace || "below") + '"' : "") + ">" +
-            (c.mine ? ICON.heart : ICON.heartLine) + '<span class="n">' + esc(n) + "</span></div></div>";
-        }).join("") + "</div>";
-      },
-      toB: function (body, p) {
-        // Der Zähler springt sichtbar auf den neuen Wert
-        var mine = p.data.comments.filter(function (c) { return c.mine; })[0];
-        var n = body.querySelector(".igc-row.mine .n");
-        n.textContent = mine.likesB;
-        n.parentNode.classList.add("pop");
-        return wait(ms(320));
-      }
-    },
-
     "lockscreen": {
       cls: "lock",
       scroll: function () { return true; },
+      // opt.sel: Auswahl, die angezeigt wird (Schritt „Ausprobieren“ und Rückblick)
       render: function (p, isB, opt) {
         var d = p.data;
         var r = state.patterns[p.id];
-        var html = isB ? "" : '<div class="lock-clock">' + esc(d.time) + '</div><div class="lock-date">' + esc(d.date || todayDe()) + "</div>";
+        var sel = (opt && opt.sel) || picks;
+        var html = isB ? "" : '<div class="lock-clock">' + esc(d.time) + '</div><div class="lock-date">' + esc(todayDe()) + "</div>";
         html += '<div class="lock-list">';
         d.items.forEach(function (it, i) {
           var n = i + 1;
@@ -765,117 +526,124 @@
             '<span class="note-main"><span class="note-top"><strong>' + esc(appLabel(it.app)) + "</strong><span>" + esc(it.time) + "</span></span>" +
             '<span class="note-text">' + esc(it.text) + "</span></span>";
           if (!isB) {
-            html += '<button type="button" class="note" data-n="' + n + '" aria-pressed="' + (picks.indexOf(n) >= 0) + '">' + inner + "</button>";
+            html += '<button type="button" class="note" data-n="' + n + '" aria-pressed="' + (sel.indexOf(n) >= 0) + '">' + inner + "</button>";
           } else {
             var mine = r && r.selected.indexOf(n) >= 0 && !exportMode;
             html += '<div class="note ' + (it.human ? "human" : "app") + (opt && opt.animate ? " fade-in" : "") + '">' + inner +
-              (mine ? '<span class="picked">' + ICON.check + '<span class="sr-only">' + esc(C.ui.selectedByYou) + "</span></span>" : "") +
+              (mine ? '<span class="picked">' + ICON.check + '<span class="sr-only">' + esc(UI.selectedByYou) + "</span></span>" : "") +
               '<span class="note-tag">' + esc(it.human ? d.labelHuman : d.labelApp) + "</span></div>";
           }
         });
-        html += "</div>";
-        return html;
+        return html + "</div>";
       },
       toB: function () { return Promise.resolve(); }
     },
 
-    "ig-stories": {
-      cls: "ig igs",
-      render: function (p, isB, opt) {
-        var d = p.data;
-        var html = igHead(d);
-        html += '<div class="st-bar ig-stbar">' + d.stories.map(function (st, i) {
-          var cls = "st-ring" + (st.own ? " own" : "") + (st.expiring && isB ? " expired" : "");
-          return '<div class="st"><span class="' + cls + '"' + (st.expiring && isB ? ' data-mark="' + (d.markPlace || "below") + '"' : "") +
-            (st.expiring ? ' data-expiring="1"' : "") + ">" + stAv(st.user, i, st.own) +
-            (st.own ? '<span class="st-plus" aria-hidden="true">+</span>' : "") + '</span><span class="st-name">' + esc(st.user) + "</span></div>";
-        }).join("") + "</div>";
-        if (!isB) html += '<div class="st-expiry">' + esc(d.expiry) + "</div>";
-        html += '<div class="ig-content">' + igPostHtml(d.post, 0) + "</div>" + igNavHtml();
-        return html;
-      },
-      toB: function (body) {
-        // Der Ring blendet in 300 ms aus, die Zeile „noch 1 Std." verschwindet
-        body.querySelector("[data-expiring]").classList.add("expire");
-        var line = body.querySelector(".st-expiry");
-        if (line) line.classList.add("fade-out");
-        return wait(ms(300));
-      }
-    },
-
-    "story-view": {
-      cls: "ig",
-      // Zustand A: die geöffnete Story von lena_k, oben Name und Alter ("23 Std.").
-      // Zustand B: zurück in der Story-Leiste, der Ring von lena_k ist weg.
-      render: function (p, isB, opt) {
-        var d = p.data;
-        if (!isB) {
-          return '<div class="story-full">' +
-            '<div class="story-bars"><span class="done"></span><span class="done"></span><span></span></div>' +
-            '<div class="story-head">' + avatar(d.story.user) + '<span class="user">' + esc(d.story.user) + "</span>" +
-            '<span class="story-age">' + esc(d.story.age) + "</span></div>" +
-            '<div class="story-img"' + assetAttr(d.story.asset) + "></div>" +
-            '<div class="story-reply"><span class="story-field">' + esc(d.story.replyField) + "</span>" + ICON.heartLine + ICON.send + "</div>" +
-            "</div>";
-        }
-        var html = igHead(d);
-        html += '<div class="st-bar ig-stbar">' + d.stories.map(function (st, i) {
-          if (st.expiring) {
-            // Der Platz, an dem lena_ks Ring war: Kreis ohne Ring, markiert
-            return '<div class="st"><span class="st-ring expired"' + (' data-mark="' + (d.markPlace || "below") + '"') +
-              ">" + stAv(st.user, i, false) + "</span>" +
-              '<span class="st-name">' + esc(st.user) + "</span></div>";
-          }
-          return '<div class="st"><span class="st-ring' + (st.own ? " own" : "") + '">' + stAv(st.user, i, st.own) +
-            (st.own ? '<span class="st-plus" aria-hidden="true">+</span>' : "") +
-            '</span><span class="st-name">' + esc(st.user) + "</span></div>";
-        }).join("") + "</div>";
-        html += '<div class="ig-content">' + igPostHtml(d.post, 0) + "</div>" + igNavHtml();
-        return html;
-      },
-      toB: function () { return Promise.resolve(); }
-    },
-
-    "snap-chats": {
-      cls: "snap",
+    // ───────────── Placebo: nachgestellte Screens ohne echte Marken ─────────────
+    "pw-reuse": {
+      cls: "pw",
+      scroll: function () { return true; },
       render: function (p, isB) {
         var d = p.data;
-        return '<div class="snap-head">' + esc(d.title) + "</div>" + d.rows.map(function (row) {
-          return '<div class="snap-row">' + avatar(row.user, "bitmoji") + '<div class="snap-text"><div class="user">' + esc(row.user) +
-            '</div><div class="status">' + esc(row.status) + "</div></div>" +
-            (row.streak ? '<span class="streak' + (row.mark ? " is-target" : "") + '"' + (isB && row.mark ? ' data-mark="' + (d.markPlace || "below") + '"' : "") + ">" + esc(row.streak) + "</span>" : "") +
-            "</div>";
-        }).join("");
+        return '<div class="pw-title">Meine Konten</div><div class="pw-list">' + d.accounts.map(function (a, i) {
+          var flag = "";
+          if (isB && a.leak) flag = '<span class="pw-flag leak">' + ICON.warn + esc(d.leakLabel) + "</span>";
+          else if (isB) flag = '<span class="pw-flag alert">' + ICON.warn + esc(d.alertLabel) + "</span>";
+          return '<div class="pw-acc' + (isB ? (a.leak ? " is-leak" : " is-alert") : "") + '"' + (isB && i === 1 ? ' data-mark="inside"' : "") + ">" +
+            '<div class="pw-acc-top"><b>' + esc(a.name) + '</b><span class="pw-kind">' + esc(a.kind) + "</span></div>" +
+            '<div class="pw-acc-row"><span>' + esc(d.email) + '</span><span class="pw-dots">●●●●●●●●●●●</span></div>' + flag + "</div>";
+        }).join("") + '</div><p class="pw-same">Überall dasselbe Passwort</p>';
       },
-      toB: function () { return Promise.resolve(); }
+      toB: function (body) {
+        var rows = body.querySelectorAll(".pw-acc");
+        if (rows[0]) rows[0].classList.add("is-leak");
+        return wait(ms(500));
+      },
+      // Rahmen um alle drei übernommenen Konten
+      markAll: ".pw-acc.is-alert"
+    },
+
+    "pw-phish": {
+      cls: "pw",
+      scroll: function () { return true; },
+      render: function (p, isB, opt) {
+        var d = p.data;
+        var spot = (opt && opt.spot) || function () { return ""; };
+        var tgt = function (key, inner, cls) { var s = spot(key); return s ? '<span class="w1t ' + (cls || "") + '">' + inner + s + "</span>" : inner; };
+        var urlHtml = isB ? esc(d.url.replace(d.urlMain, "")) + "<b>" + esc(d.urlMain) + "</b>" + (d.url.indexOf("/") >= 0 ? "" : "")
+          : esc(d.url);
+        if (isB) urlHtml = esc(d.url.split(d.urlMain)[0]) + "<b>" + esc(d.urlMain) + "</b>" + esc(d.url.split(d.urlMain)[1] || "");
+        return '<div class="pw-browser"><div class="pw-urlbar' + (isB ? " zoom" : "") + '"' + (isB ? ' data-mark="inside"' : "") + ">" +
+          tgt("url", '<span class="pw-url">' + ICON.lock + "<span>" + urlHtml + "</span></span>", "w1t-block") + "</div></div>" +
+          '<div class="pw-page">' +
+          tgt("banner", '<div class="pw-banner">' + ICON.warn + "<span>" + esc(d.banner) + "</span></div>", "w1t-block") +
+          '<div class="pw-logo"><span class="pw-logo-mark">M</span>' + esc(d.bank) + "</div>" +
+          '<div class="pw-form"><label>Benutzername</label><div class="pw-input"></div><label>Passwort</label><div class="pw-input"></div>' +
+          '<div class="pw-btn">Anmelden</div>' + tgt("forgot", '<span class="pw-link">Passwort vergessen?</span>') + "</div></div>";
+      },
+      toB: function () { return wait(ms(300)); }
+    },
+
+    "pw-2fa": {
+      cls: "lock",
+      scroll: function () { return true; },
+      render: function (p, isB) {
+        var d = p.data;
+        var html = '<div class="lock-clock">' + esc(UI.statusTime) + '</div><div class="lock-date">' + esc(todayDe()) + "</div>" +
+          '<div class="lock-list"><div class="note"><span class="app-icon ai-msg" aria-hidden="true"></span><span class="note-main">' +
+          '<span class="note-top"><strong>Nachrichten</strong><span>jetzt</span></span><span class="note-text">' + esc(d.sms) + "</span></span></div>";
+        if (isB) {
+          html += '<div class="note pw-alert"' + ' data-mark="inside"><span class="app-icon pw-ai-bank" aria-hidden="true">M</span><span class="note-main">' +
+            '<span class="note-top"><strong>Musterbank</strong><span>jetzt</span></span><span class="note-text">' + esc(d.loginAlert) + "</span></span></div>";
+        }
+        html += "</div>";
+        html += '<div class="pw-call"><div class="pw-call-who">' + ICON.phone + "<b>" + esc(d.caller) + "</b><span>Anruf läuft · 0:42</span></div>" +
+          '<p class="pw-call-text">' + esc(d.callText) + "</p></div>";
+        return html;
+      },
+      toB: function () { return wait(ms(300)); }
+    },
+
+    "pw-strength": {
+      cls: "pw",
+      scroll: function () { return true; },
+      render: function (p, isB) {
+        var d = p.data;
+        var html = '<div class="pw-browser"><div class="pw-urlbar"><span class="pw-url">' + ICON.lock + "<span>" +
+          esc(d.site.toLowerCase()) + ".example/registrieren</span></span></div></div>" +
+          '<div class="pw-page"><div class="pw-logo"><span class="pw-logo-mark">S</span>' + esc(d.site) + "</div>" +
+          '<div class="pw-form"><label>Neues Passwort</label><div class="pw-input pw-filled">' + esc(d.password) + "</div>" +
+          '<div class="pw-meter"><span></span><span></span><span></span><span></span></div><div class="pw-meter-label">Stärke: <b>' + esc(d.meterLabel) + "</b></div>" +
+          '<div class="pw-btn">Konto anlegen</div></div>';
+        if (isB) {
+          html += '<div class="pw-cracker" data-mark="inside"><div class="pw-cracker-head">Rate-Programm</div>' +
+            d.tries.map(function (t, i) {
+              var hit = i === d.tries.length - 1;
+              return '<div class="pw-try' + (hit ? " hit" : "") + '"><span>' + esc(t) + "</span><span>" + (hit ? "Treffer" : "falsch") + "</span></div>";
+            }).join("") + "</div>";
+        }
+        return html + "</div>";
+      },
+      toB: function () { return wait(ms(300)); }
     }
   };
 
   // ── Handy-Rahmen ───────────────────────────────────────
-  // Der nachgestellte Screen wird immer in fester Größe gezeichnet (DEVICE_W × DEVICE_H, inklusive Rahmen)
-  // und dann passend skaliert: groß zum Ansehen, klein über der Frage.
   var DEVICE_W = 410, DEVICE_H = 800;
-
-  // Nur der scrollbare Inhalt (ohne Kopf- und Fußleiste), für Neuzeichnen im Rahmen
   function bodyOnly(html) {
     return html.replace(/^<div class="ig-head">[\s\S]*?<\/div>/, "").replace(/<div class="ig-nav"[\s\S]*?<\/div>$/, "");
   }
-  // Handy-Rahmen als feste Spalte: Statusleiste, Kopfzeile, Inhalt (scrollt allein),
-  // Fußleiste. Kopf- und Fußleiste der Instagram-Screens werden aus dem Inhalt
-  // herausgelöst, damit sie beim Scrollen fest oben bzw. unten bleiben.
-  function deviceHtml(cls, bodyHtml, scroll, time) {
+  function deviceHtml(cls, bodyHtml, scroll) {
     var head = "", foot = "";
     bodyHtml = bodyHtml.replace(/^<div class="ig-head">[\s\S]*?<\/div>/, function (m) { head = m; return ""; });
     bodyHtml = bodyHtml.replace(/<div class="ig-nav"[\s\S]*?<\/div>$/, function (m) { foot = m; return ""; });
     return '<div class="device-wrap" data-size="full"><div class="device ' + cls + '">' +
-      '<div class="device-status"><span class="device-tag">' + esc(C.ui.screenTag) + '</span>' +
-      '<span class="device-time">' + esc(time || C.ui.statusTime) + '</span><span class="device-icons">' + ICON.status + "</span></div>" +
+      '<div class="device-status"><span class="device-tag">' + esc(UI.screenTag) + '</span>' +
+      '<span class="device-time">' + esc(UI.statusTime) + '</span><span class="device-icons">' + ICON.status + "</span></div>" +
       head + '<div class="screen-body' + (scroll ? " scroll" : "") + '">' + bodyHtml + "</div>" + foot + "</div></div>";
   }
-
-  // Größe des Handys an den freien Platz anpassen. size: "full" | "small"
-  function fitDevice(animate) {
-    var wrap = app.querySelector(".device-wrap");
+  function fitDevice() {
+    var wrap = app.querySelector(".lp-stage > .device-wrap");
     if (!wrap) return;
     var dev = wrap.firstChild, stage = wrap.parentNode;
     var cs = getComputedStyle(stage);
@@ -891,53 +659,49 @@
     var maxH = small ? Math.min(availH, Math.max(170, window.innerHeight * 0.3)) : availH;
     var s = Math.min(1, availW / DEVICE_W, maxH / DEVICE_H);
     s = Math.max(small ? 0.2 : 0.42, s);
-    // Kein Zoom-Effekt mehr (Feedback-Call 05.10.): Größenwechsel ohne Animation
     wrap.classList.add("no-anim");
     dev.style.transform = "scale(" + s.toFixed(4) + ")";
     wrap.style.width = Math.round(DEVICE_W * s) + "px";
     wrap.style.height = Math.round(DEVICE_H * s) + "px";
-    wrap.setAttribute("data-scale", s.toFixed(4));
   }
-
-  // Muster 1 (Instagram): so weit scrollen, dass vom ersten Beitrag das untere Bildende
-  // (150 px) stehen bleibt; Werte im unskalierten Screen
   function feedScrollDy(body) {
     var content = body.querySelector(".ig-content"), img = body.querySelector(".ig-post .ig-img");
     if (!content || !img) return 0;
     var k = body.getBoundingClientRect().width / body.offsetWidth || 1;
     return Math.max(0, Math.round((img.getBoundingClientRect().bottom - content.getBoundingClientRect().top) / k - 150));
   }
-
-  // Rote Umrandung um das Element mit data-mark (Koordinaten im unskalierten Screen)
+  // Rote Umrandung um Elemente mit data-mark (bzw. alle Treffer von markAll), im unskalierten Screen
   function placeMark(body) {
     body.querySelectorAll(".mark").forEach(function (el) { el.remove(); });
-    var t = body.querySelector("[data-mark]");
     var pg = pages[state.page];
-    if (!t || !pg.pattern) return;
-    var p = pg.pattern;
-    var br = body.getBoundingClientRect(), r = t.getBoundingClientRect();
-    var k = br.width / body.offsetWidth || 1; // aktuelle Skalierung, auch mitten in einer Animation
-    var inside = t.getAttribute("data-mark") === "inside";
-    var pad = inside ? -6 : 4, W = body.clientWidth, H = body.scrollHeight;
-    var left = Math.max(3, (r.left - br.left) / k - pad), right = Math.min(W - 3, (r.right - br.left) / k + pad);
-    var top = Math.max(3, (r.top - br.top) / k + body.scrollTop - pad), bottom = Math.min(H - 3, (r.bottom - br.top) / k + body.scrollTop + pad);
-    // Mindestgröße der Markierung 44 x 44 px (11.10.: kleine Ziele waren im verkleinerten Handy kaum zu sehen)
-    if (right - left < 44) { var cx = (left + right) / 2; left = Math.max(3, cx - 22); right = Math.min(W - 3, cx + 22); }
-    if (bottom - top < 44) { var cy = (top + bottom) / 2; top = Math.max(3, cy - 22); bottom = Math.min(H - 3, cy + 22); }
-    var mark = document.createElement("div");
-    mark.className = "mark fade-in";
-    mark.setAttribute("role", "img");
-    mark.setAttribute("aria-label", C.ui.markPrefix + p.markLabel);
-    mark.style.cssText = "left:" + left + "px;top:" + top + "px;width:" + (right - left) + "px;height:" + (bottom - top) + "px";
-    body.appendChild(mark);
+    if (!pg || !pg.pattern) return;
+    var tpl = SCREENS[pg.pattern.screen];
+    var targets = tpl.markAll ? body.querySelectorAll(tpl.markAll) : [body.querySelector("[data-mark]")];
+    var br = body.getBoundingClientRect();
+    var k = br.width / body.offsetWidth || 1;
+    Array.prototype.forEach.call(targets, function (t) {
+      if (!t) return;
+      var r = t.getBoundingClientRect();
+      var inside = t.getAttribute("data-mark") === "inside" || !!tpl.markAll;
+      var pad = inside ? -2 : 4, W = body.clientWidth, H = body.scrollHeight;
+      var left = Math.max(3, (r.left - br.left) / k - pad), right = Math.min(W - 3, (r.right - br.left) / k + pad);
+      var top = Math.max(3, (r.top - br.top) / k + body.scrollTop - pad), bottom = Math.min(H - 3, (r.bottom - br.top) / k + body.scrollTop + pad);
+      if (right - left < 44) { var cx = (left + right) / 2; left = Math.max(3, cx - 22); right = Math.min(W - 3, cx + 22); }
+      if (bottom - top < 44) { var cy = (top + bottom) / 2; top = Math.max(3, cy - 22); bottom = Math.min(H - 3, cy + 22); }
+      var mark = document.createElement("div");
+      mark.className = "mark fade-in";
+      mark.setAttribute("role", "img");
+      mark.setAttribute("aria-label", UI.markPrefix + (pg.pattern.markLabel || ""));
+      mark.style.cssText = "left:" + left + "px;top:" + top + "px;width:" + (right - left) + "px;height:" + (bottom - top) + "px";
+      body.appendChild(mark);
+    });
   }
-
   var resizeTimer;
   window.addEventListener("resize", function () {
     clearTimeout(resizeTimer);
     resizeTimer = setTimeout(function () {
-      fitDevice(false);
-      var body = app.querySelector(".screen-body");
+      fitDevice();
+      var body = app.querySelector(".lp-stage .screen-body");
       if (body && (state.sub === "react" || state.sub === "explain")) placeMark(body);
     }, 120);
   });
@@ -946,18 +710,18 @@
   function render() {
     var pg = pages[state.page];
     if (!previewKey) window.scrollTo(0, 0);
-    if (pg.type === "intro") renderIntro();
-    else if (pg.type === "apps") renderApps();
-    else if (pg.type === "pattern" || pg.type === "distractor") renderPattern(pg);
+    if (pg.type === "start") renderStart();
+    else if (pg.type === "pattern") renderPattern(pg);
     else if (pg.type === "recognition") renderRecognition(pg);
     else if (pg.type === "einordnung") renderEinordnung();
-    else renderSummary();
+    else if (pg.type === "zusammenfassung") renderSummary();
+    else if (pg.type === "quiz") renderQuiz(pg);
+    else renderPlan(pg);
     applyAssets(app);
     addBackButton();
     addContactLine();
     updateProgress();
   }
-  // Kontaktzeile unter dem Knopf (Rework 6.3), Adresse aus ../config.js
   function addContactLine() {
     var mail = window.STUDY_CONFIG && window.STUDY_CONFIG.CONTACT_EMAIL;
     var foot = app.querySelector(".lp-foot");
@@ -967,377 +731,28 @@
     p.innerHTML = 'Technische Probleme? Schreib an <a href="mailto:' + esc(mail) + '">' + esc(mail) + "</a>.";
     foot.appendChild(p);
   }
-
-  // ── Einschätzung und Bewertung: Prüfen und Speichern (Rework 4.1, 4.3, 6.1) ──
-  function bindEst(panel) {
-    var b = panel.querySelector(".est-b"), c = panel.querySelector(".est-c");
-    panel.querySelectorAll('input[name="est"]').forEach(function (inp) {
-      inp.addEventListener("change", function () {
-        // Text im jeweils anderen Feld bleibt erhalten, das Feld wird nur ausgeblendet
-        b.hidden = inp.value !== "ja";
-        c.hidden = inp.value === "ja";
-        var shownCard = inp.value === "ja" ? b : c;
-        setTimeout(function () { shownCard.scrollIntoView({ block: "nearest", behavior: "smooth" }); }, 30);
-      });
-    });
-    bindLiveCheck(panel);
-  }
-  function bindLiveCheck(panel) {
-    var recheck = function () { if (panel.querySelector(".q-card.missing")) checkPanel(panel, true); };
-    panel.addEventListener("change", recheck);
-    panel.addEventListener("input", recheck);
-  }
-  // Pflichtfragen prüfen: rot umrahmen, Meldung, oben die Zahl, zur ersten springen.
-  // quiet=true: nur erledigte Markierungen entfernen (beim Antworten).
-  function checkPanel(panel, quiet) {
-    var bad = [];
-    panel.querySelectorAll("[data-req]").forEach(function (q) {
-      if (q.hidden) { q.classList.remove("missing"); return; }
-      var msg = "";
-      if (q.getAttribute("data-req") === "radio") {
-        if (!q.querySelector("input:checked")) msg = C.ui.missing;
-      } else {
-        if (!q.querySelector("textarea").value.trim()) msg = C.ui.missing;
-      }
-      if (quiet && !q.classList.contains("missing")) return;
-      q.classList.toggle("missing", !!msg);
-      q.querySelector(".q-err").textContent = msg;
-      if (msg) bad.push(q);
-    });
-    var note = panel.querySelector(".miss-note");
-    if (note) { note.hidden = bad.length < 2; note.textContent = fill(C.ui.missingN, { n: bad.length }); }
-    if (!quiet && bad.length) bad[0].scrollIntoView({ block: "center", behavior: "smooth" });
-    return bad.length === 0;
-  }
-  // Muster-/Ablenker-Angaben, die jede ER- und AK-Zeile mitbekommt
-  function estMeta(pg) {
-    var p = pg.pattern;
-    return pg.type === "distractor"
-      ? { muster: "d" + pg.k, ablenker: pg.dist.id, app: pg.distApp, variante: pg.dist.id, position: pg.pos }
-      : { muster: "m" + p.id, app: p.targetApp, variante: p.screen + ":" + p.screenApp, fallback: !!p.fallback, position: pg.pos };
-  }
-  function dbSaveWave(wave, page, key, value, seconds) {
-    if (previewKey || !window.DB || !state.code) return;
-    window.DB.saveEvent(state.code, wave, page, key, value, seconds, pilotFlag, wave === "BOOST" ? C.version : undefined);
-  }
-  function saveEst(pg, panel) {
-    var a = (panel.querySelector('input[name="est"]:checked') || {}).value;
-    var b = panel.querySelector("#estb").value.trim(), c = panel.querySelector("#estc").value.trim();
-    var key = pg.type === "distractor" ? "ER_d" + pg.k : "ER_m" + pg.pattern.id;
-    var meta = estMeta(pg), secs = secondsSince(state.pageStart), page = "s" + pg.pos;
-    dbSaveWave("T0", page, key + "a", Object.assign({ wert: a }, meta), secs);
-    if (b) dbSaveWave("T0", page, key + "b", Object.assign({ wert: b }, meta), secs);
-    if (c) dbSaveWave("T0", page, key + "c", Object.assign({ wert: c }, meta), secs);
-    state.est[pg.key] = { a: a, b: b, c: c };
-  }
-
-  // Hinweis über dem Inhalt einer zurückgeblätterten Seite
   function addReviewNote() {
-    var panel = app.querySelector(".lp-panel");
+    var panel = app.querySelector(".lp-panel") || app.querySelector(".tp-body");
     if (!panel || panel.querySelector(".review-note")) return;
     var n = document.createElement("p");
     n.className = "review-note";
-    n.textContent = C.ui.reviewNote;
+    n.textContent = UI.reviewNote;
     panel.insertBefore(n, panel.firstChild);
   }
-
-  // „Zurück": blättert eine Seite zurück; dort ist alles nur noch Ansicht
-  // (Antworten gesperrt). Weiter führt bis zur aktuellen Stelle zurück.
+  // „Zurück“: einen Schritt zurück; dort ist alles nur noch Ansicht. Auf der Startseite
+  // gibt es kein Zurück (der Fragebogen davor ist abgeschlossen).
   function addBackButton() {
-    if (previewKey) return;
-    // Erster Screen: zurück auf die letzte Seite des Fragebogens (noch vor der Schulung)
-    var first = state.page === 0 && stepIndex(0, state.sub) === 0;
-    var toSurvey = first && returnUrl;
-    if (first && !toSurvey) return;
+    if (previewKey || state.page === 0) return;
     var foot = app.querySelector(".lp-foot");
     if (!foot || foot.querySelector(".btn-back")) return;
     var b = document.createElement("button");
     b.type = "button";
     b.className = "btn secondary btn-back";
-    b.textContent = C.ui.back;
-    b.addEventListener("click", function () {
-      if (toSurvey) { location.href = returnUrl + (returnUrl.indexOf("?") >= 0 ? "&" : "?") + "zurueck=1"; return; }
-      stepBack();
-    });
+    b.textContent = UI.back;
+    b.addEventListener("click", stepBack);
     foot.classList.add("with-back");
     foot.insertBefore(b, foot.firstChild);
   }
-
-  function lpHead(left, right) {
-    return '<div class="lp-head"><span class="lp-step">' + esc(left) + "</span>" +
-      (right ? '<span class="lp-app">' + esc(right) + "</span>" : "") + "</div>";
-  }
-
-  // ── Einleitung, Bildschirm 1 ───────────────────────────
-  function renderIntro() {
-    var I = C.intro;
-    var needCode = !urlCode;
-    app.innerHTML =
-      '<form class="page tp" novalidate><div class="tp-body">' +
-      '<p class="tp-kicker">' + esc(I.head) + "</p>" +
-      "<h1>" + esc(I.title) + "</h1>" + paras(I.text) +
-      (needCode ? '<div class="field"><label for="code">' + esc(I.codeLabel) + '</label>' +
-        '<input id="code" name="code" autocomplete="off" autocapitalize="characters" spellcheck="false" required value="' +
-        esc(previewKey ? "" : state.code) + '">' +
-        '<div class="error" id="code-err" role="alert"></div></div>' : "") +
-      '</div><div class="lp-foot"><button class="btn" type="submit">' + esc(I.button) + "</button></div></form>";
-    focusFirst("h1");
-    app.querySelector("form").addEventListener("submit", function (e) {
-      e.preventDefault();
-      if (needCode) {
-        var v = app.querySelector("#code").value.trim();
-        if (!v) { app.querySelector("#code-err").textContent = C.ui.codeMissing; app.querySelector("#code").focus(); return; }
-        state.code = v;
-      }
-      if (previewKey) return;
-      if (isReview()) { goto(1); return; }
-      state.pageSeconds.intro = secondsSince(state.pageStart);
-      if (!state.startedAt) state.startedAt = isoNow();
-      goto(1);
-    });
-  }
-
-  // ── Einleitung, Bildschirm 2: Deine Apps ───────────────
-  function renderApps() {
-    var A = C.appsPage;
-    var known = urlApps.length > 0;
-    if (!picks.length) picks = (previewKey ? urlApps : (state.apps || urlApps)).slice();
-    var tiles = C.appOrder.map(function (k) {
-      return '<button type="button" class="app-tile" data-app="' + k + '" aria-pressed="' + (picks.indexOf(k) >= 0) + '">' +
-        '<span class="app-icon ' + iconClass(k) + '" aria-hidden="true"></span><span class="app-name">' + esc(appLabel(k)) + "</span>" +
-        '<span class="tile-check" aria-hidden="true">' + ICON.check + "</span></button>";
-    }).join("");
-    app.innerHTML =
-      '<div class="page tp"><div class="tp-body">' +
-      '<p class="tp-kicker">' + esc(A.head) + "</p>" +
-      "<h1>" + esc(A.title) + "</h1>" +
-      '<p id="apps-lead">' + esc(known ? A.knownLead : A.askLead) + "</p>" +
-      '<div class="app-tiles" role="group" aria-labelledby="apps-lead">' + tiles + "</div>" +
-      (known ? "<p>" + esc(A.knownAfter) + "</p>" : "") +
-      '</div><div class="lp-foot"><button class="btn" id="go" type="button">' + esc(known ? A.knownButton : A.askButton) + "</button></div></div>";
-    focusFirst("h1");
-    var go = app.querySelector("#go");
-    if (isReview()) {
-      // Apps nicht mehr änderbar: davon hängt ab, welche Muster gezeigt wurden
-      app.querySelectorAll(".app-tile").forEach(function (btn) {
-        var on = (state.apps || []).indexOf(btn.getAttribute("data-app")) >= 0;
-        btn.setAttribute("aria-pressed", String(on));
-        btn.disabled = true;
-      });
-      go.textContent = C.ui.next;
-      go.addEventListener("click", function () { goto(state.page + 1); });
-      return;
-    }
-    go.disabled = picks.length === 0;
-    app.querySelectorAll(".app-tile").forEach(function (btn) {
-      btn.addEventListener("click", function () {
-        var k = btn.getAttribute("data-app"), i = picks.indexOf(k);
-        if (i >= 0) picks.splice(i, 1); else picks.push(k);
-        btn.setAttribute("aria-pressed", String(i < 0));
-        go.disabled = picks.length === 0;
-      });
-    });
-    go.addEventListener("click", function () {
-      if (!picks.length || previewKey) return;
-      state.apps = C.appOrder.filter(function (k) { return picks.indexOf(k) >= 0; });
-      state.appsSource = known ? "param" : "asked";
-      state.shown = assignPatterns(state.apps);
-      state.pageSeconds.apps = secondsSince(state.pageStart);
-      dbSave("apps", "APPS", { apps: state.apps, source: state.appsSource,
-        shown: state.shown }, state.pageSeconds.apps);
-      if (!previewKey && window.DB && state.code) {
-        // Profil immer aktualisieren: T1/T2 leiten die gezeigten Muster aus
-        // den Apps im Profil ab, also muss hier der letzte Stand hinein.
-        window.DB.saveProfile(state.code, null, state.apps);
-      }
-      buildPages();
-      goto(2);
-    });
-  }
-
-  function ctxFor(p, isB, phase) {
-    if (!isB) return phase === "ask" && p.ctxAsk ? p.ctxAsk : p.ctxA;
-    var t = p.ctxB || p.ctxA;
-    var r = state.patterns[p.id];
-    if (p.ctxBYou && r && !exportMode) t += " " + fill(p.ctxBYou, { n: r.selected.length });
-    return t;
-  }
-
-  // ── Musterseiten ───────────────────────────────────────
-  function renderPattern(pg) {
-    var p = pg.pattern;
-    var tpl = SCREENS[p.screen];
-    if (state.sub === "look") state.sub = stepsOf(pg)[0]; // Einschätzung; bei noEst direkt die Frage
-    var isB = state.sub === "react" || state.sub === "explain";
-    var right = p.screenApp === "lock" ? C.ui.lockLabel : appLabel(p.screenApp);
-    app.innerHTML =
-      '<div class="page lp">' + lpHead(fill(C.ui.patternOf, { x: pg.index, n: pg.total }), right) +
-      (p.fallback && !p.isDistractor ? '<div class="fallback-note">' + esc(fill(C.ui.fallbackNote, { app: appLabel(p.targetApp) })) + "</div>" : "") +
-      '<main class="lp-stage"><p class="lp-ctx" id="ctx"></p>' +
-      deviceHtml(tpl.cls, tpl.render(p, isB, {}), tpl.scroll && tpl.scroll(), isB && p.statusTimeB) +
-      '<div class="lp-panel"></div></main>' +
-      '<div class="lp-foot"><button class="btn" id="main" type="button"></button></div></div>';
-    showPhase(pg, state.sub, false);
-  }
-
-  function sizeFor(p, phase) {
-    if (phase === "explain" || phase === "ak") return "small";
-    if (phase === "est" || phase === "dres") return "full";
-    if (phase === "ask" && p.type !== "multi") return "small";
-    return "full";
-  }
-
-  function radioGroup(name, options) {
-    return options.map(function (o) {
-      return '<label class="opt"><input type="radio" name="' + name + '" value="' + esc(o.v) + '"><span>' + esc(o.label) + "</span></label>";
-    }).join("");
-  }
-  function panelHtml(p, phase) {
-    var r = state.patterns[p.id] || {};
-    var U = C.ui;
-    if (phase === "est") {
-      return '<p class="miss-note" hidden role="alert"></p>' +
-        '<fieldset class="q-card" data-req="radio"><legend class="q" id="q">' + esc(U.estQ) + "</legend>" +
-        radioGroup("est", U.estOptions) + '<p class="q-err"></p></fieldset>' +
-        '<div class="q-card est-b" hidden><label class="q" for="estb">' + esc(U.estB) + "</label>" +
-        '<textarea id="estb" rows="3"></textarea><p class="q-err"></p></div>' +
-        '<div class="q-card est-c" hidden><label class="q" for="estc">' + esc(U.estC) + "</label>" +
-        '<textarea id="estc" rows="3"></textarea></div>';
-    }
-    if (phase === "dres") {
-      var pg0 = pages[state.page];
-      return '<section class="ex-card"><h2 id="ex-title">' + esc(U.noPattern) + "</h2><p>" + esc(pg0.dist.why) + "</p></section>";
-    }
-    if (phase === "ask" && p.type !== "multi") {
-      return '<fieldset class="q-card"><legend class="q" id="q">' + esc(p.question) + "</legend>" +
-        p.options.map(function (o, i) {
-          return '<label class="opt"><input type="radio" name="ans" value="' + (i + 1) + '"><span>' + esc(o) + "</span></label>";
-        }).join("") + "</fieldset>";
-    }
-    if (phase === "react") {
-      var text = p.type === "multi" ? (exportMode ? "" : fill(p.resultLine, { x: r.hits, y: r.falseAlarms })) : p.hint;
-      return text ? '<div class="callout" id="callout" role="status">' + esc(text) + "</div>" : "";
-    }
-    if (phase === "explain") {
-      var verdict = "";
-      if (p.type !== "multi" && !exportMode && r.answer) {
-        verdict = '<p class="verdict">' + esc(r.isCorrect ? C.ui.predictionRight
-          : fill(C.ui.predictionWrong, { a: p.options[r.answer - 1] || "–", c: p.options[p.correct - 1] })) + "</p>";
-      }
-      return '<section class="ex-card"><h2 id="ex-title">' + esc(p.name) + "</h2>" + verdict +
-        '<dl class="lines">' +
-        "<div><dt>" + esc(C.ui.labelWas) + "</dt><dd>" + esc(p.was) + "</dd></div>" +
-        "<div><dt>" + esc(C.ui.labelWirkung) + "</dt><dd>" + esc(p.wirkung) + "</dd></div>" +
-        "<div><dt>" + esc(C.ui.labelZweck) + "</dt><dd>" + esc(p.zweck) + "</dd></div></dl></section>";
-    }
-    return "";
-  }
-
-  // Einen Schritt der Musterseite zeigen (ohne die Seite neu aufzubauen, damit Übergänge weich bleiben)
-  function showPhase(pg, phase, animate) {
-    var p = pg.pattern;
-    var tpl = SCREENS[p.screen];
-    var isB = phase === "react" || phase === "explain";
-    var stage = app.querySelector(".lp-stage");
-    var ctx = app.querySelector("#ctx"), panel = app.querySelector(".lp-panel"), btn = app.querySelector("#main");
-    var body = app.querySelector(".screen-body");
-    ctx.textContent = ctxFor(p, isB, phase);
-    ctx.hidden = phase === "explain";
-    panel.innerHTML = panelHtml(p, phase);
-    if (animate) panel.classList.add("fade-in");
-    stage.setAttribute("data-phase", phase);
-    app.querySelector(".device-wrap").setAttribute("data-size", sizeFor(p, phase));
-    fitDevice(animate);
-    if (phase === "est" || phase === "ak" || phase === "dres") { applyMarkA(body, pg); placeMark(body); }
-    else if (!isB) clearMarkA(body);
-    if (isB && tpl.afterB) tpl.afterB(body, p);
-    if (isB) placeMark(body);
-    btn.disabled = false;
-    btn.onclick = null;
-    var backBtn = app.querySelector(".btn-back");
-    if (backBtn) backBtn.disabled = false;
-
-    if (phase === "est") {
-      btn.textContent = C.ui.next;
-      bindEst(panel);
-      btn.onclick = function () {
-        if (!checkPanel(panel)) return;
-        saveEst(pg, panel);
-        state.sub = pg.type === "distractor" ? "dres" : "ask";
-        state.pageStart = Date.now();
-        save(); showPhase(pg, state.sub, true);
-      };
-      addRelookButton(pg, phase);
-      focusFirst("#ctx");
-    } else if (phase === "dres") {
-      btn.textContent = C.ui.next;
-      btn.onclick = function () { goto(state.page + 1); };
-      if (isReview()) addReviewNote();
-      focusFirst("#ex-title");
-    } else if (phase === "look") {
-      btn.textContent = C.ui.next;
-      btn.onclick = function () { state.sub = "ask"; save(); showPhase(pg, "ask", true); };
-      focusFirst("#ctx");
-    } else if (phase === "ask") {
-      btn.textContent = C.ui.next; // überall „Weiter“ (11.10.)
-      btn.disabled = true;
-      if (p.type === "multi") bindToggles(".note", function () { btn.disabled = picks.length === 0; });
-      else app.querySelectorAll('input[name="ans"]').forEach(function (inp) {
-        inp.addEventListener("change", function () { btn.disabled = false; });
-      });
-      btn.onclick = function () { tapToReact(pg); };
-      addRelookButton(pg, phase);
-      focusFirst(p.type === "multi" ? "#ctx" : "#q");
-    } else if (phase === "react") {
-      btn.textContent = C.ui.next;
-      btn.onclick = function () { state.sub = "explain"; save(); showPhase(pg, "explain", true); };
-      focusFirst("#callout") || focusFirst("#ctx");
-    } else {
-      btn.textContent = C.ui.next;
-      btn.onclick = function () {
-        var r = state.patterns[p.id];
-        if (r && r.secondsB == null) r.secondsB = secondsSince(state.bStart || state.pageStart);
-        if (r) {
-          var s = pg.shown || {};
-          dbSave("p" + p.id, "P" + p.id,
-            Object.assign({}, r, { app: s.app || p.targetApp, screen: s.screen || p.screenApp,
-              fallback: !!(s.fallback || p.fallback) }),
-            (r.secondsA || 0) + (r.secondsB || 0));
-        }
-        goto(state.page + 1);
-      };
-      if (isReview()) addReviewNote();
-      focusFirst("#ex-title");
-    }
-    if (isReview()) reviewPhase(pg, phase, panel, btn);
-    updateProgress();
-  }
-
-  // Zurückgegangen: frühere Antworten zeigen, nichts mehr änderbar, Weiter = nächster Schritt
-  function reviewPhase(pg, phase, panel, btn) {
-    var p = pg.pattern;
-    if (phase === "est") {
-      var e = state.est[pg.key] || {};
-      var radio = panel.querySelector('input[name="est"][value="' + e.a + '"]');
-      if (radio) radio.checked = true;
-      panel.querySelector("#estb").value = e.b || "";
-      panel.querySelector("#estc").value = e.c || "";
-      panel.querySelector(".est-b").hidden = e.a !== "ja";
-      panel.querySelector(".est-c").hidden = !e.a || e.a === "ja";
-    }
-    if (phase === "ask" && p.type !== "multi") {
-      var r = state.patterns[p.id] || {};
-      var ans = panel.querySelector('input[name="ans"][value="' + r.answer + '"]');
-      if (ans) ans.checked = true;
-    }
-    app.querySelectorAll(".lp-panel input, .lp-panel textarea, .screen-body .note").forEach(function (el) { el.disabled = true; });
-    btn.disabled = false;
-    btn.textContent = C.ui.next;
-    btn.onclick = stepForward;
-    addReviewNote();
-  }
-
-  // Fortschrittsbalken der Schulung (Rework 08.10.): Seiten und Schritte, ohne Text
   function updateProgress() {
     var foot = app.querySelector(".lp-foot");
     if (!foot || !pages.length) return;
@@ -1347,54 +762,177 @@
       bar.className = "progress-track";
       bar.setAttribute("aria-hidden", "true");
       bar.innerHTML = '<div class="progress-fill"></div>';
-      var line = foot.querySelector(".contact-line");
-      foot.insertBefore(bar, line || null);
+      foot.insertBefore(bar, foot.querySelector(".contact-line") || null);
     }
     var s = stepsOf(pages[state.page]);
     var done = state.page + (stepIndex(state.page, state.sub) + 1) / s.length;
     bar.firstChild.style.width = Math.round(100 * done / pages.length) + "%";
   }
 
-  // „Screen noch einmal ansehen": zeigt den Screen (Zustand A) in voller Größe
-  // über der Frage; ein Tipp führt zurück. Die Antwort bleibt unverändert.
-  function addRelookButton(pg, phase) {
-    var p = pg.pattern;
-    if (p.type === "multi" && phase === "ask") return; // Muster 6: der Screen ist ohnehin groß zu sehen
-    var withMark = phase === "est";
-    var panel = app.querySelector(".lp-panel");
-    if (!panel || panel.querySelector(".relook")) return;
-    var tpl = SCREENS[p.screen];
-    var b = document.createElement("button");
-    b.type = "button";
-    b.className = "relook";
-    b.textContent = C.ui.relook;
-    b.addEventListener("click", function () {
-      var ov = document.createElement("div");
-      ov.className = "relook-overlay";
-      ov.setAttribute("role", "dialog");
-      ov.setAttribute("aria-label", "Screen in voller Größe. Tippen zum Schließen.");
-      ov.innerHTML = '<div class="relook-stage">' +
-        deviceHtml(tpl.cls, tpl.render(p, false, {}), tpl.scroll && tpl.scroll(), null) +
-        '</div><p class="relook-hint">Tippen, um zur Frage zurückzukehren</p>';
-      document.body.appendChild(ov);
-      applyAssets(ov);
-      if (withMark) { var ovBody = ov.querySelector(".screen-body"); applyMarkA(ovBody, pg); setTimeout(function () { placeMark(ovBody); }, 0); }
-      // Gerät in den verfügbaren Platz einpassen
-      var wrap = ov.querySelector(".device-wrap"), dev = wrap.firstChild;
-      var s = Math.min(1, (window.innerWidth - 32) / DEVICE_W, (window.innerHeight - 90) / DEVICE_H);
-      dev.style.transform = "scale(" + s.toFixed(4) + ")";
-      wrap.classList.add("no-anim");
-      wrap.style.width = Math.round(DEVICE_W * s) + "px";
-      wrap.style.height = Math.round(DEVICE_H * s) + "px";
-      ov.addEventListener("click", function () { ov.remove(); });
+  // Kopfzeile: „Muster x von 4“ (bzw. „Übung x von 2“), rechts die App; darunter die Schrittanzeige
+  function lpHead(left, right) {
+    return '<div class="lp-head"><span class="lp-step">' + esc(left) + "</span>" +
+      (right ? '<span class="lp-app">' + esc(right) + "</span>" : "") + "</div>";
+  }
+  function stepperHtml(current) {
+    return '<ol class="stepper" aria-label="Schritte">' + UI.steps.map(function (label, i) {
+      var cls = i < current ? "done" : (i === current ? "now" : "todo");
+      return '<li class="' + cls + '"' + (i === current ? ' aria-current="step"' : "") + '><span class="dot">' +
+        (i < current ? ICON.check : String(i + 1)) + '</span><span class="lbl">' + esc(label) + "</span></li>";
+    }).join('<li class="sep" aria-hidden="true"></li>') + "</ol>";
+  }
+  var STEP_OF = { ask: 0, try: 1, react: 1, explain: 2 };
+
+  // ── Startseite ─────────────────────────────────────────
+  function renderStart() {
+    var S = C.start;
+    app.innerHTML = '<div class="page tp"><div class="tp-body start-body">' +
+      "<h1>" + esc(S.title) + "</h1><p>" + rich(S.lead) + "</p>" +
+      '<ul class="start-list">' + S.points.map(function (t) { return "<li>" + rich(t) + "</li>"; }).join("") + "</ul>" +
+      '<div class="start-demo">' + stepperHtml(-1) + "</div>" +
+      '<p class="start-note">' + esc(S.note) + "</p></div>" +
+      '<div class="lp-foot"><button class="btn" id="next" type="button">' + esc(S.button) + "</button></div></div>";
+    focusFirst("h1");
+    app.querySelector("#next").addEventListener("click", function () {
+      if (previewKey) return;
+      if (!isReview()) state.pageSeconds.start = secondsSince(state.pageStart);
+      if (!state.startedAt) state.startedAt = isoNow();
+      goto(1);
     });
-    // Direkt unter dem Handy, über der Frage – sonst verschwindet er im Scrollbereich
-    panel.insertBefore(b, panel.firstChild);
   }
 
-  // Der eine Tipp: Antwort speichern, Handy groß, App reagiert, dann Markierung und Hinweis
-  function tapToReact(pg) {
-    var p = pg.pattern, tpl = SCREENS[p.screen];
+  // ── Musterseiten ───────────────────────────────────────
+  function renderPattern(pg) {
+    var p = pg.pattern;
+    var tpl = SCREENS[p.screen];
+    if (stepsOf(pg).indexOf(state.sub) < 0) state.sub = "ask";
+    var isB = state.sub === "react" || state.sub === "explain";
+    var right = p.screenApp === "lock" ? UI.lockLabel : (mode === "g2" ? "" : appLabel(p.screenApp));
+    var sel = state.patterns[p.id] && state.patterns[p.id].selected;
+    app.innerHTML =
+      '<div class="page lp">' + lpHead(fill(UI.unitOf, { x: pg.index, n: pg.total }), right) +
+      '<div class="lp-steps">' + stepperHtml(STEP_OF[state.sub]) + "</div>" +
+      (p.fallback ? '<div class="fallback-note">' + esc(fill(UI.fallbackNote, { app: appLabel(p.targetApp) })) + "</div>" : "") +
+      '<main class="lp-stage"><p class="lp-ctx" id="ctx"></p>' +
+      deviceHtml(tpl.cls, tpl.render(p, isB, { sel: state.sub === "ask" ? picks : (sel || picks) }), tpl.scroll && tpl.scroll()) +
+      '<div class="lp-panel"></div></main>' +
+      '<div class="lp-foot"><button class="btn" id="main" type="button"></button></div></div>';
+    showPhase(pg, state.sub);
+  }
+  function sizeFor(p, phase) {
+    if (phase === "explain") return "small";
+    if (phase === "ask" && p.type !== "multi") return "small";
+    return "full";
+  }
+  function ctxFor(p, phase) {
+    if (phase === "ask") return p.ctxAsk || p.ctxA;
+    if (phase === "try") return p.ctxA;
+    var t = p.ctxB || p.ctxA;
+    var r = state.patterns[p.id];
+    if (p.ctxBYou && r && !exportMode) t += " " + fill(p.ctxBYou, { n: r.selected.length });
+    return t;
+  }
+  function panelHtml(p, phase) {
+    var r = state.patterns[p.id] || {};
+    if (phase === "ask") {
+      if (p.type === "multi") return '<p class="panel-hint">' + esc(UI.multiHint) + "</p>";
+      return '<fieldset class="q-card"><legend class="q" id="q">' + esc(p.question) + "</legend>" +
+        p.options.map(function (o, i) {
+          return '<label class="opt"><input type="radio" name="ans" value="' + (i + 1) + '"' + (r.answer === i + 1 ? " checked" : "") + "><span>" + esc(o) + "</span></label>";
+        }).join("") + "</fieldset>";
+    }
+    if (phase === "try") {
+      var mine = p.type === "multi" ? fill(UI.yourSelection, { n: (r.selected || []).length })
+        : fill(UI.yourPrediction, { a: p.options[(r.answer || 1) - 1] });
+      return '<div class="try-card"><p class="try-mine">' + esc(mine) + '</p><p class="try-hint" id="callout">' + esc(UI.tryHint) + "</p></div>";
+    }
+    if (phase === "react") {
+      var text = p.type === "multi" ? (exportMode ? "" : fill(p.resultLine, { x: r.hits, y: r.falseAlarms })) : p.hint;
+      return text ? '<div class="callout" id="callout" role="status">' + esc(text) + "</div>" : "";
+    }
+    if (phase === "explain") {
+      var verdict = "";
+      if (p.type !== "multi" && !exportMode && r.answer) {
+        verdict = '<p class="verdict">' + esc(r.isCorrect ? UI.predictionRight
+          : fill(UI.predictionWrong, { a: p.options[r.answer - 1] || "–", c: p.options[p.correct - 1] })) + "</p>";
+      }
+      return '<section class="ex-card"><h2 id="ex-title">' + esc(p.name) + "</h2>" + verdict +
+        '<dl class="lines">' +
+        "<div><dt>" + esc(UI.labelWas) + "</dt><dd>" + esc(p.was) + "</dd></div>" +
+        "<div><dt>" + esc(UI.labelWirkung) + "</dt><dd>" + esc(p.wirkung) + "</dd></div>" +
+        "<div><dt>" + esc(UI.labelZweck) + "</dt><dd>" + esc(p.zweck) + "</dd></div></dl></section>";
+    }
+    return "";
+  }
+  function isLastUnit(pg) { return pg.index === pg.total; }
+
+  function showPhase(pg, phase) {
+    var p = pg.pattern;
+    var tpl = SCREENS[p.screen];
+    var isB = phase === "react" || phase === "explain";
+    var stage = app.querySelector(".lp-stage");
+    var ctx = app.querySelector("#ctx"), panel = app.querySelector(".lp-panel"), btn = app.querySelector("#main");
+    var body = app.querySelector(".lp-stage .screen-body");
+    ctx.textContent = ctxFor(p, phase);
+    panel.innerHTML = panelHtml(p, phase);
+    stage.setAttribute("data-phase", phase);
+    app.querySelector(".lp-stage > .device-wrap").setAttribute("data-size", sizeFor(p, phase));
+    fitDevice();
+    if (isB && tpl.afterB) tpl.afterB(body, p);
+    if (isB) placeMark(body);
+    btn.disabled = false;
+    btn.onclick = null;
+
+    if (phase === "ask") {
+      btn.textContent = UI.btnFix;
+      btn.disabled = true;
+      if (p.type === "multi") bindToggles(".lp-stage .note", function () { btn.disabled = picks.length === 0; });
+      else app.querySelectorAll('input[name="ans"]').forEach(function (inp) {
+        inp.addEventListener("change", function () { btn.disabled = false; });
+      });
+      if (p.type !== "multi" && app.querySelector('input[name="ans"]:checked')) btn.disabled = false;
+      btn.onclick = function () { fixAnswer(pg); };
+      addRelookButton(pg);
+      focusFirst(p.type === "multi" ? "#ctx" : "#q");
+    } else if (phase === "try") {
+      btn.textContent = UI.btnTry;
+      app.querySelectorAll(".lp-stage .note").forEach(function (el) { el.disabled = true; });
+      btn.onclick = function () { tryIt(pg); };
+      focusFirst("#ctx");
+    } else if (phase === "react") {
+      btn.textContent = UI.btnExplain;
+      btn.onclick = function () { state.sub = "explain"; state.pageStart = Date.now(); save(); renderPattern(pg); };
+      focusFirst("#callout") || focusFirst("#ctx");
+    } else {
+      btn.textContent = isLastUnit(pg) ? UI.btnToExercises : UI.btnNextUnit;
+      btn.onclick = function () {
+        var r = state.patterns[p.id];
+        if (r && !isReview()) {
+          if (r.secondsB == null) r.secondsB = secondsSince(state.bStart || state.pageStart);
+          r.secondsC = secondsSince(state.pageStart);
+          var s = pg.shown || {};
+          dbSave("p" + p.id, "P" + p.id,
+            Object.assign({}, r, { app: s.app || p.targetApp, screen: s.screen || p.screenApp, fallback: !!(s.fallback || p.fallback) }),
+            (r.secondsA || 0) + (r.secondsB || 0) + (r.secondsC || 0));
+        }
+        goto(state.page + 1);
+      };
+      focusFirst("#ex-title");
+    }
+    if (isReview()) reviewPhase(pg, phase, btn);
+  }
+
+  // Zurückgegangen: frühere Antworten zeigen, nichts mehr änderbar, Weiter = nächster Schritt
+  function reviewPhase(pg, phase, btn) {
+    app.querySelectorAll(".lp-panel input, .lp-panel textarea, .lp-stage .note").forEach(function (el) { el.disabled = true; });
+    btn.disabled = false;
+    btn.onclick = stepForward;
+    addReviewNote();
+  }
+
+  // Schritt 1 abschließen: Vorhersage festlegen
+  function fixAnswer(pg) {
+    var p = pg.pattern;
     var btn = app.querySelector("#main");
     if (btn.disabled) return;
     var result = { id: p.id, name: p.key };
@@ -1410,41 +948,32 @@
     result.secondsA = secondsSince(state.pageStart);
     result.secondsB = null;
     state.patterns[p.id] = result;
-    state.sub = "react";
-    state.bStart = Date.now();
+    state.sub = "try";
+    state.pageStart = Date.now();
     save();
+    renderPattern(pg);
+  }
 
+  // Schritt 2: Ausprobieren – die App reagiert, dann Markierung und Hinweis
+  function tryIt(pg) {
+    var p = pg.pattern, tpl = SCREENS[p.screen];
+    var btn = app.querySelector("#main");
+    if (btn.disabled) return;
     btn.disabled = true;
     var backBtn = app.querySelector(".btn-back");
-    if (backBtn) backBtn.disabled = true; // nicht mitten in die Reaktion der App zurückspringen
-    app.querySelectorAll(".lp-panel input, .note").forEach(function (el) { el.disabled = true; });
-    var stage = app.querySelector(".lp-stage"), panel = app.querySelector(".lp-panel");
-    var body = app.querySelector(".screen-body");
-    // Platz für den Hinweis reservieren, damit das Handy nach der Reaktion nicht mehr springt
-    panel.innerHTML = panelHtml(p, "react");
-    panel.classList.remove("fade-in");
+    if (backBtn) backBtn.disabled = true;
+    state.bStart = state.pageStart;
+    var body = app.querySelector(".lp-stage .screen-body");
+    var panel = app.querySelector(".lp-panel");
     panel.classList.add("reserved");
-    stage.setAttribute("data-phase", "react");
-    app.querySelector(".device-wrap").setAttribute("data-size", "full");
-    var grow = 0; // kein Zoom mehr, die Reaktion der App beginnt sofort
-    fitDevice(false);
-    wait(ms(grow)).then(function () {
+    Promise.resolve(tpl.toB(body, p)).then(function () {
+      state.sub = "react";
+      save();
+      renderPattern(pg);
       var ctxEl = app.querySelector("#ctx");
-      if (ctxEl.textContent !== ctxFor(p, true)) {
-        ctxEl.textContent = ctxFor(p, true);
-        ctxEl.classList.remove("changed"); void ctxEl.offsetWidth; ctxEl.classList.add("changed");
-      }
-      if (p.statusTimeB) app.querySelector(".device-time").textContent = p.statusTimeB;
-      return tpl.toB(body, p);
-    }).then(function () {
-      // Endzustand zeichnen, dann Markierung und Hinweis zusammen einblenden (< 400 ms)
-      body.innerHTML = bodyOnly(tpl.render(p, true, { animate: true }));
-      applyAssets(body);
-      if (tpl.afterB) tpl.afterB(body, p);
-      placeMark(body);
-      panel.classList.remove("reserved");
-      panel.classList.add("fade-in");
-      showPhase(pg, "react", false);
+      ctxEl.classList.remove("changed"); void ctxEl.offsetWidth; ctxEl.classList.add("changed");
+      var pn = app.querySelector(".lp-panel");
+      if (pn) pn.classList.add("fade-in");
     });
   }
 
@@ -1460,28 +989,59 @@
     });
   }
 
-  // ── Wiedererkennen ─────────────────────────────────────
+  // „Bild vergrößern“: Screen (Zustand A) in voller Größe über der Frage; ein Tipp führt zurück
+  function addRelookButton(pg) {
+    var p = pg.pattern;
+    if (p.type === "multi") return;
+    var panel = app.querySelector(".lp-panel");
+    if (!panel || panel.querySelector(".relook")) return;
+    var tpl = SCREENS[p.screen];
+    var b = document.createElement("button");
+    b.type = "button";
+    b.className = "relook";
+    b.textContent = UI.relook;
+    b.addEventListener("click", function () {
+      var ov = document.createElement("div");
+      ov.className = "relook-overlay";
+      ov.setAttribute("role", "dialog");
+      ov.setAttribute("aria-label", "Screen in voller Größe. Tippen zum Schließen.");
+      ov.innerHTML = '<div class="relook-stage">' + deviceHtml(tpl.cls, tpl.render(p, false, {}), tpl.scroll && tpl.scroll()) +
+        '</div><p class="relook-hint">Tippen, um zur Frage zurückzukehren</p>';
+      document.body.appendChild(ov);
+      applyAssets(ov);
+      var wrap = ov.querySelector(".device-wrap"), dev = wrap.firstChild;
+      var s = Math.min(1, (window.innerWidth - 32) / DEVICE_W, (window.innerHeight - 90) / DEVICE_H);
+      dev.style.transform = "scale(" + s.toFixed(4) + ")";
+      wrap.classList.add("no-anim");
+      wrap.style.width = Math.round(DEVICE_W * s) + "px";
+      wrap.style.height = Math.round(DEVICE_H * s) + "px";
+      ov.addEventListener("click", function () { ov.remove(); });
+    });
+    panel.insertBefore(b, panel.firstChild);
+  }
+
+  // ── Übungen ────────────────────────────────────────────
   function renderRecognition(pg) {
     var it = pg.item;
-    var isB = state.sub === "react" || state.sub === "explain";
+    if (stepsOf(pg).indexOf(state.sub) < 0) state.sub = "ask";
+    var isB = state.sub === "react";
     var r = state.recognition[it.id];
-    var head = lpHead(fill(C.ui.recognitionOf, { x: pg.index, n: C.recognition.length }), it.app);
-    var middle;
-
+    var head = lpHead(fill(UI.exerciseOf, { x: pg.index, n: C.recognition.length }), it.app);
+    var middle, cards = null;
     if (it.type === "spots") {
       var rt = w1Runtime(it);
       var itR = Object.assign({}, it, { data: rt.data });
       var tpl = SCREENS[it.screen];
       middle = deviceHtml(tpl.cls + " w1", tpl.render(itR, false, { spot: function (key) { return spotHtml(itR, rt, key, isB, r); } }), true);
     } else {
-      var cards = w2Cards(it);
+      cards = w2Cards(it);
       middle = '<div class="cards-list">' + cards.map(function (c, i) {
         var n = i + 1;
-        // Kopf (App-Symbol + Meldung) über die volle Breite, darunter Auswahl bzw. Auflösung
-        var inner = '<div class="w2-top"><span class="app-icon ' + iconClass(c.app) + '" aria-hidden="true"></span>' +
-          '<span class="card-text"><strong>' + esc(appLabel(c.app)) + "</strong><span>" + esc(c.text) + "</span></span></div>";
+        var lab = it.appLabels ? it.appLabels[c.app] : appLabel(c.app);
+        var icon = it.appLabels ? (c.app === "sms" ? "ai-msg" : "ai-mail") : iconClass(c.app);
+        var inner = '<div class="w2-top"><span class="app-icon ' + icon + '" aria-hidden="true"></span>' +
+          '<span class="card-text"><strong>' + esc(lab) + "</strong><span>" + esc(c.text) + "</span></span></div>";
         if (!isB) {
-          // je Meldung zwei gleich breite Optionen: Von einem Menschen / Von der App
           return '<fieldset class="w2-card"><legend class="sr-only">' + esc(c.text) + "</legend>" + inner +
             '<div class="w2-choice" role="radiogroup">' +
             '<label><input type="radio" name="w2-' + n + '" value="human"><span>' + esc(it.labelHuman) + "</span></label>" +
@@ -1496,23 +1056,26 @@
           '<div class="w2-why">' + verdict + esc((a && !exportMode ? (c.human ? it.labelHuman : it.labelApp) + ". " : "") + c.why) + "</div></div>";
       }).join("") + "</div>";
     }
-
     var panel = "";
     if (isB) {
       panel = it.type === "spots"
         ? '<div class="feedback' + (previewKey ? "" : " fade-in") + '" id="fb">' + spotsFeedbackHtml(it, r, w1Runtime(it)) + "</div>"
-        : '<p class="feedback' + feedbackClass(it, r) + (previewKey ? "" : " fade-in") + '" id="fb">' + esc(feedbackText(it, r)) + "</p>";
+        : '<p class="feedback ' + (!r || r.isCorrect || exportMode ? "good" : "neutral") + (previewKey ? "" : " fade-in") + '" id="fb">' +
+          esc(exportMode || !r ? "" : fill(it.feedbackScore, { k: r.hits, n: r.answers.length })) + "</p>";
     }
+    var ctxText = it.type === "cards" ? fill(it.ctx, { count: ({ 2: "Zwei", 3: "Drei" })[w2Cards(it).length] || "" }) : it.ctx;
     app.innerHTML = '<div class="page lp">' + head +
-      '<main class="lp-stage" data-phase="' + (isB ? "react" : "ask") + '"><p class="lp-ctx" id="ctx">' + esc(recCtx(it)) + "</p>" +
+      '<main class="lp-stage" data-phase="' + (isB ? "react" : "ask") + '"><p class="lp-ctx" id="ctx">' + esc(ctxText) + "</p>" +
       middle + '<div class="lp-panel">' + panel + "</div></main>" +
-      '<div class="lp-foot"><button class="btn" id="main" type="button">' + esc(C.ui.next) + "</button></div></div>";
-    var wrap = app.querySelector(".device-wrap");
+      '<div class="lp-foot"><button class="btn" id="main" type="button"></button></div></div>';
+    var wrap = app.querySelector(".lp-stage > .device-wrap");
     if (wrap) wrap.setAttribute("data-size", "full");
-    fitDevice(false);
+    fitDevice();
 
     var btn = app.querySelector("#main");
+    var lastBeforeEnd = pg.index === C.recognition.length;
     if (isB) {
+      btn.textContent = UI.next;
       focusFirst("#fb");
       btn.onclick = function () {
         if (isReview()) { stepForward(); return; }
@@ -1523,6 +1086,7 @@
       if (isReview()) addReviewNote();
       return;
     }
+    btn.textContent = UI.btnCheck;
     focusFirst("#ctx");
     if (isReview()) {
       if (r && r.answers) r.answers.forEach(function (a, i) {
@@ -1530,7 +1094,7 @@
         if (x) x.checked = true;
       });
       app.querySelectorAll(".spot, .w2-choice input").forEach(function (el) { el.disabled = true; });
-      btn.textContent = C.ui.next;
+      btn.textContent = UI.next;
       btn.onclick = stepForward;
       addReviewNote();
       return;
@@ -1539,11 +1103,10 @@
     if (it.type === "spots") {
       bindToggles(".spot", function () { btn.disabled = picks.length === 0; });
     } else {
-      // „Auflösen" erst, wenn alle drei Meldungen eingeordnet sind
       var allAnswered = function () {
         return cards.every(function (c, i) { return app.querySelector('input[name="w2-' + (i + 1) + '"]:checked'); });
       };
-      app.querySelectorAll('.w2-choice input').forEach(function (inp) {
+      app.querySelectorAll(".w2-choice input").forEach(function (inp) {
         inp.addEventListener("change", function () { btn.disabled = !allAnswered(); });
       });
     }
@@ -1554,8 +1117,8 @@
         state.recognition[it.id] = spotsResult(it, picks);
       } else {
         var choices = cards.map(function (c, i) {
-          var sel = app.querySelector('input[name="w2-' + (i + 1) + '"]:checked');
-          return sel ? sel.value : null;
+          var s = app.querySelector('input[name="w2-' + (i + 1) + '"]:checked');
+          return s ? s.value : null;
         });
         if (choices.indexOf(null) >= 0) return;
         state.recognition[it.id] = w2Result(it, cards, choices);
@@ -1564,14 +1127,15 @@
       save();
       renderRecognition(pg);
       applyAssets(app);
+      addBackButton(); addContactLine(); updateProgress();
     };
+    void lastBeforeEnd;
   }
-
   function spotHtml(it, rt, key, isB, r) {
     var n = rt.data.spots[key];
     if (!n) return "";
     var meta = rt.meta.filter(function (m) { return m.n === n; })[0] || {};
-    var label = C.ui.spotPrefix + n + ": " + (meta.label || "");
+    var label = UI.spotPrefix + n + ": " + (meta.label || "");
     if (!isB) {
       return '<button type="button" class="spot spot-' + esc(key) + '" data-n="' + n + '" aria-pressed="' + (picks.indexOf(n) >= 0) +
         '" aria-label="' + esc(label) + '"><span>' + n + "</span></button>";
@@ -1579,43 +1143,32 @@
     var target = rt.targets.indexOf(n) >= 0;
     var mine = r && r.selected.indexOf(n) >= 0 && !exportMode;
     return '<span class="spot spot-' + esc(key) + (target ? " target" : " miss") + (mine ? " mine" : "") + '" role="img" aria-label="' +
-      esc(label + (mine ? ", " + C.ui.selectedByYou : "")) + '"><span>' + n + "</span></span>";
+      esc(label + (mine ? ", " + UI.selectedByYou : "")) + '"><span>' + n + "</span></span>";
   }
-
-  // Wiederfinden 2: zwei bis drei Karten aus dem Pool – nur genutzte Apps
-  // (Instagram, TikTok, Snapchat), nur gezeigte Muster, immer mindestens eine
-  // Meldung von einem Menschen und eine von der App, fest je Teilnehmercode.
-  // Fehlt für die Apps der Person eine Sorte, kommt die Instagram-Variante.
+  // Übung 2: zwei bis drei Karten – nur genutzte Apps, mindestens eine von jeder Sorte, fest je Code.
+  // Placebo: Karten ohne App-Bezug (SMS, E-Mail), immer drei.
   function w2Cards(it) {
-    var ids = shownIds();
-    var used = (state.apps || []).filter(function (a) { return STUDY_APPS.indexOf(a) >= 0; });
-    if (!used.length) used = ["ig"];
-    var fits = function (c) { return c.pattern == null || ids.indexOf(c.pattern) >= 0; };
-    var pool = it.cardPool.filter(function (c) { return used.indexOf(c.app) >= 0 && fits(c); });
     var rnd = seededRandom(hashCode(String(state.code || "") + "w2"));
     function shuffled(list) {
       var l = list.slice();
       for (var i = l.length - 1; i > 0; i--) { var j = Math.floor(rnd() * (i + 1)); var t = l[i]; l[i] = l[j]; l[j] = t; }
       return l;
     }
-    var igOf = function (human) {
-      return it.cardPool.filter(function (c) { return c.app === "ig" && !!c.human === human && fits(c); });
-    };
+    var pool = it.cardPool;
+    if (!it.appLabels) {
+      var used = (state.apps || []).filter(function (a) { return CT.appOrder.indexOf(a) >= 0; });
+      if (!used.length) used = ["ig"];
+      pool = it.cardPool.filter(function (c) { return used.indexOf(c.app) >= 0; });
+    }
+    var igOf = function (human) { return it.cardPool.filter(function (c) { return c.app === "ig" && !!c.human === human; }); };
     var humans = shuffled(pool.filter(function (c) { return c.human; }));
-    var apps = shuffled(pool.filter(function (c) { return !c.human; }));
+    var others = shuffled(pool.filter(function (c) { return !c.human; }));
     if (!humans.length) humans = shuffled(igOf(true));
-    if (!apps.length) apps = shuffled(igOf(false));
-    var out = [humans.shift(), apps.shift()].filter(Boolean);
-    while (out.length < 3 && apps.length) out.push(apps.shift());
+    if (!others.length) others = shuffled(igOf(false));
+    var out = [humans.shift(), others.shift()].filter(Boolean);
+    while (out.length < 3 && others.length) out.push(others.shift());
     while (out.length < 3 && humans.length) out.push(humans.shift());
     return shuffled(out);
-  }
-  // Einleitungssatz einer Wiederfinden-Seite; {count} = Zahl der angezeigten Meldungen als Wort
-  function recCtx(it) {
-    if (it.type !== "cards") return it.ctx;
-    var n = w2Cards(it).length;
-    var word = { 2: "Zwei", 3: "Drei" }[n] || String(n);
-    return fill(it.ctx, { count: word });
   }
   function w2Result(it, cards, choices) {
     var answers = cards.map(function (c, i) {
@@ -1625,34 +1178,18 @@
     var hits = answers.filter(function (a) { return a.correct; }).length;
     return { id: it.id, answers: answers, hits: hits, isCorrect: hits === answers.length, seconds: null };
   }
-
-  // Rückmeldung je Nummer: Name des Musters oder „kein Muster" (Feedback-Call 05.10.)
   function spotsFeedbackHtml(it, r, rt) {
     var rows = rt.meta.map(function (m) {
-      var name = m.pattern ? patternDef(m.pattern).name : it.noPatternLabel;
+      var name = m.pattern ? patternDef(m.pattern).short : it.noPatternLabel;
       var tapped = r && !exportMode && r.selected.indexOf(m.n) >= 0;
       var cls = m.pattern ? (tapped ? "hit" : "open") : (tapped ? "wrong" : "plain");
       return '<li class="' + cls + '"><b>' + m.n + "</b> " + esc(name) + "</li>";
     }).join("");
-    var score = exportMode || !r ? "" :
-      '<p class="fb-score">' + esc(fill(it.feedbackScore, { k: r.hits, n: rt.targets.length })) + "</p>";
+    var score = exportMode || !r ? "" : '<p class="fb-score">' + esc(fill(it.feedbackScore, { k: r.hits, n: rt.targets.length })) + "</p>";
     return '<ul class="fb-list">' + rows + "</ul>" + score;
   }
 
-  function feedbackText(it, r) {
-    if (it.type === "cards") {
-      // Begründungen stehen an den Karten; hier nur noch die Bilanz
-      return exportMode || !r ? "" : fill(it.feedbackScore, { k: r.hits, n: r.answers.length });
-    }
-    var lead = exportMode || !r ? "" : (r.isCorrect ? it.feedbackRight : it.feedbackWrong);
-    return lead + (it.feedbackText || "");
-  }
-  function feedbackClass(it, r) {
-    if (it.type !== "cards") return "";
-    return (!r || r.isCorrect || exportMode) ? " good" : " neutral";
-  }
-
-  // ── Rahmenseiten ───────────────────────────────────────
+  // ── Einordnung und Zusammenfassung ─────────────────────
   function renderEinordnung() {
     var E = C.einordnung;
     app.innerHTML = '<div class="page tp"><div class="tp-body"><h1>' + esc(E.title) + "</h1>" + paras(E.text) + "</div>" +
@@ -1663,92 +1200,325 @@
       goto(state.page + 1);
     });
   }
-
-  function shownIds() { return (state.shown || []).map(function (s) { return s.id; }); }
-
   function scores() {
     var x = 0, y = 0, max = 0, ids = shownIds();
     ids.forEach(function (id) { if (patternCorrect(state.patterns[id])) x++; });
     C.recognition.forEach(function (it) {
       max += it.type === "spots" ? w1Runtime(it).targets.length : w2Cards(it).length;
       var r = state.recognition[it.id];
-      if (!r) return;
-      y += r.hits || 0; // W1: gefundene Stellen, W2: richtig eingeordnete Meldungen (je 1 Punkt)
+      if (r) y += r.hits || 0;
     });
     return { x: x, n: ids.length, y: y, max: max };
   }
-
-  // „Kein Ende: … Nach Maß: … Zurückholen: …" nur mit gezeigten Mustern
-  function groupText() {
-    var ids = shownIds();
-    return C.zusammenfassung.groups.map(function (g) {
-      var names = g.ids.filter(function (id) { return ids.indexOf(id) >= 0; }).map(function (id) { return patternDef(id).short; });
-      return names.length ? "**" + g.label + ":** " + names.join(", ") : "";
-    }).filter(Boolean); // je Gruppe ein Absatz mit fettem Stichwort (11.10.)
-  }
-
   function renderSummary() {
     var Z = C.zusammenfassung;
-    var count = shownIds().length;
-    var title = fill(Z.title, { count: Z.numberWords[count] || count });
-    var estList = '<ul class="est-list">' + shownIds().map(function (id) {
-      var e = state.est["p" + id];
-      if (!e) return ""; // Muster ohne Einschätzung (Autoplay, TikTok-Feed)
-      return "<li><b>" + esc(patternDef(id).short) + "</b><span>" + esc(fill(C.ui.estSummary, { x: C.ui.estLabels[e.a] || "–" })) + "</span></li>";
+    var more = mode === "g3" || mode === "g4";
+    var list = '<ul class="sum-list">' + shownIds().map(function (id) {
+      var d = patternDef(id);
+      return "<li><b>" + esc(d.short) + "</b><span>" + esc(d.satz) + "</span></li>";
     }).join("") + "</ul>";
-    app.innerHTML = '<div class="page tp"><div class="tp-body"><h1>' + esc(title) + "</h1>" + paras(groupText()) + (exportMode ? "" : estList) +
+    app.innerHTML = '<div class="page tp"><div class="tp-body"><h1>' + esc(Z.title) + "</h1>" + list +
       (exportMode ? "" : '<p class="tp-score">' + esc(fill(Z.scores, scores())) + "</p>") +
-      "<p>" + esc(Z.outro) + "</p></div>" +
-      '<div class="lp-foot"><button class="btn" id="finish" type="button">' + esc(Z.button) + "</button>" +
+      "<p>" + esc(more ? Z.outroMore : Z.outroEnd) + "</p></div>" +
+      '<div class="lp-foot"><button class="btn" id="finish" type="button">' + esc(more ? Z.button : Z.buttonEnd) + "</button>" +
       '<p class="status-line" id="status" role="status"></p></div></div>';
     focusFirst("h1");
     if (previewKey) return;
-
     app.querySelector("#finish").addEventListener("click", function (e) {
       var btn = e.currentTarget;
       btn.disabled = true;
+      if (isReview()) { goto(state.page + 1); return; }
       var result = finish();
       dbSave("zusammenfassung", "SUMMARY", result, state.pageSeconds.zusammenfassung);
-      var back = returnUrl || ("../index.html" + (state.code ? "?c=" + encodeURIComponent(state.code) +
-        (pilotFlag ? "&pilot=1" : "") : ""));
-      var done = (previewKey || !window.DB || !state.code)
-        ? Promise.resolve()
-        : window.DB.markDone(state.code, "BOOST");
-      Promise.resolve(done).then(function () { location.href = back; },
-        function () { location.href = back; });
+      if (more) {
+        // Schulung abgeschlossen; danach der neutrale Teil (G3) bzw. der Plan (G4)
+        Promise.resolve(markDone("BOOST")).then(function () { goto(state.page + 1); }, function () { goto(state.page + 1); });
+        return;
+      }
+      var wave = mode === "post" ? "POST" : "INTERVENTION";
+      Promise.resolve(markDone(wave)).then(backToStudy, backToStudy);
     });
   }
-
-  // Übersichtszeile für das SUMMARY-Ereignis (die Einzelantworten stehen
-  // bereits als eigene Zeilen APPS, P1–P8, W1, W2 in events)
   function finish() {
     if (state.pageSeconds.zusammenfassung == null) state.pageSeconds.zusammenfassung = secondsSince(state.pageStart);
     if (!state.finishedAt) state.finishedAt = isoNow();
     save();
     return {
-      version: C.version,
-      startedAt: state.startedAt,
-      finishedAt: state.finishedAt,
-      apps: state.apps || [],
-      appsSource: state.appsSource,
-      shown: state.shown || [],
-      scores: scores(),
-      pageSeconds: {
-        intro: state.pageSeconds.intro,
-        apps: state.pageSeconds.apps,
-        einordnung: state.pageSeconds.einordnung,
-        zusammenfassung: state.pageSeconds.zusammenfassung
-      }
+      version: C.version, mode: mode,
+      startedAt: state.startedAt, finishedAt: state.finishedAt,
+      apps: state.apps || [], shown: state.shown || [], scores: scores(),
+      pageSeconds: { start: state.pageSeconds.start, einordnung: state.pageSeconds.einordnung, zusammenfassung: state.pageSeconds.zusammenfassung }
     };
   }
+  // Ende des neutralen Teils bzw. des Plans: Intervention abgeschlossen, zurück in die Studie
+  function finishIntervention(btn) {
+    if (btn) btn.disabled = true;
+    Promise.resolve(markDone("INTERVENTION")).then(backToStudy, backToStudy);
+  }
+
+  // ── Neutraler Teil (G3): kurzes Quiz ───────────────────
+  function renderQuiz(pg) {
+    var F = CT.filler, q = pg.item;
+    if (stepsOf(pg).indexOf(state.sub) < 0) state.sub = "ask";
+    var isE = state.sub === "explain";
+    var r = state.quiz[q.id];
+    var last = pg.index === F.items.length;
+    var body = '<fieldset class="q-card"><legend class="q" id="q">' + esc(q.question) + "</legend>" +
+      q.options.map(function (o, i) {
+        var checked = r && r.answer === i + 1 ? " checked" : "";
+        return '<label class="opt' + (isE && i + 1 === q.correct ? " is-correct" : "") + '"><input type="radio" name="ans" value="' + (i + 1) + '"' + checked +
+          (isE ? " disabled" : "") + "><span>" + esc(o) + "</span></label>";
+      }).join("") + "</fieldset>";
+    if (isE && r) {
+      body += '<section class="ex-card quiz-fact"><p class="verdict">' + esc(r.isCorrect ? F.verdictRight : fill(F.verdictWrong, { c: q.options[q.correct - 1] })) +
+        "</p><p>" + esc(q.fact) + "</p></section>";
+    }
+    app.innerHTML = '<div class="page lp">' + lpHead(fill(F.of, { x: pg.index, n: F.items.length }), "") +
+      '<main class="lp-stage quiz-stage">' + (pg.index === 1 ? '<h1 class="quiz-title">' + esc(F.title) + '</h1><p class="lp-ctx">' + esc(F.lead) + "</p>" : "") +
+      '<div class="lp-panel">' + body + "</div></main>" +
+      '<div class="lp-foot"><button class="btn" id="main" type="button"></button></div></div>';
+    var btn = app.querySelector("#main");
+    if (!isE) {
+      btn.textContent = UI.btnFix;
+      btn.disabled = !app.querySelector('input[name="ans"]:checked');
+      app.querySelectorAll('input[name="ans"]').forEach(function (inp) { inp.addEventListener("change", function () { btn.disabled = false; }); });
+      btn.onclick = function () {
+        if (isReview()) { stepForward(); return; }
+        var sel = app.querySelector('input[name="ans"]:checked');
+        if (!sel) return;
+        var ans = Number(sel.value);
+        state.quiz[q.id] = { id: q.id, answer: ans, correct: q.correct, isCorrect: ans === q.correct, secondsA: secondsSince(state.pageStart) };
+        state.sub = "explain";
+        state.pageStart = Date.now();
+        save();
+        render();
+      };
+      focusFirst("#q");
+    } else {
+      btn.textContent = last ? F.buttonLast : UI.next;
+      btn.onclick = function () {
+        if (!isReview() && r) {
+          r.secondsB = secondsSince(state.pageStart);
+          dbSaveWave("FILLER", q.id, q.id, r, (r.secondsA || 0) + r.secondsB);
+        }
+        if (last && !isReview()) { finishIntervention(btn); return; }
+        if (last) { finishIntervention(btn); return; }
+        goto(state.page + 1);
+      };
+      focusFirst(".quiz-fact");
+    }
+    if (isReview()) { app.querySelectorAll(".lp-panel input").forEach(function (el) { el.disabled = true; }); addReviewNote(); }
+  }
+
+  // ── Wenn-Dann-Plan (G4) ────────────────────────────────
+  function planSentence(pl) {
+    var P = CT.plan.byPattern[pl.muster] || { wenn: [], dann: [] };
+    var clean = function (t, word) {
+      return String(t || "").trim().replace(new RegExp("^" + word + "\\s+", "i"), "").replace(/^…\s*/, "").replace(/[.!…\s]+$/, "");
+    };
+    var w = pl.wenn === "eigen" ? clean(pl.wenn_eigen, "wenn") : P.wenn[pl.wenn - 1];
+    var d = pl.dann === "eigen" ? clean(pl.dann_eigen, "dann") : P.dann[pl.dann - 1];
+    return "Wenn " + w + ", dann " + d + ".";
+  }
+  // kleines Bild des Musters (Screen nach dem Ausprobieren)
+  function thumbHtml(id) {
+    var s = (state.shown || []).filter(function (e) { return e.id === id; })[0];
+    if (!s) return "";
+    var p = resolvePattern(s), tpl = SCREENS[p.screen];
+    return '<span class="plan-thumb" aria-hidden="true">' + deviceHtml(tpl.cls, tpl.render(p, true, {}), false) + "</span>";
+  }
+  function renderPlan(pg) {
+    var P = CT.plan, pl = state.plan;
+    var html = "", valid;
+    if (pg.type === "plan1") {
+      html = '<h1 class="quiz-title">' + esc(P.title1) + '</h1><fieldset class="q-card"><legend class="q" id="q">' + esc(P.q1) + "</legend>" +
+        shownIds().map(function (id) {
+          var d = patternDef(id);
+          return '<label class="opt plan-opt"><input type="radio" name="muster" value="' + id + '"' + (pl.muster === id ? " checked" : "") + ">" +
+            thumbHtml(id) + "<span>" + esc(d.short) + "</span></label>";
+        }).join("") + "</fieldset>";
+    } else if (pg.type === "plan2") {
+      var B = P.byPattern[pl.muster] || { wenn: [], dann: [] };
+      var group = function (name, title, list, ownLabel, ownPh, val, own) {
+        return '<fieldset class="q-card" data-group="' + name + '"><legend class="q">' + esc(title) + "</legend>" +
+          list.map(function (t, i) {
+            return '<label class="opt"><input type="radio" name="' + name + '" value="' + (i + 1) + '"' + (val === i + 1 ? " checked" : "") + "><span>" + esc(t) + "</span></label>";
+          }).join("") +
+          '<label class="opt"><input type="radio" name="' + name + '" value="eigen"' + (val === "eigen" ? " checked" : "") + "><span>" + esc(ownLabel) + "</span></label>" +
+          '<input type="text" class="plan-own" name="' + name + '-eigen" placeholder="' + esc(ownPh) + '" value="' + esc(own || "") + '"' + (val === "eigen" ? "" : " hidden") + ">" +
+          '<p class="q-err"></p></fieldset>';
+      };
+      html = '<h1 class="quiz-title">' + esc(P.title2) + '</h1><p class="lp-ctx">' + esc(P.lead2) + "</p>" +
+        group("wenn", P.qWenn, B.wenn, P.ownWenn, P.ownWennPh, pl.wenn, pl.wenn_eigen) +
+        group("dann", P.qDann, B.dann, P.ownDann, P.ownDannPh, pl.dann, pl.dann_eigen);
+    } else {
+      html = '<h1 class="quiz-title">' + esc(P.title3) + '</h1><section class="plan-card"><p class="plan-lead">' + esc(P.lead3) + "</p>" +
+        '<p class="plan-sentence">' + esc(planSentence(pl)) + "</p></section>" +
+        '<p class="tp-hint">' + esc(P.screenshotHint) + "</p>";
+    }
+    app.innerHTML = '<div class="page lp"><main class="lp-stage quiz-stage"><div class="lp-panel">' + html + "</div></main>" +
+      '<div class="lp-foot"><button class="btn" id="main" type="button"></button></div></div>';
+    applyAssets(app);
+    var btn = app.querySelector("#main");
+    var review = isReview();
+    if (pg.type === "plan1") {
+      btn.textContent = UI.next;
+      valid = function () { return !!app.querySelector('input[name="muster"]:checked'); };
+      app.querySelectorAll('input[name="muster"]').forEach(function (i) { i.addEventListener("change", function () { btn.disabled = !valid(); }); });
+      btn.disabled = !valid();
+      btn.onclick = function () {
+        var m = Number(app.querySelector('input[name="muster"]:checked').value);
+        if (m !== pl.muster) { pl.wenn = null; pl.dann = null; }
+        pl.muster = m;
+        state.pageSeconds.plan1 = secondsSince(state.pageStart);
+        goto(state.page + 1);
+      };
+    } else if (pg.type === "plan2") {
+      btn.textContent = UI.next;
+      ["wenn", "dann"].forEach(function (g) {
+        app.querySelectorAll('input[name="' + g + '"]').forEach(function (i) {
+          i.addEventListener("change", function () {
+            var own = app.querySelector('input[name="' + g + '-eigen"]');
+            own.hidden = i.value !== "eigen";
+            if (!own.hidden) own.focus();
+          });
+        });
+      });
+      btn.onclick = function () {
+        var ok = true;
+        ["wenn", "dann"].forEach(function (g) {
+          var box = app.querySelector('[data-group="' + g + '"]');
+          var sel = app.querySelector('input[name="' + g + '"]:checked');
+          var own = app.querySelector('input[name="' + g + '-eigen"]');
+          var msg = !sel ? UI.missing : (sel.value === "eigen" && !own.value.trim() ? UI.missingOwn : "");
+          box.classList.toggle("missing", !!msg);
+          box.querySelector(".q-err").textContent = msg;
+          if (msg) ok = false;
+          if (sel) { pl[g] = sel.value === "eigen" ? "eigen" : Number(sel.value); pl[g + "_eigen"] = sel.value === "eigen" ? own.value.trim() : null; }
+        });
+        if (!ok) { var first = app.querySelector(".q-card.missing"); if (first) first.scrollIntoView({ block: "center", behavior: "smooth" }); return; }
+        state.pageSeconds.plan2 = secondsSince(state.pageStart);
+        goto(state.page + 1);
+      };
+    } else {
+      btn.textContent = CT.plan.button3;
+      btn.onclick = function () {
+        if (!review) {
+          state.pageSeconds.plan3 = secondsSince(state.pageStart);
+          dbSaveWave("PLAN", "plan", "PLAN", {
+            muster: "m" + pl.muster, wenn: pl.wenn, dann: pl.dann,
+            wenn_eigen: pl.wenn_eigen || null, dann_eigen: pl.dann_eigen || null,
+            satz: planSentence(pl),
+            seconds: { schritt1: state.pageSeconds.plan1, schritt2: state.pageSeconds.plan2, schritt3: state.pageSeconds.plan3 }
+          }, (state.pageSeconds.plan1 || 0) + (state.pageSeconds.plan2 || 0) + state.pageSeconds.plan3);
+        }
+        finishIntervention(btn);
+      };
+    }
+    if (review && pg.type !== "plan3") addReviewNote();
+  }
+
+  // ── Vorschau-Zustand ───────────────────────────────────
+  function previewState(key) {
+    var s = fresh();
+    state = s;
+    s.code = urlCode || "VORSCHAU";
+    s.startedAt = "2026-10-18T10:31:04Z";
+    s.apps = urlApps.length ? urlApps : ["ig", "tt", "sc"];
+    s.shown = assignPatterns(s.apps);
+    var variant = params.get("variant");
+    var m = /^(p(\d+)|W\d|q\d)([ATBE])$/.exec(key);
+    if (m && m[2] && variant) {
+      s.shown = s.shown.map(function (e) {
+        if (e.id !== Number(m[2])) return e;
+        var def = patternDef(e.id);
+        return def.always ? e : entryFor(def, variant);
+      });
+    }
+    buildPages();
+    pages.forEach(function (pg) {
+      if (pg.type !== "pattern") return;
+      var p = pg.pattern;
+      if (p.type === "multi") {
+        var sel = p.data.items.map(function (it, i) { return it.human ? i + 1 : 0; }).filter(Boolean);
+        s.patterns[p.id] = Object.assign({ id: p.id, name: p.key }, multiResult(p, exportMode ? sel : [1, 2, 4]));
+      } else {
+        var ans = Number(params.get("answer")) || (p.correct === 1 ? 2 : 1);
+        s.patterns[p.id] = { id: p.id, name: p.key, answer: ans, correct: p.correct, isCorrect: ans === p.correct };
+      }
+    });
+    C.recognition.forEach(function (it) {
+      if (it.type === "spots") s.recognition[it.id] = spotsResult(it, [1, 2]);
+      else s.recognition[it.id] = w2Result(it, w2Cards(it), ["human", "app", "human"]);
+    });
+    CT.filler.items.forEach(function (q) { s.quiz[q.id] = { id: q.id, answer: 1, correct: q.correct, isCorrect: q.correct === 1 }; });
+    s.plan = { muster: 4, wenn: 1, dann: 1 };
+    var phaseOf = { A: "ask", T: "try", B: "react", E: "explain" };
+    var pageKey = m ? m[1] : key;
+    s.sub = m ? phaseOf[m[3]] : "look";
+    if (m && /^W/.test(m[1])) s.sub = m[3] === "B" ? "react" : "ask";
+    if (m && /^q/.test(m[1])) { pageKey = "Q" + m[1].slice(1); s.sub = m[3] === "E" ? "explain" : "ask"; }
+    s.page = Math.max(0, pages.findIndex(function (pg) { return pg.key === pageKey; }));
+    if (s.sub === "ask") {
+      var pg = pages[s.page];
+      if (pg.pattern) delete s.patterns[pg.pattern.id];
+      if (pg.item && pg.type === "recognition") delete s.recognition[pg.item.id];
+      if (pg.type === "quiz") delete s.quiz[pg.item.id];
+    }
+    s.maxPage = s.page; s.maxSub = s.sub;
+    return s;
+  }
+
+  // ── Start ──────────────────────────────────────────────
+  function begin(m, progress) {
+    setMode(m);
+    state = load();
+    if (!state || state.version !== CT.version || state.mode !== mode || (urlCode && state.code && state.code !== urlCode)) state = fresh();
+    if (urlCode) state.code = urlCode;
+    if (!state.shown) {
+      state.apps = (urlApps.length ? urlApps : ((progress && progress.apps) || [])).slice();
+      state.shown = assignPatterns(state.apps);
+      state.startedAt = isoNow();
+      buildPages();
+      // Schulung schon abgeschlossen (G3/G4): direkt beim neutralen Teil bzw. Plan einsteigen
+      if (progress && progress.boost_done && (mode === "g3" || mode === "g4")) {
+        state.page = state.maxPage = firstExtraPage();
+        state.sub = state.maxSub = stepsOf(pages[state.page])[0];
+      } else {
+        dbSave("start", "APPS", { apps: state.apps, shown: state.shown, mode: mode }, null);
+      }
+    } else {
+      buildPages();
+    }
+    save();
+    render();
+  }
+
+  (async function init() {
+    if (previewKey) {
+      setMode(params.get("modus") || "g3");
+      state = previewState(previewKey);
+      document.documentElement.classList.add("is-preview");
+      if (exportMode) document.documentElement.classList.add("is-export");
+      render();
+      return;
+    }
+    if (postFlag) { begin("post", null); return; }
+    if (!urlCode || !window.DB) { begin("demo", null); return; }
+    app.innerHTML = '<div class="page tp"><div class="tp-body"><p>Einen Moment …</p></div></div>';
+    var res = await window.DB.progress(urlCode);
+    var p = res && res.ok ? res.data : null;
+    if (!p || !p.exists) { backToStudy(); return; }
+    pilotFlag = pilotFlag || p.pilot === true;
+    var g = p.grp;
+    if (g === "G3") begin("g3", p);
+    else if (g === "G4") begin("g4", p);
+    else if (g === "G2") begin("g2", p);
+    else backToStudy(); // G1 oder noch keine Gruppe: keine Intervention
+  })();
 
   // ── Offline nach dem ersten Laden ──────────────────────
   if (!previewKey && "serviceWorker" in navigator && location.protocol === "https:") {
     navigator.serviceWorker.register("sw.js").catch(function () {});
   }
-
-  if (previewKey) document.documentElement.classList.add("is-preview");
-  if (previewKey && exportMode) document.documentElement.classList.add("is-export");
-  save();
-  render();
 })();

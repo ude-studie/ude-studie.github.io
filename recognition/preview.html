@@ -4,29 +4,31 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex, nofollow">
-  <title>Folge-Screens</title>
+  <title>Screens Wiedererkennung</title>
   <link rel="stylesheet" href="../boost/styles.css">
   <link rel="stylesheet" href="rec.css">
   <style>
     body { background: #e9ecef; margin: 0; font-family: "Segoe UI", system-ui, sans-serif; }
-    .wrap { max-width: 1340px; margin: 0 auto; padding: 20px; }
+    .wrap { max-width: 1400px; margin: 0 auto; padding: 20px; }
     h1 { font-size: 1.4rem; } h2 { margin: 28px 0 12px; }
-    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 18px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 18px; }
     .cell { background: #fff; border-radius: 14px; padding: 12px; }
     .cell .info { font-size: 0.85rem; color: #444; margin-bottom: 8px; line-height: 1.4; }
     .cell .info b { color: #000; }
-    .cell .tagd { display: inline-block; background: #6b7486; color: #fff; border-radius: 6px;
-      padding: 1px 7px; font-size: 0.75rem; margin-left: 6px; }
-    .cell .tagm { display: inline-block; background: #1f3a5f; color: #fff; border-radius: 6px;
-      padding: 1px 7px; font-size: 0.75rem; margin-left: 6px; }
+    .cell .tagd { display: inline-block; background: #6b7486; color: #fff; border-radius: 6px; padding: 1px 7px; font-size: 0.75rem; margin-left: 6px; }
+    .cell .tagm { display: inline-block; background: #1f3a5f; color: #fff; border-radius: 6px; padding: 1px 7px; font-size: 0.75rem; margin-left: 6px; }
     .rec-stage { height: 648px; }
+    table { border-collapse: collapse; background: #fff; font-size: .8rem; margin-bottom: 10px; }
+    td, th { border: 1px solid #bbb; padding: 4px 6px; vertical-align: top; }
+    body.single .wrap { padding: 0; }
   </style>
 </head>
 <body>
 <div class="wrap">
-  <h1>Screens im Folge-Fragebogen – Durchsicht (nur intern)</h1>
-  <p>Oben die Zuordnung je App-Kombination (Reihenfolge wie im Fragebogen), darunter alle
-     Screens des Pools je Muster und alle Ablenker je App.</p>
+  <h1>Screens der Wiedererkennung (T0, T1, T2) – Durchsicht, nur intern</h1>
+  <p>Oben die Zuordnung je App-Kombination (Beispiel-Code „VORSCHAU“; die Reihenfolge ist je Person zufällig),
+     darunter alle Screens je Welle. <code>?single=T0-m4-ig</code> zeigt einen einzelnen Screen,
+     <code>?welle=T1</code> nur eine Welle.</p>
   <div id="combos"></div>
   <div id="out"></div>
 </div>
@@ -35,38 +37,46 @@
 <script>
 (function () {
   var R = window.RECOGNITION;
-  var APP = { ig: "Instagram", tt: "TikTok", sc: "Snapchat", lock: "Sperrbildschirm" };
-  var byId = {};
-  ["T0", "T1", "T2"].forEach(function (k) { R.SETS[k].forEach(function (e) { byId[e.id] = e; }); });
-  // Zuordnung je Kombination
-  var combos = [["ig"], ["tt"], ["sc"], ["ig", "tt"], ["ig", "sc"], ["tt", "sc"], ["ig", "tt", "sc"]];
-  var tbl = '<table border="1" cellpadding="4" style="border-collapse:collapse;background:#fff;font-size:.8rem"><tr><th>Apps</th><th>Reihenfolge (Position: Muster = Screen, App; S: App in der Schulung)</th></tr>';
-  combos.forEach(function (c) {
-    tbl += "<tr><td>" + c.join("+") + "</td><td>" + R.followupSet(c).map(function (e) {
-      return e.position + ": " + e.muster + " = " + e.id + " (" + e.app + (e.schulungApp ? ", S: " + e.schulungApp : "") + ")";
-    }).join(" · ") + "</td></tr>";
-  });
-  document.getElementById("combos").innerHTML = tbl + "</table>";
+  var APP = { ig: "Instagram", tt: "TikTok", sc: "Snapchat" };
+  var q = new URLSearchParams(location.search);
   var out = document.getElementById("out");
   function cell(grid, entry, label, tag, dist) {
     var c = document.createElement("div"); c.className = "cell";
     var info = document.createElement("div"); info.className = "info";
-    info.innerHTML = "<b>" + label + "</b>" + '<span class="' + (dist ? "tagd" : "tagm") + '">' + tag + "</span><br>App: " + (APP[entry.app] || entry.app);
-    c.appendChild(info); c.appendChild(R.render(entry, {})); grid.appendChild(c);
+    info.innerHTML = "<b>" + label + "</b>" + '<span class="' + (dist ? "tagd" : "tagm") + '">' + tag + "</span>";
+    c.appendChild(info);
+    if (entry.ctx) { var p = document.createElement("p"); p.className = "rec-ctx"; p.textContent = entry.ctx; c.appendChild(p); }
+    c.appendChild(R.render(entry, {})); grid.appendChild(c);
   }
-  function section(title) {
-    var h = document.createElement("h2"); h.textContent = title; out.appendChild(h);
-    var g = document.createElement("div"); g.className = "grid"; out.appendChild(g); return g;
+  if (q.get("single")) {
+    document.body.className = "single";
+    document.querySelector(".wrap").innerHTML = "";
+    document.querySelector(".wrap").appendChild(R.render({ id: q.get("single") }, {}));
+    return;
   }
-  var g1 = section("Muster-Pool");
-  Object.keys(R.FOLLOWUP_POOL).forEach(function (m) {
-    R.FOLLOWUP_POOL[m].forEach(function (e) {
-      cell(g1, { id: e.id, app: e.app }, m + " · " + e.id + (byId[e.id] ? " · " + byId[e.id].target : ""), R.MUSTER[m], false);
-    });
+  var waves = q.get("welle") ? [q.get("welle")] : ["T0", "T1", "T2"];
+  var combos = [["ig"], ["tt"], ["sc"], ["ig", "tt"], ["ig", "sc"], ["tt", "sc"], ["ig", "tt", "sc"]];
+  var tbl = "<table><tr><th>Apps</th>" + waves.map(function (w) { return "<th>" + w + "</th>"; }).join("") + "</tr>";
+  combos.forEach(function (c) {
+    tbl += "<tr><td>" + c.join("+") + "</td>" + waves.map(function (w) {
+      return "<td>" + R.waveSet(w, c, "VORSCHAU").map(function (e) {
+        return e.position + ": " + e.muster + " = " + e.id + (e.fallback ? " (Fallback)" : "");
+      }).join("<br>") + "</td>";
+    }).join("") + "</tr>";
   });
-  var g2 = section("Ablenker");
-  Object.keys(R.FOLLOWUP_DISTRACTORS).forEach(function (a) {
-    R.FOLLOWUP_DISTRACTORS[a].forEach(function (d) { cell(g2, { id: d.id, app: a }, d.id + " · " + d.name, "Ablenker", true); });
+  document.getElementById("combos").innerHTML = tbl + "</table>";
+  waves.forEach(function (w) {
+    var h = document.createElement("h2"); h.textContent = "Welle " + w; out.appendChild(h);
+    var g = document.createElement("div"); g.className = "grid"; out.appendChild(g);
+    R.CORE.forEach(function (m) {
+      Object.keys(R.SETS[w][m]).forEach(function (a) {
+        var id = R.SETS[w][m][a];
+        cell(g, { id: id, app: a, ctx: m === "m4" ? "Du hast gerade weitergescrollt." : null }, id + " · " + (APP[a] || a), R.MUSTER[m], false);
+      });
+    });
+    Object.keys(R.DISTRACTORS[w]).forEach(function (a) {
+      R.DISTRACTORS[w][a].forEach(function (d) { cell(g, { id: d.id, app: a }, d.id + " · " + d.name, "Ablenker", true); });
+    });
   });
 })();
 </script>

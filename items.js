@@ -1,10 +1,13 @@
 /*
  * items.js – alle Fragetexte, Skalen und Anker der Studie.
- * Nichts davon steht hartcodiert in der Logik. Wortlaute aus Auftrag v3.
- * Keine festen Termine (seit 06.10.): Folge-Fragebogen etwa zehn Tage nach T0 (seit 11.10.).
+ * Nichts davon steht hartcodiert in der Logik.
  * Texte mit Struktur: **fett**, Leerzeile = Absatz, Zeilen mit „• “ = Aufzählung (study.js, richHtml).
+ * Platzhalter: %dauer_t0% … aus config.js, %datum% / %ende% setzt der Router ein.
  *
- * Stand: survey-v3 (11.10.): Blöcke R, T0, FB und ein Folge-Fragebogen T1.
+ * Stand: survey-v4 (18.10.2026): vier Gruppen, Fragebögen T0 / T1 / T2.
+ * Alle neuen oder geänderten Texte sind mit „// ENTWURF“ markiert und in
+ * TEXTAENDERUNGEN-v4.md gesammelt. Texte dürfen keine Gruppe, keine
+ * Hypothese und keinen Unterschied zwischen den Schulungen verraten.
  */
 window.ITEMS = {
 
@@ -16,18 +19,37 @@ window.ITEMS = {
     ]
   },
 
-  // ── Rahmentexte (Router, Wartesite, Code-Seiten) ───────
+  // ── Rahmentexte (Router, Warteseite, Code-Seiten) ───────
   frame: {
     waitTitle: "Vielen Dank!",
-    waitText: "Danke, dass du dir die Zeit genommen hast. Deine Antworten helfen uns sehr.\n\n**Wie es weitergeht:** In etwa zehn Tagen schicken wir dir per Mail den Link zu einem kurzen Folgefragebogen (etwa %dauer_t1% Minuten).\n\n**Warum er wichtig ist:** Erst mit deinen Antworten im Folgefragebogen können wir sehen, ob die Schulung etwas bewirkt. Wir freuen uns sehr, wenn du wieder dabei bist.",
+    // ENTWURF: Warteseite nach T0 bzw. nach der Intervention (vor T1); gruppenneutral
+    waitT1Text: "Danke, dass du dir die Zeit genommen hast. Deine Antworten helfen uns sehr.\n\n**Wie es weitergeht:** Am %datum%, schicken wir dir per Mail den Link zum nächsten Fragebogen (etwa %dauer_t1% Minuten). Er ist dann eine Woche lang offen, bis %ende%.\n\n**Warum er wichtig ist:** Erst mit deinen Antworten in den nächsten Fragebögen können wir die Studie auswerten. Wir freuen uns sehr, wenn du wieder dabei bist.",
+    // ENTWURF: Warteseite nach T1 (vor T2)
+    waitT2Text: "Danke für deine Antworten!\n\n**Wie es weitergeht:** Am %datum%, schicken wir dir per Mail den Link zum letzten Fragebogen (etwa %dauer_t2% Minuten). Er ist dann eine Woche lang offen, bis %ende%.",
+    // ENTWURF: Warteseite, wenn T1 verpasst wurde (T2 bleibt erreichbar)
+    t1MissedTitle: "Schön, dass du da bist",
+    t1MissedText: "Der Zeitraum für den zweiten Fragebogen ist leider vorbei. Das ist nicht schlimm: Am %datum%, schicken wir dir den Link zum letzten Fragebogen (etwa %dauer_t2% Minuten). Er ist dann eine Woche lang offen, bis %ende%.",
+    // nur im Pilotmodus: Knopf auf der Warteseite
+    pilotSkip: "Pilot: Wartezeit überspringen",
+    // ENTWURF: Übergang nach T0 für G2–G4 (G1 sieht direkt die Warteseite)
+    transitionTitle: "Danke für deine Antworten!",
+    transitionText: "Gleich startet eine kurze Schulung zu digitalen Themen.",
+    transitionButton: "Weiter",
     doneTitle: "Vielen Dank für deine Teilnahme",
     doneText: "Du hast alles geschafft. Danke für deine Zeit und deine Unterstützung!",
+    // ENTWURF: T2 verpasst (Wortlaut aus dem Umbau-Auftrag)
+    t2MissedTitle: "Danke für deine Teilnahme",
+    t2MissedText: "Der Zeitraum für diesen Fragebogen ist vorbei. Danke für deine Teilnahme.",
+    // ENTWURF: Angebot am Ende für G1/G2 (freiwillige Schulung, Welle POST)
+    offerText: "**Zum Schluss ein Angebot:** Wenn du magst, kannst du dir jetzt noch eine kurze Schulung ansehen: wie Social-Media-Apps gebaut sind, damit man sie länger und öfter nutzt. Sie dauert etwa %dauer_schulung% Minuten und ist freiwillig. Deine Antworten darin werten wir nicht aus.",
+    offerButton: "Schulung ansehen",
+    // ENTWURF: nach der freiwilligen Schulung
+    postDoneText: "Danke, dass du dir auch die Schulung angesehen hast.",
     unknownCodeTitle: "Code unbekannt",
     unknownCodeText: "Diesen Code kennen wir nicht. Prüfe den Link aus deiner Mail oder gib deinen Code ein.",
     codeInputLabel: "Dein Code (6 Zeichen)",
     codeInputButton: "Weiter",
-    startTitle: "Studie Social-Media-Schulung",
-    startNew: "Ich bin neu",
+    startTitle: "Studie zu Social-Media-Apps", // ENTWURF (vorher „Studie Social-Media-Schulung“)
     startHaveCode: "Ich habe schon einen Code",
     t0MissedTitle: "Danke für dein Interesse",
     t0MissedText: "Die Anmeldung zur Studie ist inzwischen geschlossen. Danke trotzdem für dein Interesse.",
@@ -36,11 +58,12 @@ window.ITEMS = {
     registrationClosed: "Die Anmeldung zur Studie ist leider geschlossen."
   },
 
-  // ── Block R: Registrierung (Rework 07.10., survey-v2) ───
+  // ── Block R: Registrierung ─────────────────────────────
   R: {
     r01: {
       title: "Willkommen zur Studie",
-      text: "**Worum es geht:** Wir untersuchen, wie Social-Media-Apps gestaltet sind, damit man sie länger und öfter nutzt. Die Studie läuft an der Universität Duisburg-Essen (Wirtschaftsinformatik).\n\n**Ablauf:**\n• Heute: Anmeldung, Fragebogen und eine Schulung mit nachgestellten Screens aus deinen Apps (zusammen etwa %dauer_t0% Minuten)\n• In etwa zehn Tagen: ein kurzer Folgefragebogen (etwa %dauer_t1% Minuten)\n\nDanke, dass du dir die Zeit nimmst und uns unterstützt!",
+      // ENTWURF v4: neuer Ablauf, gruppenneutral (keine Schulung „mit Screens aus deinen Apps“ mehr versprochen)
+      text: "**Worum es geht:** Wir untersuchen, wie Menschen Social-Media-Apps nutzen und wie sie deren Gestaltung wahrnehmen. Die Studie läuft an der Universität Duisburg-Essen (Wirtschaftsinformatik).\n\n**Ablauf:**\n• Heute: Anmeldung, ein Fragebogen und bei den meisten eine kurze Schulung zu digitalen Themen (zusammen etwa %dauer_t0% Minuten)\n• Nach etwa 2 und nach etwa 5 Wochen: je ein kurzer Fragebogen (etwa %dauer_t1% Minuten)\n\nWelche Schulung du bekommst und wann, entscheidet der Zufall. Manche bekommen ihre Schulung erst am Ende der Studie.\n\nDanke, dass du dir die Zeit nimmst und uns unterstützt!",
       infoLink: "Teilnahmeinformation und Datenschutz",
       infoHref: "teilnahme.html",
       EW01: "Ich habe die Teilnahmeinformation gelesen und willige ein, an der Studie teilzunehmen.",
@@ -96,7 +119,8 @@ window.ITEMS = {
     },
     r04: {
       title: "Deine E-Mail-Adresse",
-      text: "**Wofür:** Wir schicken dir den Link zum Folgefragebogen.\n\n**Datenschutz:** Deine Adresse wird getrennt von deinen Antworten gespeichert, nur für diese Studie genutzt, nicht weitergegeben und nach Studienende gelöscht.",
+      // ENTWURF v4: zwei weitere Fragebögen und Erinnerungen
+      text: "**Wofür:** Wir schicken dir die Links zu den beiden weiteren Fragebögen und, falls nötig, eine Erinnerung.\n\n**Datenschutz:** Deine Adresse wird getrennt von deinen Antworten gespeichert, nur für diese Studie genutzt, nicht weitergegeben und nach Studienende gelöscht.",
       EM01: "E-Mail-Adresse",
       EM02: "E-Mail-Adresse wiederholen",
       error: "Das sieht nicht nach einer E-Mail-Adresse aus. Bitte prüfe die Eingabe.",
@@ -110,11 +134,12 @@ window.ITEMS = {
   }
 };
 
-// ── Block T0: Fragebogen (Wortlaute aus Auftrag v3, Abschnitt 5) ──────────
+// ── Fragebogen-Bausteine (T0, T1, T2) ────────────────────────────────────
 window.ITEMS.T0 = {
   t01: {
     title: "Der erste Fragebogen",
-    text: "**Was dich erwartet:**\n• Fragen zu deiner Social-Media-Nutzung und ein Screenshot deiner Bildschirmzeit\n• danach die Schulung mit nachgestellten Screens aus deinen Apps\n\n**Dauer:** zusammen etwa %dauer_t0% Minuten.\n\nEs gibt keine richtigen oder falschen Antworten. Antworte so, wie es für dich stimmt."
+    // ENTWURF v4: neue Reihenfolge, Dauer nur für den Fragebogen
+    text: "**Was dich erwartet:**\n• ein Screenshot deiner Bildschirmzeit\n• nachgestellte Screens aus Social-Media-Apps, die du kurz einschätzt\n• Fragen zu deiner Social-Media-Nutzung und zu dir\n\n**Dauer:** etwa %dauer_t0_fragebogen% Minuten.\n\nEs gibt keine richtigen oder falschen Antworten. Antworte so, wie es für dich stimmt."
   },
   t04: {
     // Recherchiert 11.10. (Apple Support, Apple Community, deutsche Anleitungen). iOS: Wochenansicht,
@@ -135,6 +160,11 @@ window.ITEMS.T0 = {
       "Mach einen **Screenshot** der App-Liste, auf dem deine Social-Media-Apps (**Instagram, TikTok, Snapchat**) mit ihren Zeiten zu sehen sind. Passt nicht alles auf einen, scroll weiter und mach einen zweiten."
     ],
     zusatz_android: "Android sortiert nicht nach Kategorien. Uns reichen die Zeiten dieser Apps.",
+    // ENTWURF v4: nur in T1 und T2 (Umbau-Auftrag, Etappe 2)
+    letzteWoche: "**Wichtig:** Mit „letzte Woche“ meinen wir die volle Woche von Montag bis Sonntag vor heute.",
+    // ENTWURF v4: Hinweis am Computer (kein Touch, breiter als 700 px), dazu ein QR-Code
+    desktopHinweis: "**Du bist gerade am Computer?** Den Screenshot machst du am Handy. Scanne dafür den QR-Code mit der Handy-Kamera: Er öffnet deinen persönlichen Link. Lade den Screenshot am Handy hoch und mach danach hier am Computer weiter – lade diese Seite dazu einmal neu.",
+    desktopLinkLabel: "Dein persönlicher Link",
     SU01: "Konntest du den Screenshot machen?",
     SU02_label: "Screenshot hochladen (bis 3 Dateien, je 10 MB)",
     SU02_hinweis_leer: "Ohne Screenshot fehlt uns der wichtigste Wert. Falls das Hochladen gerade nicht möglich ist, kannst du trotzdem weitermachen.",
@@ -147,8 +177,9 @@ window.ITEMS.T0 = {
       { v: "anderes", label: "Anderer Grund:", text: true }
     ]
   },
-  // Erkennen im Folge-Fragebogen: gleiches Format wie in der Schulung (Rework 07.10., 4.1 und 8)
+  // Wiedererkennung (v4: eigener Block in T0, T1 und T2; vier Kernmuster + drei Ablenker)
   erkennen: {
+    title: "Nachgestellte Screens", // ENTWURF v4: Seitentitel
     instruktion: "Du siehst jetzt {n} nachgestellte Screens aus Social-Media-Apps. In jedem ist ein Element rot umrahmt. Sag uns, ob es aus deiner Sicht versucht, dein Verhalten zu beeinflussen. Nicht jedes umrahmte Element tut das.",
     ERa: "Versucht das rot umrahmte Element, dein Verhalten zu beeinflussen?",
     ERa_options: [
@@ -161,6 +192,7 @@ window.ITEMS.T0 = {
     screenOf: "Screen {x} von {n}"
   },
   t17: {
+    title: "Die Elemente noch einmal",
     intro: "Zu jedem Element zwei kurze Fragen. Unter jedem Bild kannst du es vergrößern.",
     AK01: "Wie stark würde dich dieses Element dazu bringen, die App länger oder öfter zu nutzen?",
     AK01_skala: [
@@ -174,109 +206,146 @@ window.ITEMS.T0 = {
     ]
   },
   smscf: {
+    title: "Deine Social-Media-Nutzung",
     instruktion: "Mit Social Media meinen wir hier Instagram, TikTok und Snapchat. Wie oft gibst du dem Verlangen nach, sie zu nutzen, obwohl deine Nutzung in diesem Moment …",
     skala: [
       { v: 1, label: "fast nie" }, { v: 2, label: "selten" }, { v: 3, label: "manchmal" },
       { v: 4, label: "oft" }, { v: 5, label: "sehr oft" }
     ],
-    // Kontrollfrage im Folge-Fragebogen (Rework 07.10., 8); richtig ist Stufe 2. Nur markieren.
+    // Kontrollfrage in T1 (richtig: Stufe 2). Nur markieren, kein Ausschluss.
     ATT02: "Dies ist eine Kontrollfrage. Bitte wähle hier „selten“.",
     ATT02_richtig: 2,
+    // ENTWURF v4: neue Kontrollfrage in T2 (statt ATT02, damit sie nicht wiedererkannt wird; [offen] siehe Bericht)
+    ATT03: "Dies ist eine Kontrollfrage. Bitte wähle hier „oft“.",
+    ATT03_richtig: 4,
     SF01_01: "… mit anderen Zielen in Konflikt steht (zum Beispiel: etwas für Uni oder Arbeit erledigen)?",
     SF01_02: "… dazu führt, dass du deine Zeit weniger effizient nutzt?",
     SF01_03: "… dazu führt, dass du andere Dinge aufschiebst, die du tun willst oder musst?"
   },
-  kgre: {
+  kg: {
+    title: "Deine Apps in der letzten Woche",
     KG01: "Wie sehr hattest du in der letzten Woche das Gefühl, selbst zu bestimmen, wie du deine Zeit in [App] verbringst?",
     KG01_skala: [
       { v: 1, label: "überhaupt nicht" }, { v: 2, label: "wenig" }, { v: 3, label: "teilweise" },
       { v: 4, label: "überwiegend" }, { v: 5, label: "völlig" }
-    ],
-    RE01: "Wie oft hast du in der letzten Woche die Zeit bereut, die du in [App] verbracht hast?",
-    RE01_skala: [
-      { v: 1, label: "nie" }, { v: 2, label: "selten" }, { v: 3, label: "manchmal" },
-      { v: 4, label: "oft" }, { v: 5, label: "sehr oft" }
     ]
+    // RE01 (Reue) gestrichen in v4
   },
-  bscs: {
-    // ENTWURF: Platzhalter-Übersetzungen aus Dokument 03 (Tangney et al. 2004,
-    // eigene Übersetzung). Daniel ersetzt sie durch die SCS-K-D, sobald verfügbar.
+  // Selbstkontrolle, 8-Item-Fassung der SCS-K-D (Singh, 2022, Diagnostica 68(2), 76–87, Tab. 1;
+  // Übersetzung Bertrams & Dickhäuser, 2009). Wortlaut aus „18 Skalen deutsch.md“, Block „App-Fassung“.
+  // Ersetzt seit 18.10. BS01_01–13 (eigene Übersetzung). Umpolen: Items 2, 3, 4, 5, 7.
+  // Stufen 1 und 5 wörtlich, 2–4 eigene Beschriftung.
+  sk: {
+    title: "Über dich",
     instruktion: "Wie sehr treffen die folgenden Aussagen auf dich zu?",
     skala: [
-      { v: 1, label: "trifft überhaupt nicht zu" }, { v: 2, label: "trifft eher nicht zu" },
-      { v: 3, label: "teils, teils" }, { v: 4, label: "trifft eher zu" }, { v: 5, label: "trifft voll zu" }
+      { v: 1, label: "völlig unzutreffend" }, { v: 2, label: "eher unzutreffend" },
+      { v: 3, label: "teils, teils" }, { v: 4, label: "eher zutreffend" }, { v: 5, label: "trifft ganz genau zu" }
     ],
-    // Kontrollfrage zwischen Item 7 und 8; richtig ist Stufe 2. Nur markieren, kein Ausschluss.
-    ATT01: "Dies ist eine Kontrollfrage. Bitte wähle hier „trifft eher nicht zu“.",
+    // Kontrollfrage nach Item 4; richtig ist Stufe 2. Nur markieren, kein Ausschluss.
+    ATT01: "Dies ist eine Kontrollfrage. Bitte wähle hier „eher unzutreffend“.",
     ATT01_richtig: 2,
+    umpolen: [2, 3, 4, 5, 7],
     items: [
-      "Ich kann Versuchungen gut widerstehen.",
+      "Ich bin gut darin, Versuchungen zu widerstehen.",
       "Es fällt mir schwer, schlechte Gewohnheiten abzulegen.",
-      "Ich tue bestimmte Dinge, die schlecht für mich sind, wenn sie Spaß machen.",
-      "Ich lehne Dinge ab, die schlecht für mich sind.",
-      "Manchmal kann ich mich nicht davon abhalten, etwas zu tun, obwohl ich weiß, dass es falsch ist.",
-      "Vergnügen und Spaß halten mich manchmal davon ab, meine Arbeit zu erledigen.",
       "Ich bin faul.",
-      "Ich habe Schwierigkeiten, mich zu konzentrieren.",
-      "Ich kann effektiv auf langfristige Ziele hinarbeiten.",
-      "Ich handle oft, ohne alle Alternativen durchdacht zu haben.",
-      "Ich sage unpassende Dinge.",
       "Ich wünschte, ich hätte mehr Selbstdisziplin.",
-      "Andere würden sagen, ich habe eine eiserne Selbstdisziplin."
+      "Angenehme Aktivitäten und Vergnügen hindern mich manchmal daran, meine Arbeit zu machen.",
+      "Ich kann effektiv auf langfristige Ziele hinarbeiten.",
+      "Manchmal kann ich mich selbst nicht daran hindern, etwas zu tun, obwohl ich weiß, dass es falsch ist.",
+      "Andere würden sagen, dass ich eine eiserne Selbstdisziplin habe."
     ]
   },
-  vorSchulung: {
-    title: "Gleich beginnt die Schulung",
-    text: "Du siehst nachgestellte Screens aus deinen Apps. Bei den meisten gehst du vier kurze Schritte:\n• **Einschätzen:** Ein Element ist rot umrahmt. Versucht es, dein Verhalten zu beeinflussen?\n• **Vorhersagen:** Was passiert als Nächstes? Wähl eine Antwort.\n• **Auflösen:** Die App reagiert, und du siehst, was passiert.\n• **Erklärung:** wie das Element funktioniert, warum es wirkt und wozu es dient\n\nEinige Screens enthalten kein bekanntes Muster. Zum Schluss suchst du die Muster in zwei kurzen Aufgaben selbst.\n\nDie Screens sind nachgestellt. Du bist nicht in der echten App."
+
+  // ── Neue Skalen v4 ───────────────────────────────────────
+  // ASRS-6 (Screener Teil A der WHO ASRS-v1.1, deutsche Fassung, ins Du übertragen; Kessler et al. 2005).
+  // Wortlaut aus „18 Skalen deutsch.md“, Block „App-Fassung“. Kodierung 0–4.
+  // Zusätzlich gespeichert: AS01_sum (0–24) und AS01_pos (auffällig: Items 1–3 ab Stufe 2, 4–6 ab Stufe 3).
+  asrs: {
+    title: "Konzentration im Alltag", // ENTWURF (Seitentitel)
+    instruktion: "Wie oft traf das in den letzten 6 Monaten auf dich zu? Wähle jeweils die Antwort, die am besten beschreibt, wie du dich gefühlt und verhalten hast.",
+    skala: [
+      { v: 0, label: "Nie" }, { v: 1, label: "Selten" }, { v: 2, label: "Manchmal" },
+      { v: 3, label: "Oft" }, { v: 4, label: "Sehr oft" }
+    ],
+    auffaelligAb: [2, 2, 2, 3, 3, 3],
+    items: [
+      "Wie oft hast du Probleme, die letzten Details eines Projekts abzuschließen, nachdem die schwierigen Teile abgeschlossen sind?",
+      "Wie oft hast du Schwierigkeiten, Dinge zu ordnen, wenn du eine Aufgabe hast, die Organisation erfordert?",
+      "Wie oft hast du Probleme, dich an Termine oder Verpflichtungen zu erinnern?",
+      "Wie oft vermeidest oder verschiebst du es, eine Aufgabe zu beginnen, die viel Nachdenken erfordert?",
+      "Wie oft bist du zappelig oder bewegst die Hände oder Füße, wenn du lange Zeit sitzen musst?",
+      "Wie oft fühlst du dich übermäßig aktiv und unter dem Zwang, Dinge zu tun, als ob du von einem Motor angetrieben wärst?"
+    ]
   },
+  // FoMO (Przybylski et al., 2013), 10 Items. ENTWURF: eigene Übersetzung vom 18.10.
+  // (Wortlaut aus „18 Skalen deutsch.md“, Block „App-Fassung FoMO“). Wird vor Studienstart
+  // ersetzt durch die Fassung von Wegmann et al. (2017) oder eine rückübersetzte Fassung.
+  // Pflicht, 1–5, keine Umpolung, Mittelwert.
+  fomo: {
+    title: "Freunde und Erlebnisse", // ENTWURF (Seitentitel)
+    instruktion: "Wie sehr treffen die folgenden Aussagen auf dich und deinen Alltag zu? Antworte so, wie es wirklich ist, und nicht so, wie es sein sollte.", // ENTWURF
+    skala: [ // ENTWURF
+      { v: 1, label: "trifft überhaupt nicht auf mich zu" }, { v: 2, label: "trifft ein wenig auf mich zu" },
+      { v: 3, label: "trifft teilweise auf mich zu" }, { v: 4, label: "trifft stark auf mich zu" },
+      { v: 5, label: "trifft voll und ganz auf mich zu" }
+    ],
+    items: [ // ENTWURF
+      "Ich befürchte, dass andere lohnendere Erlebnisse haben als ich.",
+      "Ich befürchte, dass meine Freunde lohnendere Erlebnisse haben als ich.",
+      "Ich mache mir Sorgen, wenn ich erfahre, dass meine Freunde ohne mich Spaß haben.",
+      "Ich werde unruhig, wenn ich nicht weiß, was meine Freunde gerade machen.",
+      "Es ist mir wichtig, die Insider-Witze meiner Freunde zu verstehen.",
+      "Manchmal frage ich mich, ob ich zu viel Zeit damit verbringe, auf dem Laufenden zu bleiben.",
+      "Es stört mich, wenn ich eine Gelegenheit verpasse, mich mit Freunden zu treffen.",
+      "Wenn ich eine schöne Zeit habe, ist es mir wichtig, die Einzelheiten online zu teilen (z. B. in einer Story).",
+      "Es stört mich, wenn ich ein geplantes Treffen verpasse.",
+      "Wenn ich im Urlaub bin, verfolge ich weiter, was meine Freunde machen."
+    ]
+  },
+  // SRBAI-G (Ljubic, Broda, Windmann & Englert, 2025, Tab. 2), Satzanfang auf App-Öffnen angepasst.
+  // Wortlaut aus „18 Skalen deutsch.md“, Block „App-Fassung“. 5 Stufen wie in der deutschen Fassung;
+  // Stufenbeschriftungen eigene Formulierung.
+  srbai: {
+    title: "Gewohnheiten", // ENTWURF (Seitentitel)
+    instruktion: "Instagram, TikTok oder Snapchat zu öffnen ist für mich etwas, …",
+    skala: [
+      { v: 1, label: "stimme überhaupt nicht zu" }, { v: 2, label: "stimme eher nicht zu" },
+      { v: 3, label: "teils, teils" }, { v: 4, label: "stimme eher zu" }, { v: 5, label: "stimme voll zu" }
+    ],
+    items: [
+      "… das ich automatisch tue.",
+      "… das ich tue, ohne mich bewusst daran erinnern zu müssen.",
+      "… das ich tue, ohne nachzudenken.",
+      "… mit dem ich anfange, ohne zu bemerken, dass ich es tue."
+    ]
+  },
+
   offen: {
-    title: "Zwei offene Fragen",
+    title: "Eine offene Frage", // ENTWURF v4 (QU02 gestrichen)
     diktat: "Tipp: Du kannst deine Antworten auch einsprechen. Tippe dazu auf das Mikrofon-Symbol deiner Tastatur.",
-    QU01: "Welche Funktionen in deinen Apps sorgen deiner Meinung nach dafür, dass du sie länger oder öfter nutzt? Nenne alles, was dir einfällt.",
-    QU02: "Wie gehst du mit diesen Funktionen um? Und würdest du gern anders damit umgehen?"
+    QU01: "Welche Funktionen in deinen Apps sorgen deiner Meinung nach dafür, dass du sie länger oder öfter nutzt? Nenne alles, was dir einfällt."
   }
 };
 
-// ── Block FB: Feedback zur Schulung (Auftrag v3, Abschnitt 5) ─────────────
+// ── Block FB: nur im Pilotmodus, direkt nach der Intervention (v4) ────────
+// FB01, FB02, FB02b und FB05 sind gestrichen (FB05 regt Vorsätze an).
 window.ITEMS.FB = {
-  title: "Rückmeldung zur Schulung",
-  FB01: "Hattest du während der Schulung ein Aha-Erlebnis? Gemeint ist ein Moment, in dem dir plötzlich etwas klar wurde, das du vorher nicht gesehen hattest.",
-  FB01_options: [
-    { v: "ja_deutlich", label: "Ja, deutlich" },
-    { v: "ja_ansatzweise", label: "Ja, ansatzweise" },
-    { v: "nein", label: "Nein" }
-  ],
-  // Nur die Muster, die die Person gesehen hat (pages/fb.js filtert)
-  FB02: "Bei welchen Mustern? (mehrere möglich)",
-  FB02_options: [
-    { v: "m1", label: "Endloses Scrollen: Der Feed hört nie auf." },
-    { v: "m2", label: "Ziehen zum Aktualisieren: Mal kommt etwas Neues, mal nicht." },
-    { v: "m3", label: "Empfehlungen: Die App zeigt dir, wobei du hängen bleibst." },
-    { v: "m4", label: "Autoplay: Videos starten von selbst." },
-    { v: "m5", label: "Herzen und Zähler: Reaktionen kommen gebündelt." },
-    { v: "m6", label: "Benachrichtigungen: Die meisten schickt die App selbst." },
-    { v: "m7", label: "Streaks: Die App setzt eine tägliche Frist." },
-    { v: "m8", label: "Verfallende Stories: Nach 24 Stunden sind sie weg." }
-  ],
-  FB02b: "An welcher Stelle? (mehrere möglich)",
-  FB02b_options: [
-    { v: "aufloesung", label: "als die App reagiert hat und meine Vorhersage aufgelöst wurde" },
-    { v: "funktion", label: "bei „So funktioniert es“" },
-    { v: "wirkung", label: "bei „Warum es wirkt“" },
-    { v: "nutzen", label: "bei „Wozu es dient“" },
-    { v: "einordnung", label: "bei der Einordnung am Ende" }
-  ],
+  title: "Rückmeldung (nur Testpersonen)", // ENTWURF
+  hinweis: "Diese Seite sehen nur Testpersonen im Pilotmodus.", // ENTWURF
   FB03: "Was davon war neu für dich?",
   FB04: "Was war unklar?",
-  FB06: "Was war überflüssig?",
-  FB05: "Willst du nach der Schulung etwas an deiner Nutzung dieser Apps ändern? Wenn ja, was?"
+  FB06: "Was war überflüssig?"
 };
 
-// ── Folge-Fragebogen T1 (Rework 07.10., Abschnitt 8) ────────────────────────────────
+// ── Folge-Fragebögen T1 und T2 (v4, gruppenneutral) ───────────────────────
 window.ITEMS.T12 = {
-  start: "Schön, dass du wieder dabei bist! Das ist der Folgefragebogen und der letzte Teil der Studie. Er dauert etwa %dauer_t1% Minuten.",
   startTitle: "Willkommen zurück",
-  SH01: "Hast du seit der Schulung etwas an deinem Handy oder in deinen Apps geändert?",
+  startT1: "Schön, dass du wieder dabei bist! Das ist der zweite Fragebogen. Er dauert etwa %dauer_t1% Minuten.", // ENTWURF
+  startT2: "Schön, dass du wieder dabei bist! Das ist der letzte Fragebogen der Studie. Er dauert etwa %dauer_t2% Minuten.", // ENTWURF
+  shTitle: "Geänderte Einstellungen",
+  SH01: "Hast du in den letzten Wochen etwas an deinem Handy oder in deinen Apps geändert?", // ENTWURF (vorher „seit der Schulung“)
   SH01_options: [
     { v: "zeitlimit", label: "Zeitlimit für eine App gesetzt" },
     { v: "benachrichtigungen", label: "Benachrichtigungen einer App ausgeschaltet" },
@@ -287,6 +356,7 @@ window.ITEMS.T12 = {
     { v: "anderes", label: "anderes", text: true }
   ],
   SH02: "Magst du einen Screenshot davon hochladen?",
-  QU03: "Hat sich seit der Schulung etwas daran verändert, wie du deine Apps nutzt oder wie du sie wahrnimmst? Wenn ja, was und warum?",
+  schlussTitle: "Zwei Fragen zum Schluss",
+  QU03: "Hat sich in den letzten Wochen etwas daran verändert, wie du deine Apps nutzt oder wie du sie wahrnimmst? Wenn ja, was und warum?", // ENTWURF (vorher „seit der Schulung“)
   QU04: "Was glaubst du, wollte diese Studie herausfinden?"
 };

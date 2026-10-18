@@ -14,9 +14,6 @@
     .controls { display: flex; flex-wrap: wrap; gap: 16px; align-items: center; margin-top: 10px; }
     .controls label { display: flex; gap: 8px; align-items: center; min-height: 44px; }
     h2 { font-size: 1.15rem; margin: 30px 24px 4px; color: var(--primary); }
-    h3 { font-size: 1rem; margin: 16px 24px 8px; }
-    .meta { margin: 0 24px 10px; font-size: .9rem; color: #4b5563; max-width: 62rem; }
-    .tag { display: inline-block; font-size: .8rem; font-weight: 700; padding: 1px 8px; border-radius: 999px; background: #fff; border: 1px solid #c9c4bb; margin-left: 6px; }
     .grid { display: flex; flex-wrap: wrap; gap: 22px; padding: 0 24px 10px; }
     figure { margin: 0; }
     figcaption { font-size: .9rem; margin: 6px 2px 0; display: flex; justify-content: space-between; gap: 8px; width: 390px; }
@@ -26,110 +23,59 @@
 </head>
 <body>
   <header>
-    <h1>Vorschau aller Zustände</h1>
-    <p>Jeder Rahmen zeigt eine Seite der Schulung in 390 × 780 px. Je Muster sind alle gebauten App-Varianten zu sehen, jeweils in vier Schritten: 1 Einschätzung (rot umrahmtes Element), 2 Frage (mit „Bild vergrößern"), 3 Reaktion mit Markierung, 4 Erklärung. Darunter die drei Ablenker. Unter jedem Muster steht, für welche Apps der Person welcher Screen als Fallback gezeigt wird. In Schritt 3 und 4 ist eine falsche Beispielantwort eingesetzt (bei Muster 6 die Auswahl 1, 2, 4; bei W1 die Stellen 1, 2, 4; bei W2 eine gemischte Beispiel-Einordnung). Nichts hier wird gespeichert.</p>
-    <p>„Exportansicht" blendet Buttons und alles Persönliche aus (Antwort-Zeile, eigene Auswahl, eigene Zahlen), damit sich die Zustände als Ersatzbilder für das Umfragetool abfotografieren lassen. „Einzeln öffnen" zeigt eine Seite allein.</p>
+    <h1>Vorschau aller Zustände (boost-v7)</h1>
+    <p>Jeder Rahmen zeigt eine Seite in 390 × 780 px. Je Muster vier Zustände: A Vorhersagen, T Ausprobieren (vor dem Tippen),
+       B Ausprobieren (die App hat reagiert), E Erklärung. Bei B und E ist eine falsche Beispielantwort eingesetzt. Nichts hier wird gespeichert.</p>
     <div class="controls">
-      <label><input type="checkbox" id="export"> Exportansicht</label>
-      <label>Beispielantwort:
-        <select id="answer">
-          <option value="">falsch (Standard)</option>
-          <option value="1">Antwort 1</option>
-          <option value="2">Antwort 2</option>
-          <option value="3">Antwort 3</option>
+      <label>Teil:
+        <select id="modus">
+          <option value="g3">Schulung + neutraler Teil (G3)</option>
+          <option value="g4">Schulung + Wenn-Dann-Plan (G4)</option>
+          <option value="g2">Passwort-Schulung (G2)</option>
+          <option value="post">Schulung freiwillig nach T2 (POST)</option>
         </select>
       </label>
-      <label>Apps für Sperrbildschirm und Wiedererkennen:
+      <label>Apps:
         <select id="apps">
-          <option value="ig,tt,sc">Instagram, TikTok, Snapchat</option>
+          <option value="ig,tt,sc">Instagram + TikTok + Snapchat</option>
           <option value="ig">nur Instagram</option>
           <option value="tt">nur TikTok</option>
           <option value="sc">nur Snapchat</option>
-          <option value="fb">nur Facebook</option>
-          <option value="x">nur X</option>
         </select>
       </label>
+      <label><input type="checkbox" id="export"> Exportansicht</label>
     </div>
   </header>
-  <main id="out"></main>
-  <script>
-    // Einzelansicht: preview.html?single=<Aufrufparameter, URL-codiert> zeigt nur einen Rahmen 390 × 844 oben links
-    (function () {
-      var single = new URLSearchParams(location.search).get("single");
-      if (!single) return;
-      document.body.innerHTML = '<iframe title="Einzelansicht" src="index.html?' + single.replace(/"/g, "") +
-        '" style="width:390px;height:844px;border:0;display:block;border-radius:0;box-shadow:none"></iframe>';
-      document.body.style.margin = "0";
-      window.__single = true;
-    })();
-  </script>
-  <script src="content.js"></script>
-  <script>
-    (function () {
-      if (window.__single) return;
-      var C = window.CONTENT;
-      var params = new URLSearchParams(location.search);
-      var exp = document.getElementById("export"), ans = document.getElementById("answer"), appsSel = document.getElementById("apps");
-      exp.checked = params.get("export") === "1";
-      ans.value = params.get("answer") || "";
-      appsSel.value = params.get("apps") || "ig,tt,sc";
-      function reload() {
-        var q = new URLSearchParams();
-        if (exp.checked) q.set("export", "1");
-        if (ans.value) q.set("answer", ans.value);
-        if (appsSel.value !== "ig,tt,sc") q.set("apps", appsSel.value);
-        location.search = q.toString();
-      }
-      [exp, ans, appsSel].forEach(function (el) { el.addEventListener("change", reload); });
-
-      var extra = (exp.checked ? "&export=1" : "") + (ans.value ? "&answer=" + ans.value : "") + "&apps=" + appsSel.value;
-      function label(k) { return k === "lock" ? "Sperrbildschirm" : (C.apps[k] || {}).label || k; }
-      // gleiche Regel wie in app.js (fallbackFor)
-      function fallbackFor(p, target) {
-        if (p.variants.ig) return "ig";
-        var o = p.order, i = o.indexOf(target);
-        for (var k = 1; k <= o.length; k++) { var a = o[(i + k) % o.length]; if (p.variants[a]) return a; }
-        return Object.keys(p.variants)[0];
-      }
-      function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
-      function frame(key, caption, more) {
-        var src = "index.html?preview=" + key + (more || "") + extra;
-        return '<figure><iframe loading="lazy" title="' + esc(caption) + '" src="' + esc(src) + '"></iframe>' +
-          "<figcaption><span>" + esc(caption) + '</span><a href="' + esc(src) + '" target="_blank" rel="noopener">einzeln öffnen</a></figcaption></figure>';
-      }
-
-      // Seit dem Rework 07.10. ohne Einleitung und App-Abfrage: die Schulung beginnt mit Screen 1
-      var html = "";
-
-      var steps = [["L", "1 Einschätzung"], ["A", "2 Frage"], ["B", "3 Reaktion"], ["E", "4 Erklärung"]];
-      C.patterns.forEach(function (p) {
-        html += "<h2>Muster " + p.id + " · " + esc(p.name) + "</h2>";
-        var built = Object.keys(p.variants);
-        if (p.always) {
-          html += '<p class="meta">Wird immer gezeigt; die Meldungen kommen nur aus den genutzten Apps (Auswahl oben).</p>';
-        } else {
-          var notes = p.order.filter(function (a) { return built.indexOf(a) < 0; }).map(function (a) {
-            return label(a) + " → " + label(fallbackFor(p, a));
-          });
-          html += '<p class="meta">Reihenfolge: ' + p.order.map(label).join(", ") + ". Gebaut: " + built.map(label).join(", ") +
-            ". " + (notes.length ? "Fallback: " + notes.join("; ") + "." : "Kein Fallback nötig.") + "</p>";
-        }
-        built.forEach(function (v) {
-          html += "<h3>" + esc(label(v)) + (p.always ? "" : '<span class="tag">gebaut</span>') + "</h3><div class=\"grid\">";
-          steps.forEach(function (s) {
-            html += frame("p" + p.id + s[0], "Muster " + p.id + " · " + label(v) + " · " + s[1], p.always ? "" : "&variant=" + v);
-          });
-          html += "</div>";
-        });
+  <div id="out"></div>
+<script>
+(function () {
+  var out = document.getElementById("out");
+  function build() {
+    var modus = document.getElementById("modus").value;
+    var apps = document.getElementById("apps").value;
+    var exp = document.getElementById("export").checked ? "&export=1" : "";
+    var units = modus === "g2" ? [1, 2, 3, 4] : [1, 4, 3, 6];
+    var sections = [["Start", ["start"]]];
+    units.forEach(function (u, i) { sections.push([(modus === "g2" ? "Thema " : "Muster ") + (i + 1), ["A", "T", "B", "E"].map(function (s) { return "p" + u + s; })]); });
+    sections.push(["Übungen", ["W1A", "W1B", "W2A", "W2B"]]);
+    sections.push(["Einordnung und Zusammenfassung", ["einordnung", "zusammenfassung"]]);
+    if (modus === "g3") sections.push(["Neutraler Teil (Quiz)", ["q1A", "q1E", "q2A", "q2E", "q3A", "q3E"]]);
+    if (modus === "g4") sections.push(["Wenn-Dann-Plan", ["plan1", "plan2", "plan3"]]);
+    out.innerHTML = "";
+    sections.forEach(function (s) {
+      var h = document.createElement("h2"); h.textContent = s[0]; out.appendChild(h);
+      var g = document.createElement("div"); g.className = "grid"; out.appendChild(g);
+      s[1].forEach(function (k) {
+        var url = "index.html?preview=" + k + "&modus=" + modus + "&apps=" + apps + exp;
+        var fig = document.createElement("figure");
+        fig.innerHTML = '<iframe loading="lazy" src="' + url + '" title="' + k + '"></iframe><figcaption><span>' + k + '</span><a href="' + url + '" target="_blank">Einzeln öffnen</a></figcaption>';
+        g.appendChild(fig);
       });
-
-      html += '<h2>Ablenker</h2><p class="meta">Drei Ablenker nach dem 2., 4. und 6. Screen, reihum aus den oben gewählten Apps. Einschätzung, danach die Auflösung „Hier steckt kein Muster.“</p><div class="grid">' +
-        [1, 2, 3].map(function (k) { return frame("d" + k + "L", "Ablenker " + k + " · Einschätzung") + frame("d" + k + "R", "Ablenker " + k + " · Auflösung"); }).join("") + "</div>";
-      html += '<h2>Wiederfinden</h2><p class="meta">W1: Nummerierte Marker nur für Muster, die bei den oben gewählten Apps gezeigt werden; Elemente nicht gezeigter Muster sind aus dem Screen entfernt (z. B. verschwindet das Lade-Rad bei „nur Snapchat"). W2: drei Meldungen aus den genutzten Apps, je „Von einem Menschen" oder „Von der App"; die Streak-Meldung kommt nur mit Muster 7 vor.</p><div class="grid">' +
-        frame("W1A", "W1 Nummern antippen") + frame("W1B", "W1 Rückmeldung") + frame("W2A", "W2 Meldungen einordnen") + frame("W2B", "W2 Rückmeldung") + "</div>";
-      html += '<h2>Schluss</h2><div class="grid">' + frame("einordnung", "Einordnung") + frame("zusammenfassung", "Zusammenfassung") + "</div>";
-      document.getElementById("out").innerHTML = html;
-    })();
-  </script>
+    });
+  }
+  ["modus", "apps", "export"].forEach(function (id) { document.getElementById(id).addEventListener("change", build); });
+  build();
+})();
+</script>
 </body>
 </html>

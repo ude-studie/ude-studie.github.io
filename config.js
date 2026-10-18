@@ -10,27 +10,31 @@ window.STUDY_CONFIG = {
 
   STORAGE_BUCKET: "screenshots",
 
-  // --- Ablauf (seit 06.10.: keine festen Termine mehr) ---
-  // Anmeldung, Fragebogen T0, Schulung und Feedback laufen direkt
-  // hintereinander, solange die Anmeldung offen ist. Es gibt EINEN
-  // Folge-Fragebogen (gespeichert als Welle T1), der sich für jede Person
-  // FOLLOWUP_AFTER_DAYS Tage nach ihrem T0 öffnet (ab 0:00 Uhr Berlin).
+  // --- Ablauf (v4, 18.10.: vier Gruppen, T0 / T1 / T2) ---
+  // Anmeldung, T0 und die Intervention laufen direkt hintereinander, solange
+  // die Anmeldung offen ist. Direkt nach T0 teilt der Server die Gruppe zu
+  // (assign_group, MIGRATION-v4.sql). T1 und T2 öffnen je Person am Montag
+  // nach der ersten bzw. vierten vollen Kalenderwoche nach der Intervention
+  // und sind 7 Tage offen. Die Termine berechnet der Server (set_schedule);
+  // die App liest sie über progress().
   TIMEZONE: "Europe/Berlin",
   WINDOWS: {
     R:  { from: "2026-10-01T00:00:00", to: "2026-12-31T23:59:59" },
     T0: { from: "2026-10-01T00:00:00", to: "2026-12-31T23:59:59" }
   },
-  FOLLOWUP_AFTER_DAYS: 10, // seit 11.10.: Folge-Fragebogen nach etwa zehn Tagen
 
-  // Zeitangaben in den Texten (%dauer_t0%, %dauer_t1%). T0 = 20 Minuten (Entscheidung Daniel 07.10.)
-  DAUER_T0_MIN: "20",
-  DAUER_T1_MIN: "15",
+  // Zeitangaben in den Texten (%dauer_t0%, %dauer_t1%, %dauer_t2%, %dauer_schulung%)
+  // ENTWURF v4: Ziel aus dem Umbau-Auftrag (heute höchstens 25, T1/T2 je höchstens 10 Minuten)
+  DAUER_T0_MIN: "25",       // Anmeldung + Fragebogen + Intervention
+  DAUER_T0_FRAGEBOGEN_MIN: "12", // nur der erste Fragebogen (Startseite T0-01)
+  DAUER_T1_MIN: "10",
+  DAUER_T2_MIN: "10",
+  DAUER_SCHULUNG_MIN: "10", // Startseite der Schulung
 
-  // Fassung des Fragebogens; wird mit jedem Event gespeichert (Spalte events.version).
-  // SEND_VERSION erst auf true setzen, wenn ADD-VERSION-SPALTE.sql in Supabase gelaufen ist –
-  // sonst lehnt die Datenbank jede Zeile mit unbekannter Spalte ab.
-  SURVEY_VERSION: "survey-v3", // v3 (11.10.): FB02 Auswahl, FB02b/FB06 neu, T0-07, Screenshot-Anleitung neu
-  SEND_VERSION: true, // Spalte events.version existiert seit 07.10.
+  // Fassung des Fragebogens; wird mit jedem Event gespeichert (Spalte events.version,
+  // seit v4 auch in schema.sql).
+  SURVEY_VERSION: "survey-v4", // v4 (18.10.): 4 Gruppen, Wiedererkennung T0/T1/T2, neue Skalen, T2
+  SEND_VERSION: true,
 
   // Kontaktzeile unter jeder Seite (Rework 6.3)
   CONTACT_EMAIL: "daniel.davydov@stud.uni-due.de",

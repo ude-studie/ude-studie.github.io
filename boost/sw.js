@@ -1,6 +1,7 @@
-/* Offline-Cache: erst Netz, bei fehlendem Netz der zuletzt geladene Stand. */
-var CACHE = "boost-v2";
-var FILES = ["./", "index.html", "app.js", "content.js", "styles.css",
+/* Offline-Cache: erst Netz, bei fehlendem Netz der zuletzt geladene Stand.
+ * v7 (18.10.2026): neuer Cache-Name, alte boost-Caches werden beim Aktivieren gelöscht. */
+var CACHE = "boost-v7";
+var FILES = ["./", "index.html", "app.js", "content.js", "content-pw.js", "styles.css",
   "assets/foto-hoersaal.jpg", "assets/foto-hund.jpg", "assets/foto-mia-pasta.jpg", "assets/foto-tom-lissabon.jpg", "assets/foto-weiter.jpg", "assets/video-jonas-lauf.jpg", "assets/video-mia-pasta.jpg", "assets/video-tom-lissabon.jpg", "assets/video-weiter.jpg"];
 
 self.addEventListener("install", function (e) {
@@ -8,7 +9,14 @@ self.addEventListener("install", function (e) {
 });
 
 self.addEventListener("activate", function (e) {
-  e.waitUntil(self.clients.claim());
+  e.waitUntil(
+    caches.keys()
+      .then(function (keys) {
+        return Promise.all(keys.filter(function (k) { return /^boost-/.test(k) && k !== CACHE; })
+          .map(function (k) { return caches.delete(k); }));
+      })
+      .then(function () { return self.clients.claim(); })
+  );
 });
 
 self.addEventListener("fetch", function (e) {
