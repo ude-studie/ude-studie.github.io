@@ -3,7 +3,7 @@
  * Umbau-Auftrag, Etappe 6. ALLE Texte ENTWURF (stehen in TEXTAENDERUNGEN-v4.md).
  *
  * Gleicher Aufbau und gleiche Optik wie die Schulung (content.js):
- *   Startseite → 4 Themen × 3 Schritte (Antwort → Ausprobieren → Erklärung)
+ *   Startseite → 4 Themen × 3 Schritte (Antwort → Was passiert → Erklärung)
  *   → 2 Übungen → Einordnung → Zusammenfassung
  * Nachgestellte Screens ohne echte Marken („Musterbank“, „Mustershop“ … sind erfunden).
  * Kein Bezug zu Social-Media-Gestaltung, Bildschirmzeit oder Aufmerksamkeit.
@@ -27,7 +27,7 @@ window.CONTENT_PW = {
     lead: "In dieser kurzen Schulung geht es darum, wie Angreifer an Passwörter und Konten kommen.",
     points: [
       "Es kommen **4 Themen** rund um sichere Passwörter.",
-      "Jedes Thema hat **3 Schritte:** ① Antwort ② Ausprobieren ③ Erklärung",
+      "Jedes Thema hat **3 Schritte:** ① Antwort ② Was passiert ③ Erklärung",
       "Am Ende kommen **2 kurze Übungen**.",
       "Dauer: etwa **12 Minuten**."
     ],
@@ -55,7 +55,7 @@ window.CONTENT_PW = {
           screen: "pw-reuse",
           ctxA: "Deine Konten. Überall nutzt du dasselbe Passwort.",
           ctxB: "Der Mustershop wurde gehackt. Kurz danach melden sich Fremde bei deinen anderen Konten an.",
-          tryText: "„Ausprobieren“ zeigt, was nach dem Hack beim Mustershop passiert.",
+          tryText: "Gleich siehst du, was nach dem Hack beim Mustershop passiert.",
           hint: "Mit der gestohlenen Kombination aus E-Mail und Passwort kommen Angreifer überall hinein, wo du dasselbe Passwort nutzt.",
           markLabel: "Warnungen bei den anderen Konten",
           data: {
@@ -90,7 +90,7 @@ window.CONTENT_PW = {
           screen: "pw-phish",
           ctxA: "Eine Mail sagt: „Ihr Konto wird gesperrt. Melden Sie sich an.“ Der Link führt hierher.",
           ctxB: "Die Adresse gehört nicht der Musterbank, sondern „konto-sicherheit.net“.",
-          tryText: "„Ausprobieren“ zeigt, wem die Seite wirklich gehört.",
+          tryText: "Gleich siehst du, wem die Seite wirklich gehört.",
           hint: "Entscheidend ist, was direkt vor der Endung ganz rechts steht, hier „.net“: Die Seite gehört zu „konto-sicherheit.net“. Das „musterbank.de“ vorne ist nur Tarnung.",
           markLabel: "Adresszeile des Browsers",
           data: {
@@ -120,7 +120,7 @@ window.CONTENT_PW = {
           screen: "pw-2fa",
           ctxA: "Eben kam eine SMS mit einem Code. Gleichzeitig ruft jemand an.",
           ctxB: "In dem Moment meldet sich jemand mit deinem Konto an. Er braucht nur noch den Code.",
-          tryText: "„Ausprobieren“ zeigt, was in diesem Moment mit deinem Konto passiert.",
+          tryText: "Gleich siehst du, was in diesem Moment mit deinem Konto passiert.",
           hint: "Den Code hat die Musterbank geschickt, weil sich gerade jemand mit deinem Passwort anmeldet. Der Anrufer will genau diesen Code.",
           markLabel: "Hinweis: neue Anmeldung",
           data: {
@@ -150,7 +150,7 @@ window.CONTENT_PW = {
           screen: "pw-strength",
           ctxA: "Du legst ein neues Konto an. Die Seite bewertet dein Passwort.",
           ctxB: "Ein Angriffsprogramm probiert typische Muster zuerst und ist schnell am Ziel.",
-          tryText: "„Ausprobieren“ zeigt, wie ein Angriffsprogramm Passwörter errät.",
+          tryText: "Gleich siehst du, wie ein Angriffsprogramm Passwörter errät.",
           hint: "Wörter aus dem Wörterbuch mit Jahreszahl und „!“ stehen weit oben auf den Listen solcher Angriffsprogramme. „Sommer2024!“ gehört dazu.",
           markLabel: "Liste der ausprobierten Passwörter",
           data: {
