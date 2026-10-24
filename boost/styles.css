@@ -1251,3 +1251,8 @@ div.card { cursor: default; }
 .ttw1 .tt-tabs { text-shadow: 0 1px 3px rgba(0,0,0,.7); }
 .ttw1 .ttw1-next::after { content: ""; position: absolute; inset: 0; background: rgba(0,0,0,.25); }
 .ttw1 .ttw1-next-user { z-index: 2; }
+
+/* Fragebogen (18.10./24.10.): Hinweis klebt unten im scrollenden Bereich der App, nicht am Browserfenster */
+.q-hint.in-flow { position: sticky; bottom: 12px; left: auto; transform: none; display: block; width: max-content;
+  margin: -46px auto 0; animation-name: q-hint-bob-y; }
+.q-hint.in-flow[hidden] { display: none; }

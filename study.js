@@ -479,11 +479,15 @@
       return !f.hidden && (scr.compareDocumentPosition(f) & 4);
     })[0];
     if (!q) return;
-    var pill = el("button", "q-hint", "↓ Zur Frage");
+    var pill = el("button", "q-hint in-flow", "↓ Zur Frage");
     pill.type = "button";
     pill.hidden = true;
     pill.addEventListener("click", function () { q.scrollIntoView({ behavior: "smooth", block: "start" }); });
-    app.appendChild(pill);
+    // Direkt hinter den Screen setzen und dort unten im scrollenden Bereich kleben lassen (sticky).
+    // Vorher am Browserfenster befestigt – am Computer schwebte er dann unter der App-Karte.
+    var node = scr;
+    while (node.parentNode && node.parentNode !== page) node = node.parentNode;
+    page.insertBefore(pill, node.nextSibling);
     var io = new IntersectionObserver(function (es) {
       if (es[0].isIntersecting) { pill.remove(); io.disconnect(); }
       else pill.hidden = false;
