@@ -33,7 +33,7 @@ window.STUDY_CONFIG = {
 
   // Fassung des Fragebogens; wird mit jedem Event gespeichert (Spalte events.version,
   // seit v4 auch in schema.sql).
-  SURVEY_VERSION: "survey-v4", // v4 (18.10.): 4 Gruppen, Wiedererkennung T0/T1/T2, neue Skalen, T2
+  SURVEY_VERSION: "survey-v5", // v4 (18.10.): 4 Gruppen, Wiedererkennung T0/T1/T2, neue Skalen, T2; v5 (ToL 24.10.): Kontextsatz Autoplay-Screen, Rahmentexte
   SEND_VERSION: true,
 
   // Kontaktzeile unter jeder Seite (Rework 6.3)

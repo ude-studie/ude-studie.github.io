@@ -175,7 +175,7 @@
     var body = text + (p.post_done ? "\n\n" + F.postDoneText : "") + (offer ? "\n\n" + F.offerText : "");
     simplePage(title, body, offer ? buttonRow(F.offerButton, function () { handoff(true); }) : null);
   }
-  function showRegistrationClosed() { simplePage(F.waitTitle, F.registrationClosed); }
+  function showRegistrationClosed() { simplePage(F.registrationClosedTitle, F.registrationClosed); }
   // Übergang nach T0 für G2–G4: gruppenneutral, ohne Zurück (T0 ist abgeschlossen)
   function showTransition() {
     simplePage(F.transitionTitle, F.transitionText, buttonRow(F.transitionButton, function () { handoff(false); }));
@@ -865,6 +865,8 @@
         var entry = item.entry || {};
         if (window.RECOGNITION.render) {
           var stage = window.RECOGNITION.render(entry, { mini: !!item.mini });
+          // ToL 24.10.: Autoplay-Animation (ohne Rahmen) nimmt keine Klicks an, kein Hand-Zeiger
+          if (entry.noFrame) stage.classList.add("rec-static");
           if (!item.mini) {
             if (!entry.ctx) return stage;
             // Kontextsatz über dem Screen (v4: Autoplay „Du hast gerade weitergescrollt.“)

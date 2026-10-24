@@ -44,7 +44,13 @@
         return;
       }
       var sel = box.querySelector("select");
-      if (sel) { if (!sel.value) setVal(sel, sel.options[1 + rnd(sel.options.length - 1)].value); return; }
+      if (sel) {
+        if (!sel.value) setVal(sel, sel.options[1 + rnd(sel.options.length - 1)].value);
+        // ToL 24.10.: bei „Sonstiges“ auch das Textfeld daneben füllen (sonst blieb der Testlauf hängen)
+        var other = box.querySelector(".other-input");
+        if (other && !other.hidden && !other.value) setVal(other, "Testangabe (Pilot)");
+        return;
+      }
       var inp = box.querySelector("input:not([type=file]):not([type=checkbox]), textarea");
       if (!inp || inp.value) return;
       if (inp.type === "email") { // Wiederholung (EM02) muss gleich sein: vorhandene Adresse übernehmen

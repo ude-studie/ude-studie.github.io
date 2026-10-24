@@ -161,6 +161,10 @@
 .rec-sound svg { width: 22px; height: 22px; fill: #fff; color: #fff; }
 .rl .bar.rec-bar { bottom: 10px; left: 12px; right: 12px; height: 4px; border-radius: 2px; }
 
+/* ToL 24.10.: Autoplay-Screen nur zum Anschauen – keine Klicks, kein Hand-Zeiger, kein Markieren */
+.rec-stage.rec-static, .rec-stage.rec-static * { cursor: default; }
+.rec-stage.rec-static .device-wrap { pointer-events: none; user-select: none; -webkit-user-select: none; }
+
 /* Kontextsatz über einem Screen (Autoplay) */
 .rec-with-ctx { margin: 0; }
 .rec-ctx { margin: 0 0 10px; padding: 10px 14px 10px 16px; border-left: 5px solid var(--primary, #1f3a5f);

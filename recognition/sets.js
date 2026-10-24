@@ -79,7 +79,9 @@
   var CTX = {
     m1: { tt: "Du scrollst durch deinen TikTok-Feed. Unten beginnt schon das nächste Video.",
           ig: "Du scrollst durch die Reels. Unten beginnt schon das nächste Video." },
-    m4: { tt: "Du hast gerade weitergescrollt.", ig: "Du hast gerade weitergescrollt." },
+    // ToL 24.10.: Zusatz, weil die Animation wie etwas zum Anklicken wirkte (gilt für T0, T1 und T2). ENTWURF
+    m4: { tt: "Du hast gerade weitergescrollt. Schau einfach zu, du musst hier nichts antippen.",
+          ig: "Du hast gerade weitergescrollt. Schau einfach zu, du musst hier nichts antippen." },
     m3: { tt: "Dein TikTok-Feed.", ig: "Dein Instagram-Feed." },
     m6: { ig: "Dein Sperrbildschirm.", tt: "Dein Sperrbildschirm.", sc: "Dein Sperrbildschirm." }
   };

@@ -860,6 +860,7 @@
       '<div class="lp-steps">' + stepperHtml(STEP_OF[state.sub]) + "</div>" +
       (p.fallback ? '<div class="fallback-note">' + esc(fill(UI.fallbackNote, { app: appLabel(p.targetApp) })) + "</div>" : "") +
       '<main class="lp-stage"><p class="lp-ctx" id="ctx"></p>' +
+      '<p class="lp-ctx-hint" id="ctx-hint" hidden></p>' + // ToL 24.10.: multiHint über dem Screen statt darunter
       deviceHtml(tpl.cls, tpl.render(p, isB, { sel: state.sub === "ask" ? picks : (sel || picks) }), tpl.scroll && tpl.scroll()) +
       '<div class="lp-panel"></div></main>' +
       '<div class="lp-foot"><button class="btn" id="main" type="button"></button></div></div>';
@@ -882,7 +883,7 @@
   function panelHtml(p, phase) {
     var r = state.patterns[p.id] || {};
     if (phase === "ask") {
-      if (p.type === "multi") return '<p class="panel-hint">' + esc(UI.multiHint) + "</p>";
+      if (p.type === "multi") return ""; // ToL 24.10.: multiHint steht jetzt über dem Screen (#ctx-hint)
       return '<fieldset class="q-card"><legend class="q" id="q">' + esc(p.question) + "</legend>" +
         p.options.map(function (o, i) {
           return '<label class="opt"><input type="radio" name="ans" value="' + (i + 1) + '"' + (r.answer === i + 1 ? " checked" : "") + "><span>" + esc(o) + "</span></label>";
@@ -923,6 +924,10 @@
     var ctx = app.querySelector("#ctx"), panel = app.querySelector(".lp-panel"), btn = app.querySelector("#main");
     var body = app.querySelector(".lp-stage .screen-body");
     ctx.textContent = ctxFor(p, phase);
+    // ToL 24.10.: Bei der Mehrfachauswahl steht der Hinweis direkt unter der Aufgabe, über dem Screen
+    var ctxHint = app.querySelector("#ctx-hint");
+    ctxHint.hidden = !(phase === "ask" && p.type === "multi");
+    ctxHint.textContent = ctxHint.hidden ? "" : UI.multiHint;
     panel.innerHTML = panelHtml(p, phase);
     stage.setAttribute("data-phase", phase);
     app.querySelector(".lp-stage > .device-wrap").setAttribute("data-size", sizeFor(p, phase));
@@ -1251,16 +1256,15 @@
   }
   function renderSummary() {
     var Z = C.zusammenfassung;
+    // G4: die Regel steht direkt im Kasten des Musters (ToL 24.10.: vorher eine zweite Liste mit
+    // denselben vier Namen, die Seite war zu lang); G3 (und POST): Satz zur eigenen Entscheidung (seit 18.10.)
     var list = '<ul class="sum-list">' + shownIds().map(function (id) {
       var d = patternDef(id);
-      return "<li><b>" + esc(d.short) + "</b><span>" + esc(d.satz) + "</span></li>";
+      var rule = mode === "g4" && d.regel
+        ? '<span class="sum-rule"><b>' + esc(Z.rulesTitle) + ":</b> " + esc(d.regel) + "</span>" : "";
+      return "<li><b>" + esc(d.short) + "</b><span>" + esc(d.satz) + "</span>" + rule + "</li>";
     }).join("") + "</ul>";
-    // G4: die vier Regeln noch einmal; G3 (und POST): Satz zur eigenen Entscheidung (seit 18.10.)
-    var rules = mode === "g4" ? '<h2 class="sum-rules-title">' + esc(Z.rulesTitle) + '</h2><ul class="sum-list sum-rules">' +
-      shownIds().map(function (id) {
-        var d = patternDef(id);
-        return d.regel ? "<li><b>" + esc(d.short) + "</b><span>" + esc(d.regel) + "</span></li>" : "";
-      }).join("") + "</ul>" : "";
+    var rules = "";
     var outro = (mode === "g3" || mode === "post") && Z.outroG3 ? Z.outroG3 + " " + Z.outroEnd : Z.outroEnd;
     app.innerHTML = '<div class="page tp"><div class="tp-body"><h1>' + esc(Z.title) + "</h1>" + list + rules +
       (exportMode ? "" : '<p class="tp-score">' + esc(fill(Z.scores, scores())) + "</p>") +

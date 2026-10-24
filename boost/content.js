@@ -29,7 +29,7 @@
  * Texte mit „// ENTWURF“ sind neu in v7 und stehen in TEXTAENDERUNGEN-v4.md.
  */
 window.CONTENT = {
-  version: "boost-v7",
+  version: "boost-v8", // ToL 24.10.: Regeln (G4) als Möglichkeit, Hinweise in Muster 4 und Übung 1, Auflösung in Übung 2 (vorher boost-v7)
 
   appOrder: ["ig", "tt", "sc"],
   apps: {
@@ -104,7 +104,7 @@ window.CONTENT = {
       was: "Der Feed hat kein Ende und keine Seitenzahlen. Während du scrollst, lädt die App im Hintergrund schon die nächsten Beiträge nach.",
       wirkung: "Ohne Ende fehlt ein Signal zum Aufhören (Stopping Cue), wie das Ende eines Kapitels oder einer Folge. Aufhören wird so zu einer aktiven Entscheidung, und die schiebt man leicht immer weiter auf.",
       zweck: "Mehr Zeit im Feed heißt mehr Platz für Werbung zwischen den Beiträgen.",
-      regel: "Wenn du merkst, dass du schon eine Weile scrollst, ohne etwas Bestimmtes zu suchen, dann halte kurz an und entscheide bewusst: weiter oder Schluss.", // nur G4, ENTWURF
+      regel: "Wenn du merkst, dass du schon eine Weile scrollst, ohne etwas Bestimmtes zu suchen, dann kannst du kurz anhalten und bewusst entscheiden: weiter oder Schluss.", // nur G4, ENTWURF; ToL 24.10.: Möglichkeit statt Befehl
       variants: {
         tt: {
           screen: "tiktok-feed",
@@ -160,7 +160,7 @@ window.CONTENT = {
       was: "Videos starten von selbst, sobald sie im Bild sind, und laufen in Schleife. Einen Play-Knopf gibt es nicht.",
       wirkung: "Die App macht Weiterschauen zur Voreinstellung. Menschen bleiben meist bei der Voreinstellung (Default-Effekt): Anfangen kostet nichts, nur Aufhören braucht eine Entscheidung.",
       zweck: "Videos, die von selbst starten, werden seltener übersprungen. Das bringt mehr Sehzeit und mehr Werbung.",
-      regel: "Wenn du merkst, dass du nur weiterschaust, weil das nächste Video schon läuft, dann halte kurz an und entscheide bewusst: weiterschauen oder weglegen.", // nur G4, ENTWURF
+      regel: "Wenn du merkst, dass du nur weiterschaust, weil das nächste Video schon läuft, dann kannst du kurz anhalten und bewusst entscheiden: weiterschauen oder weglegen.", // nur G4, ENTWURF; ToL 24.10.: Möglichkeit statt Befehl
       variants: {
         ig: {
           screen: "reels",
@@ -212,7 +212,7 @@ window.CONTENT = {
       was: "Zwischen Beiträgen von Konten, denen du folgst, zeigt die App Inhalte fremder Konten, nur mit „Vorgeschlagen“ markiert. Ausgewählt werden sie danach, wie lange du bei ähnlichen Inhalten hängen bleibst.",
       wirkung: "Die Auswahl folgt deinem Verhalten, nicht deinen Absichten: Was dich kurz fesselt, bekommst du öfter, auch wenn du es eigentlich nicht sehen willst. Weil die Vorschläge so gut passen, halten wir sie für unseren eigenen Geschmack.",
       zweck: "Passende Vorschläge halten dich länger im Feed. Die For You Page bei TikTok besteht nur daraus.",
-      regel: "Wenn dir die App etwas von einem Konto zeigt, dem du nicht folgst, dann frag dich kurz: Will ich das gerade sehen?", // nur G4, ENTWURF
+      regel: "Wenn dir die App etwas von einem Konto zeigt, dem du nicht folgst, dann kannst du dich kurz fragen: Will ich das gerade sehen?", // nur G4, ENTWURF; ToL 24.10.: „frag dich“ → „kannst du dich fragen“, passend zu den anderen
       variants: {
         ig: {
           screen: "ig-feed",
@@ -271,7 +271,7 @@ window.CONTENT = {
       was: "Auf dem Sperrbildschirm sehen alle Meldungen gleich aus. Nur wenige kommen von Menschen. Die meisten verschickt die App von sich aus, und das ist ab Werk eingeschaltet.",
       wirkung: "Eine Meldung, die nach einer persönlichen Nachricht aussieht, weckt Neugier und die Sorge, etwas zu verpassen (Fear of Missing Out). Ob wirklich jemand etwas von dir will, siehst du erst, wenn die App schon offen ist.",
       zweck: "Jede Meldung ist ein Anlass, die App wieder zu öffnen. Mehr Meldungen, mehr Besuche.",
-      regel: "Wenn eine Meldung nicht von einer Person kommt, dann entscheide bewusst, ob du die App jetzt öffnen willst, statt einfach draufzutippen.", // nur G4, ENTWURF
+      regel: "Wenn eine Meldung nicht von einer Person kommt, dann kannst du bewusst entscheiden, ob du die App jetzt öffnen willst, statt einfach draufzutippen.", // nur G4, ENTWURF; ToL 24.10.: Möglichkeit statt Befehl
       variants: {
         lock: {
           screen: "lockscreen",
@@ -355,6 +355,8 @@ window.CONTENT = {
         ig: {
           app: "Instagram",
           screen: "ig-feed",
+          // ToL 24.10.: Ladekreis wurde nicht als Feed-Ende erkannt („lädt das noch?“). ENTWURF
+          ctx: "Ein neuer Screen: Du bist ganz unten im Feed angekommen. Tipp die Nummern an, hinter denen ein Muster aus der Schulung steckt.",
           spotDefs: [
             { key: "sugg-0", pattern: 3, label: "„Vorgeschlagen“ neben mia.kocht" },
             { key: "save-0", pattern: null, label: "Merken-Symbol" },
@@ -372,6 +374,8 @@ window.CONTENT = {
         tt: {
           app: "TikTok",
           screen: "tt-w1",
+          // ToL 24.10.: gleicher Gedanke wie bei Instagram – sagen, wo man ist, damit das Video unten Sinn ergibt. ENTWURF
+          ctx: "Ein neuer Screen: Du wischst gerade durch die For You Page. Tipp die Nummern an, hinter denen ein Muster aus der Schulung steckt.",
           spotDefs: [
             { key: "tab-1", pattern: 3, label: "der Reiter „Für dich“" },
             { key: "share", pattern: null, label: "Teilen" },
@@ -401,7 +405,8 @@ window.CONTENT = {
       cardPool: [
         { app: "ig", human: true, text: "anna.s hat auf deine Story reagiert", why: "anna.s hat selbst reagiert." },
         { app: "tt", human: false, text: "Jemand, dem du folgst, hat etwas Neues gepostet. Sieh es dir an.",
-          why: "Die App schreibt sie selbst. Sie sagt nicht einmal, wer gepostet hat." },
+          // ToL 24.10.: Auflösung geschärft (wurde als Meldung von einer Person verstanden). ENTWURF
+          why: "Kein Mensch hat diese Meldung geschrieben. Die App verschickt sie automatisch, und es steht nicht einmal ein Name dabei." },
         { app: "ig", human: false, text: "Du hast heute noch nicht in deinen Feed geschaut. Sieh nach, was neu ist.",
           why: "Die App erinnert dich daran, sie zu öffnen." },
         { app: "sc", human: true, text: "mara.w hat dir einen Snap gesendet", why: "mara.w hat dir selbst einen Snap geschickt." },

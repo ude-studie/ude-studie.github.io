@@ -21,7 +21,7 @@ window.ITEMS = {
 
   // ── Rahmentexte (Router, Warteseite, Code-Seiten) ───────
   frame: {
-    waitTitle: "Vielen Dank!",
+    waitTitle: "Geschafft für heute – vielen Dank!", // ToL 24.10. (vorher „Vielen Dank!“), gilt für alle Gruppen
     // ENTWURF: Warteseite nach T0 bzw. nach der Intervention (vor T1); gruppenneutral
     waitT1Text: "Danke, dass du dir die Zeit genommen hast. Deine Antworten helfen uns sehr.\n\n**Wie es weitergeht:** Am %datum%, schicken wir dir per Mail den Link zum nächsten Fragebogen (etwa %dauer_t1% Minuten). Er ist dann eine Woche lang offen, bis %ende%.\n\n**Warum er wichtig ist:** Erst mit deinen Antworten in den nächsten Fragebögen können wir die Studie auswerten. Wir freuen uns sehr, wenn du wieder dabei bist.",
     // ENTWURF: Warteseite nach T1 (vor T2)
@@ -55,7 +55,8 @@ window.ITEMS = {
     t0MissedText: "Die Anmeldung zur Studie ist inzwischen geschlossen. Danke trotzdem für dein Interesse.",
     offlineHint: "Die Verbindung ist schwach. Deine Antworten werden gespeichert, sobald sie wieder besteht.",
     noConnectionRegister: "Gerade besteht keine Verbindung zum Server. Bitte öffne die Seite später noch einmal; für die Anmeldung wird eine Internetverbindung benötigt.",
-    registrationClosed: "Die Anmeldung zur Studie ist leider geschlossen."
+    registrationClosed: "Die Anmeldung zur Studie ist leider geschlossen.",
+    registrationClosedTitle: "Vielen Dank!" // ToL 24.10.: eigener Titel, weil waitTitle jetzt „Geschafft für heute …“ lautet
   },
 
   // ── Block R: Registrierung ─────────────────────────────
@@ -123,6 +124,8 @@ window.ITEMS = {
       text: "**Wofür:** Wir schicken dir die Links zu den beiden weiteren Fragebögen und, falls nötig, eine Erinnerung.\n\n**Datenschutz:** Deine Adresse wird getrennt von deinen Antworten gespeichert, nur für diese Studie genutzt, nicht weitergegeben und nach Studienende gelöscht.",
       EM01: "E-Mail-Adresse",
       EM02: "E-Mail-Adresse wiederholen",
+      // ToL 24.10.: Satz unter den Feldern (Sorge vor Werbung). ENTWURF
+      hinweis: "Wir nutzen deine Adresse nur für die Erinnerungen an die zwei weiteren Fragebögen. Keine Werbung, kein Newsletter.",
       error: "Das sieht nicht nach einer E-Mail-Adresse aus. Bitte prüfe die Eingabe.",
       mismatch: "Die beiden Adressen stimmen nicht überein."
     },
@@ -163,7 +166,8 @@ window.ITEMS.T0 = {
     // ENTWURF v4: nur in T1 und T2 (Umbau-Auftrag, Etappe 2)
     letzteWoche: "**Wichtig:** Mit „letzte Woche“ meinen wir die volle Woche von Montag bis Sonntag vor heute.",
     // ENTWURF v4: Hinweis am Computer (kein Touch, breiter als 700 px), dazu ein QR-Code
-    desktopHinweis: "**Du bist gerade am Computer?** Den Screenshot machst du am Handy. Scanne dafür den QR-Code mit der Handy-Kamera: Er öffnet deinen persönlichen Link. Lade den Screenshot am Handy hoch und mach danach hier am Computer weiter – lade diese Seite dazu einmal neu.",
+    // ToL 24.10.: erster Satz neu (QR-Code am Laptop überraschte). ENTWURF
+    desktopHinweis: "**Du bist gerade am Computer?** Deine Bildschirmzeit steht nur auf deinem Handy. Den Screenshot machst du am Handy. Scanne dafür den QR-Code mit der Handy-Kamera: Er öffnet deinen persönlichen Link. Lade den Screenshot am Handy hoch und mach danach hier am Computer weiter – lade diese Seite dazu einmal neu.",
     desktopLinkLabel: "Dein persönlicher Link",
     SU01: "Konntest du den Screenshot machen?",
     SU02_label: "Screenshot hochladen (bis 3 Dateien, je 10 MB)",

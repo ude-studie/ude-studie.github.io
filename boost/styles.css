@@ -213,6 +213,10 @@ button, input { font: inherit; }
 .lp-ctx.changed { animation: ctx-flash 900ms ease-out; }
 @keyframes ctx-flash { 0%, 35% { background: #fff4c2; } 100% { background: var(--card); } }
 .lp-ctx[hidden] { display: none; }
+/* ToL 24.10.: Hinweis zur Mehrfachauswahl direkt unter der Aufgabe, über dem Screen */
+.lp-ctx-hint { margin: -6px 0 0; width: 100%; padding: 9px 14px; border-radius: 12px;
+  background: var(--primary-soft); color: var(--primary); font-weight: 700; font-size: 1rem; line-height: 1.35; text-align: center; }
+.lp-ctx-hint[hidden] { display: none; }
 .lp-panel { width: 100%; flex: 0 0 auto; }
 .lp-panel:empty { display: none; }
 .lp-panel.reserved { visibility: hidden; }
@@ -1218,10 +1222,19 @@ div.card { cursor: default; }
 .q-hint.in-stage { position: sticky; bottom: 10px; left: auto; align-self: center; flex: 0 0 auto; margin: -46px 0 0;
   transform: none; animation-name: q-hint-bob-y; }
 @keyframes q-hint-bob-y { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(4px); } }
+/* ToL 24.10.: Knopf wurde übersehen – heller Rand und beim Erscheinen dreimal ein Puls-Ring */
+.q-hint.in-stage, .q-hint.in-flow { border: 2px solid #fff;
+  animation: q-hint-bob-y 1.6s ease-in-out infinite, q-hint-ring 1.4s ease-out 3; }
+@keyframes q-hint-ring { 0% { box-shadow: 0 4px 14px rgba(0,0,0,.25), 0 0 0 0 rgba(31,58,95,.55); }
+  100% { box-shadow: 0 4px 14px rgba(0,0,0,.25), 0 0 0 16px rgba(31,58,95,0); } }
+@media (prefers-reduced-motion: reduce) { .q-hint.in-stage, .q-hint.in-flow { animation: none; } }
 
 /* G4 (18.10.): vierter Abschnitt der Erklärung und Regeln in der Zusammenfassung */
 .lines > div.regel { background: var(--primary-soft); border-top: 0; border-radius: 12px; padding: 12px 14px; margin: 6px -6px 12px; }
 .sum-rules-title { font-size: 1.125rem; color: var(--primary); margin: 18px 0 8px; }
+/* ToL 24.10.: Regel im Kasten des Musters statt in einer zweiten Liste */
+.sum-list li .sum-rule { margin-top: 6px; padding: 8px 10px; border-radius: 10px; background: var(--primary-soft); }
+.sum-list li .sum-rule b { color: var(--primary); }
 
 /* Übung 1 (18.10.): Ladekreis im Instagram-Feed (endloses Scrollen) */
 .ig-loadmore { display: flex; justify-content: center; padding: 14px 0 12px; }
@@ -1254,5 +1267,5 @@ div.card { cursor: default; }
 
 /* Fragebogen (18.10./24.10.): Hinweis klebt unten im scrollenden Bereich der App, nicht am Browserfenster */
 .q-hint.in-flow { position: sticky; bottom: 12px; left: auto; transform: none; display: block; width: max-content;
-  margin: -46px auto 0; animation-name: q-hint-bob-y; }
+  margin: -46px auto 0; } /* ToL 24.10.: Animation (Wippen + Puls) steht oben bei .q-hint.in-stage */
 .q-hint.in-flow[hidden] { display: none; }

@@ -89,7 +89,8 @@
           { type: "text", text: T.r04.text },
           { type: "email", key: "EM01", label: T.r04.EM01, required: true, error: T.r04.error },
           { type: "email", key: "EM02", label: T.r04.EM02, required: true, error: T.r04.error,
-            sameAs: "EM01", mismatch: T.r04.mismatch }
+            sameAs: "EM01", mismatch: T.r04.mismatch },
+          { type: "hint", text: T.r04.hinweis } // ToL 24.10.: direkt unter den Feldern
         ],
         after: function (answers, ctx) {
           // E-Mail getrennt von den Antworten (contacts), in events nur ein Marker
